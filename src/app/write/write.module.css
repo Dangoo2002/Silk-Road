@@ -1,0 +1,85 @@
+.writePostContainer {
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #f9f9f9;
+}
+
+.writePostTitle {
+    text-align: center;
+    color: #333;
+}
+
+.writePostFormGroup {
+    margin-bottom: 15px;
+}
+
+.label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+.writePostInput,
+.writePostTextarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.writePostTextarea {
+    resize: vertical; /* Allow vertical resizing */
+}
+
+.writePostButton {
+    width: 100%;
+    padding: 10px;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.writePostButton:hover {
+    background-color: #005bb5;
+}
+
+/* Responsive Styles */
+@media (max-width: 720px) {
+    .writePostContainer {
+        padding: 15px;
+    }
+
+    .writePostInput,
+    .writePostTextarea {
+        font-size: 14px; /* Slightly smaller text on medium screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .writePostContainer {
+        padding: 10px;
+    }
+
+    .writePostTitle {
+        font-size: 1.5rem; /* Adjust heading size for small screens */
+    }
+
+    .writePostInput,
+    .writePostTextarea {
+        font-size: 12px; /* Smaller text on small screens */
+    }
+
+    .writePostButton {
+        font-size: 14px; /* Adjust button size */
+    }
+}

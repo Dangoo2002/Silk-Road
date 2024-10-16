@@ -1,0 +1,83 @@
+.loginContainer {
+  padding: 20px;
+  max-width: 400px;
+  margin: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background-color: #f9f9f9;
+}
+
+.loginTitle {
+  text-align: center;
+  color: #333;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.loginFormGroup {
+  margin-bottom: 15px;
+}
+
+.loginLabel {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.loginInput {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 10px;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.loginButton:hover {
+  background-color: #005bb5;
+}
+
+/* Responsive Styles */
+@media (max-width: 720px) {
+  .loginContainer {
+      padding: 15px;
+  }
+
+  .loginInput {
+      font-size: 14px; /* Slightly smaller text on medium screens */
+  }
+
+  .loginButton {
+      font-size: 14px; /* Adjust button size */
+  }
+}
+
+@media (max-width: 480px) {
+  .loginContainer {
+      padding: 10px;
+  }
+
+  .loginTitle {
+      font-size: 1.5rem; /* Adjust heading size for small screens */
+  }
+
+  .loginInput {
+      font-size: 12px; /* Smaller text on small screens */
+  }
+}

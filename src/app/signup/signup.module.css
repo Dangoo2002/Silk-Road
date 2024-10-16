@@ -1,0 +1,73 @@
+.signupContainer {
+    max-width: 600px; /* Maximum width for larger screens */
+    margin: auto; /* Center the form */
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.signupHeading {
+    text-align: center;
+}
+
+.formField {
+    margin-bottom: 15px; /* Space between form fields */
+}
+
+.label {
+    display: block; /* Make labels block elements */
+    margin-bottom: 5px; /* Space between label and input */
+}
+
+.inputField {
+    width: 100%; /* Full width for inputs */
+    padding: 10px; /* Padding inside inputs */
+    border: 1px solid #ccc; /* Border styling */
+    border-radius: 4px; /* Rounded corners */
+    box-sizing: border-box; /* Include padding in width */
+}
+
+.submitButton {
+    width: 100%; /* Full width for button */
+    padding: 10px; /* Padding inside button */
+    background-color: #007bff; /* Button background color */
+    color: white; /* Button text color */
+    border: none; /* No border */
+    border-radius: 4px; /* Rounded corners */
+    cursor: pointer; /* Pointer cursor on hover */
+    font-size: 16px; /* Font size for button */
+}
+
+.submitButton:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+.errorMessage {
+    color: red; /* Error message color */
+    text-align: center; /* Center error messages */
+}
+
+.successMessage {
+    color: green; /* Success message color */
+    text-align: center; /* Center success messages */
+}
+
+/* Responsive Styles */
+@media (max-width: 720px) {
+    .signupContainer {
+        padding: 15px; /* Reduce padding on smaller screens */
+    }
+
+    .inputField,
+    .submitButton {
+        font-size: 14px; /* Smaller font size on smaller screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .inputField,
+    .submitButton {
+        font-size: 12px; /* Even smaller font size for very small screens */
+    }
+}
