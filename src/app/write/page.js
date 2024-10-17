@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react';
-import styles from './write.module.css'; // Import the CSS module
+import styles from './write.module.css';
 
 export default function WritePost() {
   const [formData, setFormData] = useState({
@@ -14,7 +14,6 @@ export default function WritePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Send form data to the backend
     const response = await fetch('/api/write', {
       method: 'POST',
       headers: {
@@ -25,7 +24,7 @@ export default function WritePost() {
 
     if (response.ok) {
       alert('Post saved successfully!');
-      // Clear form
+    
       setFormData({
         title: '',
         description: '',
