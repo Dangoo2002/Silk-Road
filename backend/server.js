@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mysql = require('mysql');
-const multer = require('multer'); 
-
+const multer = require('multer');
+const bcrypt = require('bcrypt'); 
 
 const app = express();
 app.use(express.json());
@@ -28,9 +28,11 @@ db.connect((err) => {
   }
 });
 
+// Signup endpoint
 app.post('/signup', async (req, res) => {
   const { fullName, email, password, confirmPassword } = req.body;
 
+  // Validation checks
   if (!fullName || !email || !password || !confirmPassword) {
     return res.status(400).json({ success: false, message: 'All fields are required' });
   }
@@ -48,75 +50,62 @@ app.post('/signup', async (req, res) => {
   }
 
   try {
-    const connection = await pool.getConnection();
-    try {
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password using bcrypt
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      const sql = 'INSERT INTO sign (fullName, email, password) VALUES (?, ?, ?)';
-      await connection.query(sql, [fullName, email, hashedPassword]);
-      connection.release();
-      return res.json({ success: true, message: 'Registration successful' });
-    } catch (err) {
-      connection.release();
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(400).json({ success: false, message: 'Email already exists' });
+    // Insert the new user into the database
+    const sql = 'INSERT INTO sign (fullName, email, password) VALUES (?, ?, ?)';
+    db.query(sql, [fullName, email, hashedPassword], (err, result) => {
+      if (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+          return res.status(400).json({ success: false, message: 'Email already exists' });
+        }
+        console.error('Database error:', err);
+        return res.status(500).json({ success: false, message: 'Registration failed', error: err.message });
       }
-      console.error('Database error:', err);
-      return res.status(500).json({ success: false, message: 'Registration failed', error: err.message });
-    }
-  } catch (error) {
-    console.error('Connection error:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Registration failed due to database connection error',
-      error: error.message,
-      code: error.code
+      return res.json({ success: true, message: 'Registration successful' });
     });
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    return res.status(500).json({ success: false, message: 'Registration failed due to server error' });
   }
 });
 
 // Login endpoint
 app.post('/api/login', async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
-    }
+  // Validation checks
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required' });
+  }
 
-    try {
-      const connection = await pool.getConnection();
-      try {
-        const sql = 'SELECT * FROM sign WHERE email = ?';
-        const [rows] = await connection.query(sql, [email]);
-
-        if (rows.length === 0) {
-          return res.status(400).json({ success: false, message: 'Invalid email or password' });
-        }
-
-        const user = rows[0];
-
-        // Compare the provided password with the hashed password in the database
-        const passwordMatch = await bcrypt.compare(password, user.password);
-        if (!passwordMatch) {
-          return res.status(400).json({ success: false, message: 'Invalid email or password' });
-        }
-
-        // Here you might want to send a success response
-        return res.json({ success: true, message: 'Login successful' });
-
-      } catch (err) {
-        console.error('Database error: ' + err.message);
-        return res.status(500).json({ success: false, message: 'Login failed' });
-      } finally {
-        connection.release();
-      }
-    } catch (error) {
-      console.error('Error: ' + error.message);
+  const sql = 'SELECT * FROM sign WHERE email = ?';
+  db.query(sql, [email], async (err, rows) => {
+    if (err) {
+      console.error('Database error:', err.message);
       return res.status(500).json({ success: false, message: 'Login failed' });
     }
+
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    const user = rows[0];
+
+    // Compare the provided password with the hashed password in the database
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Login successful
+    return res.json({ success: true, message: 'Login successful' });
+  });
 });
 
+// Start the server
 app.listen(3002, () => {
-    console.log('Listening on port 3002');
-  });
+  console.log('Listening on port 3002');
+});

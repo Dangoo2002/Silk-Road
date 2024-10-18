@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useContext, useState } from 'react';
@@ -9,11 +8,16 @@ import styles from './navbar.module.css';
 import { FaUserCircle } from 'react-icons/fa';
 
 export default function Nav() {
-  const { user, login, logout } = useContext(AuthContext);
+  const { user, logout, isLoggedIn } = useContext(AuthContext); 
   const [menuOpen, setMenuOpen] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen((prevState) => !prevState);
+  };
+
+  const handleLogout = () => {
+    logout(); 
+    toggleMenu(); 
   };
 
   return (
@@ -31,15 +35,18 @@ export default function Nav() {
         </button>
         <nav className={`${styles.nav} ${menuOpen ? styles.showMenu : ''}`}>
           <ul className={styles.navList}>
-            {user ? (
-              <li className={styles.navItem} onClick={toggleMenu}>
-                <FaUserCircle className={styles.navLink} />
-                <div className={styles.userCard}>
-                  <Image src={user.image} alt={user.fullname} width={50} height={50} />
-                  <p>{user.fullname}</p>
-                  <Link href="/account-details">Account Details</Link>
-                </div>
-              </li>
+            {isLoggedIn ? ( 
+              <>
+                <li className={styles.navItem} onClick={toggleMenu}>
+                  <FaUserCircle className={styles.navLink} />
+                  <div className={styles.userCard}>
+                    <Image src={user.image} alt={user.fullname} width={50} height={50} />
+                    <p>{user.fullname}</p>
+                    <Link href="/account-details">Account Details</Link>
+                    <button onClick={handleLogout} className={styles.logoutButton}>Logout</button>
+                  </div>
+                </li>
+              </>
             ) : (
               <>
                 <li className={styles.navItem}>

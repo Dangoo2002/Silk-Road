@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation'; 
 import styles from './signup.module.css';
 import { AiOutlineUser } from 'react-icons/ai';
 import { FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
@@ -16,7 +17,8 @@ export default function Signup() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
+  
+  const router = useRouter(); 
 
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
@@ -25,7 +27,7 @@ export default function Signup() {
 
     const { fullName, email, password, confirmPassword } = formData;
 
-    // Client-side validation
+    
     if (!fullName || !email || !password || !confirmPassword) {
       setError("All fields are required");
       return;
@@ -77,6 +79,10 @@ export default function Signup() {
         password: '',
         confirmPassword: ''
       });
+
+      // Redirect to login page after signup
+      router.push('/login');
+
     } catch (error) {
       console.error('Fetch error:', error);
       setError('Network error. Please try again.');
