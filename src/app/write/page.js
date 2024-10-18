@@ -1,7 +1,12 @@
 'use client'
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css'; // Import Quill styles
 import styles from './write.module.css';
+
+// Dynamically import Quill to avoid SSR issues
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function WritePost() {
   const [formData, setFormData] = useState({
@@ -45,57 +50,58 @@ export default function WritePost() {
 
   return (
     <div className={styles.writePostContainer}>
-      <h1 className={styles.writePostTitle}>Create a New Post</h1>
-      <form onSubmit={handleSubmit}>
-        <div className={styles.writePostFormGroup}>
-          <label>Title:</label>
-          <input
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            className={styles.writePostInput}
-          />
-        </div>
+      <div className={styles.writePostCard}>
+        <h1 className={styles.writePostTitle}>Create a New Blog</h1>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.writePostFormGroup}>
+            <label className={styles.label}>Title:</label>
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              className={styles.writePostInput}
+            />
+          </div>
 
-        <div className={styles.writePostFormGroup}>
-          <label>Description:</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            className={styles.writePostTextarea}
-          />
-        </div>
+          <div className={styles.writePostFormGroup}>
+            <label className={styles.label}>Description:</label>
+            <ReactQuill
+              value={formData.description}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              className={styles.writePostTextarea}
+              theme="snow" // Using the snow theme for a clean look
+            />
+          </div>
 
-        <div className={styles.writePostFormGroup}>
-          <label>Image URL:</label>
-          <input
-            type="text"
-            name="imageUrl"
-            value={formData.imageUrl}
-            onChange={handleChange}
-            required
-            className={styles.writePostInput}
-          />
-        </div>
+          <div className={styles.writePostFormGroup}>
+            <label className={styles.label}>Image URL:</label>
+            <input
+              type="text"
+              name="imageUrl"
+              value={formData.imageUrl}
+              onChange={handleChange}
+              required
+              className={styles.writePostInput}
+            />
+          </div>
 
-        <div className={styles.writePostFormGroup}>
-          <label>Link:</label>
-          <input
-            type="text"
-            name="link"
-            value={formData.link}
-            onChange={handleChange}
-            required
-            className={styles.writePostInput}
-          />
-        </div>
+          <div className={styles.writePostFormGroup}>
+            <label className={styles.label}>Link:</label>
+            <input
+              type="text"
+              name="link"
+              value={formData.link}
+              onChange={handleChange}
+              required
+              className={styles.writePostInput}
+            />
+          </div>
 
-        <button type="submit" className={styles.writePostButton}>Submit</button>
-      </form>
+          <button type="submit" className={styles.writePostButton}>Add New Blog</button>
+        </form>
+      </div>
     </div>
   );
 }

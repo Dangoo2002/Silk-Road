@@ -1,11 +1,11 @@
 :root {
-  --background: #ffffff;
+  --background: #f0f0f0; /* Set background to white */
   --foreground: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #ffffff; /* Force background to stay white even in dark mode */
     --foreground: #ededed;
   }
 }
@@ -18,7 +18,7 @@ body {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--background); /* Apply the background color */
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

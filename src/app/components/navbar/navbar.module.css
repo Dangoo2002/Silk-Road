@@ -1,10 +1,27 @@
-/* General styles for large screens */
+.cardContainer {
+    width: 100%;
+    margin: 0;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: fixed;
+    top: 0;
+    z-index: 1;
+    overflow: hidden;
+    transition: height 0.3s ease; /* Smooth transition for height */
+    height: 90px; /* Default height for the card */
+}
+
+.cardContainer.active {
+    height: 200px; /* Increased height when the menu is active */
+}
+
 .navWrapper {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px 50px;
-    background-color: white;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 .navList {
@@ -53,7 +70,6 @@
     height: auto;
 }
 
-/* Write button styles */
 .writeButton {
     background-color: #b6babd;
     color: white;
@@ -71,7 +87,6 @@
     color: black;
 }
 
-/* Hamburger menu styles */
 .hamburger {
     display: none;
     font-size: 30px;
@@ -81,18 +96,26 @@
     color: #333;
 }
 
-/* Menu visibility toggling */
 .nav {
     display: flex;
 }
 
 .showMenu {
-    display: block;
+    display: flex;
+    animation: slideIn 0.3s forwards; /* Add slide-in animation */
 }
 
-/* Media Queries */
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
-/* For screens 720px and below */
 @media (max-width: 720px) {
     .navWrapper {
         padding: 10px 20px;
@@ -107,7 +130,6 @@
     }
 }
 
-/* For screens 480px and below */
 @media (max-width: 480px) {
     .hamburger {
         display: block;
@@ -123,35 +145,42 @@
         border: 1px solid #ccc;
         padding: 20px;
         border-radius: 5px;
-        width: 100%;
-        /* Full-width dropdown for a cleaner layout */
+        width: calc(100% - 40px);
         z-index: 10;
+        transition: all 0.3s ease; /* Smooth transition */
     }
 
     .navItem {
-        margin: 15px 0;
-        /* Added margin for spacing between items */
+        margin: 10px 0;
+        width: 100%;
     }
 
     .navLink {
         font-size: 20px;
-        /* Larger text for mobile */
         padding: 10px 0;
+        text-align: center;
+        display: block;
     }
 
     .showMenu {
         display: flex;
-        flex-direction: column;
         align-items: flex-start;
+        height: auto;
     }
 
     .navWrapper {
         flex-direction: row;
         justify-content: space-between;
+        padding: 10px 20px;
     }
 
     .logoImage {
         max-width: 80%;
         height: auto;
+    }
+
+    .cardContainer {
+        height: auto; /* Allow height to adjust when the menu is open */
+        padding: 0;
     }
 }

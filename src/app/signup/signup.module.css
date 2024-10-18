@@ -1,73 +1,186 @@
 .signupContainer {
-    max-width: 600px; /* Maximum width for larger screens */
-    margin: auto; /* Center the form */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Center the card vertically */
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
+    background-color: #f0f0f0;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
-.signupHeading {
+.signupCard {
+    display: flex;
+    max-width: 800px;
+    width: 100%;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.imageContainer {
+    width: 50%; /* Image on the left */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: white; /* Optional background for the image side */
+}
+
+.formContainer {
+    width: 50%; /* Fields on the right */
+    padding: 40px;
+}
+
+.signupTitle {
     text-align: center;
+    color: #333;
+    font-size: 1.8rem;
+    margin-bottom: 20px;
 }
 
-.formField {
-    margin-bottom: 15px; /* Space between form fields */
+.signupForm {
+    display: flex;
+    flex-direction: column;
 }
 
-.label {
-    display: block; /* Make labels block elements */
-    margin-bottom: 5px; /* Space between label and input */
+.signupFormGroup {
+    margin-bottom: 20px;
 }
 
-.inputField {
-    width: 100%; /* Full width for inputs */
-    padding: 10px; /* Padding inside inputs */
-    border: 1px solid #ccc; /* Border styling */
-    border-radius: 4px; /* Rounded corners */
-    box-sizing: border-box; /* Include padding in width */
+.signupLabel {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: black;
 }
 
-.submitButton {
-    width: 100%; /* Full width for button */
-    padding: 10px; /* Padding inside button */
-    background-color: #007bff; /* Button background color */
-    color: white; /* Button text color */
-    border: none; /* No border */
-    border-radius: 4px; /* Rounded corners */
-    cursor: pointer; /* Pointer cursor on hover */
-    font-size: 16px; /* Font size for button */
+.inputGroup {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f5f5f5; /* Grey input background */
+    color: black;
 }
 
-.submitButton:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+.icon {
+    padding: 12px;
+    color: black; /* Change icon color to gray */
 }
 
-.errorMessage {
-    color: red; /* Error message color */
-    text-align: center; /* Center error messages */
+.signupInput {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f5f5f5;
+    font-size: 16px;
+    color: black;
 }
 
-.successMessage {
-    color: green; /* Success message color */
-    text-align: center; /* Center success messages */
+.signupInput:focus {
+    outline: none; /* Remove outline on focus */
+}
+
+.showPasswordButton {
+    border: none;
+    background: none;
+    color: grey;
+    cursor: pointer;
+    padding: 12px;
+}
+
+.signupButton {
+    width: 100%;
+    padding: 12px;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.signupButton:hover {
+    background-color: #005bb5;
+}
+
+.errorBanner {
+    background-color: #ffdddd;
+    color: #d8000c;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #d8000c;
+    display: flex;
+    align-items: center;
+}
+
+.successBanner {
+    background-color: #e6ffed;
+    color: #4caf50;
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #4caf50;
+    display: flex;
+    align-items: center;
+}
+
+.errorIcon, .successIcon {
+    margin-right: 10px; /* Space between icon and text */
+}
+
+.loginLink {
+    text-align: center;
+    margin-top: 15px;
+    color: black;
+}
+
+.loginLink a {
+    color: #0070f3;
+    text-decoration: none;
+}
+
+.loginLink a:hover {
+    text-decoration: underline;
+}
+
+.signupImage {
+    max-width: 100%;
+    height: auto;
 }
 
 /* Responsive Styles */
 @media (max-width: 720px) {
-    .signupContainer {
-        padding: 15px; /* Reduce padding on smaller screens */
+    .signupCard {
+        flex-direction: column;
     }
 
-    .inputField,
-    .submitButton {
-        font-size: 14px; /* Smaller font size on smaller screens */
+    .formContainer,
+    .imageContainer {
+        width: 100%;
+    }
+
+    .formContainer {
+        padding: 20px;
+    }
+
+    .imageContainer {
+        padding: 0;
     }
 }
 
 @media (max-width: 480px) {
-    .inputField,
-    .submitButton {
-        font-size: 12px; /* Even smaller font size for very small screens */
+    .signupTitle {
+        font-size: 1.5rem;
+    }
+
+    .signupInput {
+        font-size: 14px;
+    }
+
+    .signupButton {
+        font-size: 14px;
     }
 }
