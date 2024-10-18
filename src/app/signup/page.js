@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './signup.module.css'; 
-import { AiOutlineUser } from 'react-icons/ai'; 
-import { FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa'; // Import necessary icons
+import styles from './signup.module.css';
+import { AiOutlineUser } from 'react-icons/ai';
+import { FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -15,14 +15,17 @@ export default function Signup() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL; 
+
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const { fullName, email, password, confirmPassword } = formData;
 
+    // Client-side validation
     if (!fullName || !email || !password || !confirmPassword) {
       setError("All fields are required");
       return;
@@ -43,28 +46,40 @@ export default function Signup() {
       return;
     }
 
-  
-    const response = await fetch(`${apiUrl}/signup`, { 
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
-    });
+    try {
+      console.log('Attempting to sign up with URL:', `${apiUrl}/signup`);
+      const response = await fetch(`${apiUrl}/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
 
-    if (response.ok) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        const errorMessage = errorData?.message || response.statusText || 'Error signing up';
+        console.error('Signup Error:', errorMessage, errorData);
+        setError(errorMessage);
+        setSuccess('');
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Signup successful:', data);
       setSuccess('Signup successful!');
       setError('');
 
+      // Reset form after successful signup
       setFormData({
         fullName: '',
         email: '',
         password: '',
         confirmPassword: ''
       });
-    } else {
-      const errorMessage = await response.text();
-      setError(errorMessage || 'Error signing up');
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setError('Network error. Please try again.');
       setSuccess('');
     }
   };
@@ -74,7 +89,7 @@ export default function Signup() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError(''); 
+    setError(''); // Clear error when user starts typing
   };
 
   const toggleShowPassword = () => {
