@@ -28,11 +28,12 @@ db.connect((err) => {
   }
 });
 
-// Signup endpoint
+
+
 app.post('/signup', async (req, res) => {
   const { fullName, email, password, confirmPassword } = req.body;
 
-  // Validation checks
+  
   if (!fullName || !email || !password || !confirmPassword) {
     return res.status(400).json({ success: false, message: 'All fields are required' });
   }
@@ -50,11 +51,11 @@ app.post('/signup', async (req, res) => {
   }
 
   try {
-    // Hash the password using bcrypt
+
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Insert the new user into the database
+
     const sql = 'INSERT INTO sign (fullName, email, password) VALUES (?, ?, ?)';
     db.query(sql, [fullName, email, hashedPassword], (err, result) => {
       if (err) {
@@ -64,7 +65,8 @@ app.post('/signup', async (req, res) => {
         console.error('Database error:', err);
         return res.status(500).json({ success: false, message: 'Registration failed', error: err.message });
       }
-      return res.json({ success: true, message: 'Registration successful' });
+      
+      return res.status(200).json({ success: true, message: 'Registration successful' });
     });
   } catch (error) {
     console.error('Error hashing password:', error);
@@ -72,11 +74,13 @@ app.post('/signup', async (req, res) => {
   }
 });
 
-// Login endpoint
-app.post('/api/login', async (req, res) => {
+
+
+
+app.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  // Validation checks
+
   if (!email || !password) {
     return res.status(400).json({ success: false, message: 'Email and password are required' });
   }
@@ -94,18 +98,80 @@ app.post('/api/login', async (req, res) => {
 
     const user = rows[0];
 
-    // Compare the provided password with the hashed password in the database
+  
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(400).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // Login successful
-    return res.json({ success: true, message: 'Login successful' });
+ 
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+       
+      }
+    });
   });
 });
 
-// Start the server
+
+
+app.post('/write', async (req, res) => {
+  const { title, description, imageUrl, link, userId } = req.body; 
+  if (!userId) {
+    return res.status(403).json({ success: false, message: 'User not authenticated' });
+  }
+
+  if (!title || !description || !imageUrl || !link) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+
+  try {
+    const sql = 'INSERT INTO posts (title, description, imageUrl, link, user_id) VALUES (?, ?, ?, ?, ?)';
+    db.query(sql, [title, description, imageUrl, link, userId], (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ success: false, message: 'Error saving post', error: err.message });
+      }
+
+      return res.status(200).json({ success: true, message: 'Post saved successfully' });
+    });
+  } catch (error) {
+    console.error('Error saving post:', error);
+    return res.status(500).json({ success: false, message: 'Failed to save post due to server error' });
+  }
+});
+
+
+
+app.get('/posts', (req, res) => {
+  console.log('Received request for posts'); 
+
+  const sql = `
+    SELECT p.*, s.fullName 
+    FROM posts p 
+    JOIN sign s ON p.user_id = s.id
+    ORDER BY p.created_at DESC`; 
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ success: false, message: 'Error fetching posts' });
+    }
+
+    console.log('Fetched posts:', rows);
+    return res.status(200).json(rows);
+  });
+});
+
+
+
+
 app.listen(3002, () => {
   console.log('Listening on port 3002');
 });
+

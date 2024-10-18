@@ -7,6 +7,15 @@
   background-color: #f0f0f0;
   font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
+.successMessage {
+  color: green; /* Text color for success messages */
+  margin: 10px 0; /* Spacing above and below */
+}
+
+.errorMessage {
+  color: red; /* Text color for error messages */
+  margin: 10px 0; /* Spacing above and below */
+}
 
 .loginCard {
   display: flex;

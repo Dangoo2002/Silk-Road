@@ -1,23 +1,27 @@
 'use client';
-
 import { useContext, useState } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from './navbar.module.css';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaCaretDown } from 'react-icons/fa';
 
 export default function Nav() {
-  const { user, logout, isLoggedIn } = useContext(AuthContext); 
+  const { logout, isLoggedIn, userData } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen((prevState) => !prevState);
   };
 
+  const toggleDropdown = () => {
+    setDropdownOpen((prevState) => !prevState);
+  };
+
   const handleLogout = () => {
-    logout(); 
-    toggleMenu(); 
+    logout();
+    setDropdownOpen(false); // Close dropdown on logout
   };
 
   return (
@@ -35,18 +39,19 @@ export default function Nav() {
         </button>
         <nav className={`${styles.nav} ${menuOpen ? styles.showMenu : ''}`}>
           <ul className={styles.navList}>
-            {isLoggedIn ? ( 
-              <>
-                <li className={styles.navItem} onClick={toggleMenu}>
-                  <FaUserCircle className={styles.navLink} />
-                  <div className={styles.userCard}>
-                    <Image src={user.image} alt={user.fullname} width={50} height={50} />
-                    <p>{user.fullname}</p>
-                    <Link href="/account-details">Account Details</Link>
+            {isLoggedIn ? (
+              <li className={styles.navItem}>
+                <FaUserCircle className={styles.navLink} onClick={toggleDropdown} />
+                <FaCaretDown className={styles.dropdownIcon} onClick={toggleDropdown} />
+                {dropdownOpen && (
+                  <div className={styles.dropdownCard}>
+                    <Link href="/account-details" className={styles.dropdownLink}>
+                      Account
+                    </Link>
                     <button onClick={handleLogout} className={styles.logoutButton}>Logout</button>
                   </div>
-                </li>
-              </>
+                )}
+              </li>
             ) : (
               <>
                 <li className={styles.navItem}>

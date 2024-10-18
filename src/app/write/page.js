@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css'; 
 import styles from './write.module.css';
+import { useRouter } from 'next/navigation';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
@@ -15,23 +16,40 @@ export default function WritePost() {
     link: ''
   });
 
+  const router = useRouter(); // Initialize the router
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-  
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+
+    // Retrieve user data from local storage
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    const userId = userData ? userData.id : null; // Get user ID
+
+    if (!userId) {
+      alert('User not authenticated');
+      return; // Exit if user is not authenticated
+    }
 
     const response = await fetch(`${apiUrl}/write`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formData)
+      body: JSON.stringify({
+        ...formData,
+        userId // Include userId in the request body
+      })
     });
 
     if (response.ok) {
       alert('Post saved successfully!');
-    
+      
+      // Redirect to homepage
+      router.push('/'); // Redirect to homepage
+      
+      // Reset form data
       setFormData({
         title: '',
         description: '',
@@ -73,7 +91,7 @@ export default function WritePost() {
               value={formData.description}
               onChange={(value) => setFormData({ ...formData, description: value })}
               className={styles.writePostTextarea}
-              theme="snow" // Using the snow theme for a clean look
+              theme="snow" 
             />
           </div>
 
