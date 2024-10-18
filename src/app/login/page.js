@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useContext, useState } from 'react';
-import { AuthContext } from '../components/AuthContext/page';
+import { AuthContext } from '../components/AuthContext/AuthContext';
 import styles from './login.module.css'; 
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import Link from 'next/link';

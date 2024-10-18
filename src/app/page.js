@@ -1,6 +1,6 @@
 import React from 'react';
 import Nav from "./components/navbar/page";
-import { AuthProvider } from './components/AuthContext/page';
+import { AuthProvider } from './components/AuthContext/AuthContext';
 import './page.module.css';
 
 export default function Home() {

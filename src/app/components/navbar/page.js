@@ -2,7 +2,7 @@
 'use client';
 
 import { useContext, useState } from 'react';
-import { AuthContext } from '../AuthContext/page';
+import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from './navbar.module.css';
