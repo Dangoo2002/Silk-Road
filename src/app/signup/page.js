@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import styles from './signup.module.css'; // Import the CSS module
-import { AiOutlineUser } from 'react-icons/ai'; // Import user icon
+import styles from './signup.module.css'; 
+import { AiOutlineUser } from 'react-icons/ai'; 
 import { FaEnvelope, FaLock, FaCheckCircle, FaExclamationCircle, FaEye, FaEyeSlash } from 'react-icons/fa'; // Import necessary icons
 
 export default function Signup() {
@@ -15,12 +15,12 @@ export default function Signup() {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State for showing password
+  const [showPassword, setShowPassword] = useState(false); 
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL; 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate the form data
     const { fullName, email, password, confirmPassword } = formData;
 
     if (!fullName || !email || !password || !confirmPassword) {
@@ -43,8 +43,8 @@ export default function Signup() {
       return;
     }
 
-    // Send form data to the backend
-    const response = await fetch('/api/signup', {
+  
+    const response = await fetch(`${apiUrl}/signup`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -55,7 +55,7 @@ export default function Signup() {
     if (response.ok) {
       setSuccess('Signup successful!');
       setError('');
-      // Clear form
+
       setFormData({
         fullName: '',
         email: '',
@@ -74,7 +74,7 @@ export default function Signup() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError(''); // Clear error message on input change
+    setError(''); 
   };
 
   const toggleShowPassword = () => {

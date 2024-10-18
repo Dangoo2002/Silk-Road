@@ -1,11 +1,10 @@
-'use client'
+'use client';
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import 'react-quill/dist/quill.snow.css'; // Import Quill styles
+import 'react-quill/dist/quill.snow.css'; 
 import styles from './write.module.css';
 
-// Dynamically import Quill to avoid SSR issues
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function WritePost() {
@@ -19,7 +18,10 @@ export default function WritePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch('/api/write', {
+  
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    const response = await fetch(`${apiUrl}/write`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
