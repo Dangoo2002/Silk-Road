@@ -13,10 +13,13 @@ export default function Landing() {
   const fetchPosts = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const endpoint = `${apiUrl}/posts`; // Correctly format the endpoint with backticks
+      const endpoint = `${apiUrl}/posts`;
       console.log('Fetching from:', endpoint); // Log for debugging
 
       const response = await fetch(endpoint);
+
+      console.log('Response Status:', response.status); // Log the response status
+      console.log('Response Headers:', response.headers); // Log response headers
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -26,9 +29,10 @@ export default function Landing() {
       }
 
       const data = await response.json();
+      console.log('Fetched Data:', data); 
 
       if (data && data.success) {
-        setPosts(data.posts); 
+        setPosts(data.posts);
       } else {
         alert('Failed to fetch posts');
       }
