@@ -38,6 +38,21 @@ export default function BlogPost({ params }) {
     }
   };
 
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    const formattedDate = date.toLocaleDateString('en-US', {
+      day: 'numeric', 
+      month: 'short', 
+      year: 'numeric'
+    });
+    const formattedTime = date.toLocaleTimeString('en-US', {
+      hour: 'numeric', 
+      minute: 'numeric', 
+      hour12: true
+    });
+    return `${formattedDate} at ${formattedTime}`;
+  };
+
   if (!post) return <div>Loading...</div>;
 
   return (
@@ -50,6 +65,8 @@ export default function BlogPost({ params }) {
         <div className={styles.authorInfo}>
           <img src="/user-symbol.jpg" alt={post.fullName} className={styles.userImage} />
           <span className={styles.userName}>{post.fullName}</span>
+          <span className={styles.verticalLine}>|</span>
+          <span className={styles.postDate}>{formatDateTime(post.created_at)}</span> 
         </div>
       </div>
       <Footer />

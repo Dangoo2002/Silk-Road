@@ -14,8 +14,16 @@
 .postContainer:hover {
     transform: translateY(-5px);
   
-}
-
+}.verticalLine {
+    margin: 0 8px;
+    color: #666;
+  }
+  
+  .postDate {
+    font-size: 0.9em;
+    color: #666;
+  }
+  
 .postTitle {
     font-size: 36px;
   
