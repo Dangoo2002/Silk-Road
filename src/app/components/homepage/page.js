@@ -12,7 +12,7 @@ export default function Landing() {
 
   const fetchPosts = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''; 
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const endpoint = `${apiUrl}/posts`; 
       console.log('Fetching from:', endpoint); 
 
@@ -55,8 +55,8 @@ export default function Landing() {
             <img src={post.imageUrl} alt={post.title} className={styles.cardImage} />
             <h2 className={styles.cardTitle}>{post.title}</h2>
             <p className={styles.cardDescription}>
-              {truncateText(post.description, 30)}{' '} {/* Adjusted word limit */}
-              <a href={`/post/${post.id}`} className={styles.cardLink}> {/* Fixed template string */}
+              {truncateText(post.description, 30)}{' '}
+              <a href={`/post/${post.id}`} className={styles.cardLink}> 
                 Read More
               </a>
             </p>
