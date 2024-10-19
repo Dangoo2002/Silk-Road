@@ -14,12 +14,12 @@ export default function Landing() {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
       const endpoint = `${apiUrl}/posts`;
-      console.log('Fetching from:', endpoint); // Log for debugging
+      console.log('Fetching from:', endpoint); 
 
       const response = await fetch(endpoint);
 
-      console.log('Response Status:', response.status); // Log the response status
-      console.log('Response Headers:', response.headers); // Log response headers
+      console.log('Response Status:', response.status); 
+      console.log('Response Headers:', response.headers);
 
       if (!response.ok) {
         const errorText = await response.text();
