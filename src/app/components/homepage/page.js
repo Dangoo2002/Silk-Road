@@ -12,8 +12,10 @@ export default function Landing() {
 
   const fetchPosts = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || ''; 
       const endpoint = `${apiUrl}/posts`; 
+      console.log('Fetching from:', endpoint); 
+
       const response = await fetch(endpoint);
 
       if (!response.ok) {
@@ -48,13 +50,13 @@ export default function Landing() {
     <div className={styles.homeContainer}>
       <h1 className={styles.homeTitle}>Latest Blogs</h1>
       <div className={styles.cardsContainer}>
-        {posts.map((post, index) => (
+        {posts.map((post) => (
           <div key={post.id} className={styles.card}>
             <img src={post.imageUrl} alt={post.title} className={styles.cardImage} />
             <h2 className={styles.cardTitle}>{post.title}</h2>
             <p className={styles.cardDescription}>
-              {truncateText(post.description, 5)}{' '}
-              <a href={`/post/${post.id}`} className={styles.cardLink}>
+              {truncateText(post.description, 30)}{' '} {/* Adjusted word limit */}
+              <a href={`/post/${post.id}`} className={styles.cardLink}> {/* Fixed template string */}
                 Read More
               </a>
             </p>

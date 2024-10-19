@@ -56,32 +56,39 @@ export default function WritePost() {
       return;
     }
 
-    const response = await fetch(`${apiUrl}/write`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...formData,
-        description: strippedDescription, 
-        userId
-      })
-    });
-
-    if (response.ok) {
-      alert('Post saved successfully!');
-
-      router.push('/');
-      
-     
-      setFormData({
-        title: '',
-        description: '',
-        imageUrl: '',
-        link: ''
+    try {
+      const response = await fetch(`${apiUrl}/write`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...formData,
+          description: strippedDescription, 
+          userId
+        })
       });
-    } else {
-      alert('Error saving post');
+
+      if (response.ok) {
+        alert('Post saved successfully!');
+        router.push('/');
+
+        setFormData({
+          title: '',
+          description: '',
+          imageUrl: '',
+          link: ''
+        });
+      } else {
+        // Log detailed error information
+        const errorResponse = await response.json();
+        console.error('Error saving post:', errorResponse); // Log the error response for debugging
+        alert(`Error saving post: ${errorResponse.message || 'Unknown error'}`);
+      }
+      
+    } catch (err) {
+      console.error('Network or server error:', err); // Log network errors
+      alert('An unexpected error occurred while saving the post.');
     }
   };
 
