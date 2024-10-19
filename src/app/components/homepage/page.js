@@ -5,6 +5,8 @@ import styles from './home.module.css';
 
 export default function Landing() {
   const [posts, setPosts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 6;
 
   useEffect(() => {
     fetchPosts();
@@ -50,11 +52,29 @@ export default function Landing() {
     return text;
   };
 
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className={styles.homeContainer}>
       <h1 className={styles.homeTitle}>Latest Blogs</h1>
       <div className={styles.cardsContainer}>
-        {posts.map((post) => (
+        {currentPosts.map((post) => (
           <div key={post.id} className={styles.card}>
             <img src={post.imageUrl} alt={post.title} className={styles.cardImage} />
             <h2 className={styles.cardTitle}>{post.title}</h2>
@@ -76,6 +96,24 @@ export default function Landing() {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className={styles.pagination}>
+        <button 
+          className={styles.paginationButton} 
+          onClick={handlePrevPage} 
+          disabled={currentPage === 1}
+        >
+          ←
+        </button>
+        <span className={styles.paginationInfo}>{currentPage} / {totalPages}</span>
+        <button 
+          className={styles.paginationButton} 
+          onClick={handleNextPage} 
+          disabled={currentPage === totalPages}
+        >
+          →
+        </button>
       </div>
     </div>
   );

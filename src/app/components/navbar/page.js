@@ -5,11 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import styles from './navbar.module.css';
 import { FaUserCircle, FaCaretDown } from 'react-icons/fa';
+import Loader from '../loader/page';
 
 export default function Nav() {
   const { logout, isLoggedIn, userData } = useContext(AuthContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const toggleMenu = () => {
     setMenuOpen((prevState) => !prevState);
@@ -19,13 +21,27 @@ export default function Nav() {
     setDropdownOpen((prevState) => !prevState);
   };
 
-  const handleLogout = () => {
-    logout();
-    setDropdownOpen(false); // Close dropdown on logout
+  const handleLogout = async () => {
+    setLoading(true);
+    await logout();
+    setDropdownOpen(false);
+    setTimeout(() => {
+      setLoading(false);
+      window.location.href = '/';
+    }, 2000);
+  };
+
+  const handleAccountRedirect = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      window.location.href = '/account-details';
+    }, 2000);
   };
 
   return (
     <div className={`${styles.cardContainer} ${menuOpen ? styles.active : ''}`}>
+      {loading && <Loader />}
       <div className={styles.navWrapper}>
         <Image
           src="/silkroadlogo.jpeg"
@@ -41,14 +57,16 @@ export default function Nav() {
           <ul className={styles.navList}>
             {isLoggedIn ? (
               <li className={styles.navItem}>
-                <FaUserCircle className={styles.navLink} onClick={toggleDropdown} />
+                <FaUserCircle className={styles.navLink} onClick={handleAccountRedirect} />
                 <FaCaretDown className={styles.dropdownIcon} onClick={toggleDropdown} />
                 {dropdownOpen && (
                   <div className={styles.dropdownCard}>
-                    <Link href="/account-details" className={styles.dropdownLink}>
+                    <button onClick={handleAccountRedirect} className={styles.dropdownLink}>
                       Account
-                    </Link>
-                    <button onClick={handleLogout} className={styles.logoutButton}>Logout</button>
+                    </button>
+                    <button onClick={handleLogout} className={styles.logoutButton}>
+                      Logout
+                    </button>
                   </div>
                 )}
               </li>
