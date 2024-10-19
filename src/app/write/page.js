@@ -16,7 +16,18 @@ export default function WritePost() {
     link: ''
   });
 
+  const [error, setError] = useState(''); // State for error message
   const router = useRouter(); // Initialize the router
+
+  // Validate Image URL
+  const validateImageUrl = async (url) => {
+    try {
+      const response = await fetch(url);
+      return response.ok && response.headers.get('content-type').startsWith('image/');
+    } catch {
+      return false;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,8 +39,21 @@ export default function WritePost() {
     const userId = userData ? userData.id : null; // Get user ID
 
     if (!userId) {
-      alert('User not authenticated');
+      // Set error message if user is not authenticated
+      setError('You must be logged in to create a blog post.'); // Set the error message
       return; // Exit if user is not authenticated
+    } else {
+      setError(''); // Clear error if user is authenticated
+    }
+
+    // Strip HTML tags from description
+    const strippedDescription = formData.description.replace(/<[^>]+>/g, ''); // Regular expression to remove HTML tags
+
+    // Validate the image URL
+    const isValidImageUrl = await validateImageUrl(formData.imageUrl);
+    if (!isValidImageUrl) {
+      alert('Please enter a valid image URL.');
+      return;
     }
 
     const response = await fetch(`${apiUrl}/write`, {
@@ -39,17 +63,17 @@ export default function WritePost() {
       },
       body: JSON.stringify({
         ...formData,
-        userId // Include userId in the request body
+        description: strippedDescription, 
+        userId
       })
     });
 
     if (response.ok) {
       alert('Post saved successfully!');
+
+      router.push('/');
       
-      // Redirect to homepage
-      router.push('/'); // Redirect to homepage
-      
-      // Reset form data
+     
       setFormData({
         title: '',
         description: '',
@@ -72,6 +96,8 @@ export default function WritePost() {
     <div className={styles.writePostContainer}>
       <div className={styles.writePostCard}>
         <h1 className={styles.writePostTitle}>Create a New Blog</h1>
+        
+        {error && <p className={styles.errorMessage}>{error}</p>} 
         <form onSubmit={handleSubmit}>
           <div className={styles.writePostFormGroup}>
             <label className={styles.label}>Title:</label>
@@ -91,6 +117,7 @@ export default function WritePost() {
               value={formData.description}
               onChange={(value) => setFormData({ ...formData, description: value })}
               className={styles.writePostTextarea}
+              placeholder='A minimum of 250 words'
               theme="snow" 
             />
           </div>

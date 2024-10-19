@@ -2,19 +2,21 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Center the card vertically */
+  height: 100vh;
   padding: 20px;
   background-color: #f0f0f0;
   font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
+
 .successMessage {
-  color: green; /* Text color for success messages */
-  margin: 10px 0; /* Spacing above and below */
+  color: green;
+  margin: 10px 0;
 }
 
 .errorMessage {
-  color: red; /* Text color for error messages */
-  margin: 10px 0; /* Spacing above and below */
+  color: red;
+  margin: 10px 0;
+
 }
 
 .loginCard {
@@ -72,10 +74,10 @@
 
 .loginInput {
   width: 100%;
-  padding: 12px 12px 12px 40px; /* Added left padding to create space for the icon */
+  padding: 12px 12px 12px 40px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #f5f5f5; /* Grey input background */
+  background-color: #f5f5f5;
   font-size: 16px;
   color: #333;
 

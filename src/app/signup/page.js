@@ -72,7 +72,6 @@ export default function Signup() {
       setSuccess('Signup successful!');
       setError('');
 
-      // Reset form after successful signup
       setFormData({
         fullName: '',
         email: '',
@@ -80,7 +79,7 @@ export default function Signup() {
         confirmPassword: ''
       });
 
-      // Redirect to login page after signup
+     
       router.push('/login');
 
     } catch (error) {
@@ -95,7 +94,7 @@ export default function Signup() {
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError(''); // Clear error when user starts typing
+    setError(''); 
   };
 
   const toggleShowPassword = () => {

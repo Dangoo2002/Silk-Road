@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata = {
-  title: "Silk Road-BLog App",
+  title: "Silk Road-BLogs",
   description: "Blog App",
 };
 

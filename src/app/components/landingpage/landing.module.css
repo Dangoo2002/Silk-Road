@@ -1,0 +1,69 @@
+.landingContainer {
+    position: relative;
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    background-image: url('../../../../public/bgg.jpeg');
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-size: cover;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.card {
+    background-color: white; /* Card background color */
+    border-radius: 10px; /* Rounded corners */
+    padding: 20px; /* Padding inside the card */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+    max-width: 800px; /* Max width for the card */
+    width: 90%; /* Responsive width */
+}
+
+.overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: black; /* Text color set to black */
+}
+
+.heading {
+    font-size: 1.5rem; /* Main text size */
+    line-height: 1.4; /* Line height for better readability */
+    margin-bottom: 20px; /* Space below the heading */
+}
+
+.getStartedButton {
+    padding: 10px 20px; /* Button padding */
+    font-size: 1.2rem; /* Button text size */
+    color: #fff; /* Text color */
+    background-color: #ff4081; /* Button color */
+    border: none;
+    font-weight: bold;
+    border-radius: 5px; /* Rounded corners */
+    cursor: pointer;
+    text-decoration: none; /* No underline */
+    transition: background-color 0.3s;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+}
+
+.getStartedButton:hover {
+    background-color: #e91e63; /* Darker shade on hover */
+}
+
+/* Responsive Styles */
+@media (max-width: 720px) {
+    .heading {
+        font-size: 1.5rem; /* Adjust heading size for smaller screens */
+    }
+}
+
+@media (max-width: 480px) {
+    .heading {
+        font-size: 1.2rem; /* Further reduce heading size for mobile */
+    }
+    .getStartedButton {
+        font-size: 1rem; /* Button text size for mobile */
+    }
+}

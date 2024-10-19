@@ -23,9 +23,8 @@ export default function Login() {
     e.preventDefault();
     const loginSuccess = await login(formData.email, formData.password);
     if (loginSuccess) {
-      // Assuming the user object contains an id field
-      const userId = JSON.parse(localStorage.getItem('userData')).id; // Get user ID
-      localStorage.setItem('userId', userId); // Store user ID for later use
+      const userId = JSON.parse(localStorage.getItem('userData')).id; 
+      localStorage.setItem('userId', userId);
       router.push('/');
     }
   };
@@ -46,11 +45,8 @@ export default function Login() {
         </div>
         <div className={styles.formContainer}>
           <h1 className={styles.loginTitle}>Login</h1>
-          
-          {/* Display success message */}
+      
           {success && <div className={styles.successMessage}>{success}</div>}
-          
-          {/* Display error message */}
           {error && <div className={styles.errorMessage}>{error}</div>}
           
           <form onSubmit={handleSubmit} className={styles.loginForm}>

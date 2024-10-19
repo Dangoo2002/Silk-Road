@@ -1,19 +1,20 @@
 :root {
-  --background: #f0f0f0; /* Set background to white */
-  --foreground: #171717;
+  --background: #f0f0f0; /* Light background color */
+  --foreground: #171717; /* Text color */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff; /* Force background to stay white even in dark mode */
-    --foreground: #ededed;
+    --foreground: #171717; /* Text color for dark mode */
   }
 }
 
 html,
 body {
+  height: 100vh; /* Ensure full height for body */
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: hidden; /* Prevent horizontal overflow */
 }
 
 body {
@@ -25,18 +26,30 @@ body {
 }
 
 * {
-  box-sizing: border-box;
+  box-sizing: border-box; /* Include padding and border in element's total width and height */
   padding: 0;
   margin: 0;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+  color: inherit; /* Inherit text color from parent */
+  text-decoration: none; /* Remove underline from links */
 }
 
+/* Flexbox layout for page container */
+.page-container {
+  display: flex;
+  flex-direction: column; /* Stack children vertically */
+  min-height: 100vh; /* Minimum height is full viewport height */
+}
+
+.content-wrap {
+  flex-grow: 1; /* Allow this to grow and fill available space */
+}
+
+/* Dark mode settings */
 @media (prefers-color-scheme: dark) {
   html {
-    color-scheme: dark;
+    color-scheme: dark; /* Indicate that dark mode is preferred */
   }
 }

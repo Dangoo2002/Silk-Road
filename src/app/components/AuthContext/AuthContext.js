@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Load user data from local storage on initial render
   useEffect(() => {
     const storedUserData = localStorage.getItem('userData');
     if (storedUserData && storedUserData !== 'undefined') {
@@ -27,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Login function
+ 
   const login = useCallback(async (email, password) => {
     try {
       setLoading(true);
@@ -44,9 +43,9 @@ export const AuthProvider = ({ children }) => {
         setIsLoggedIn(true);
         setUserData(data.user);
 
-        // Store user data, including user ID, in local storage
-        localStorage.setItem('userData', JSON.stringify(data.user)); // Ensure this includes an id field
-        localStorage.setItem('userId', data.user.id); // Store user ID for later use
+       
+        localStorage.setItem('userData', JSON.stringify(data.user)); 
+        localStorage.setItem('userId', data.user.id); 
 
         setSuccess('Login successful!');
         setError('');
@@ -69,12 +68,12 @@ export const AuthProvider = ({ children }) => {
     }
   }, [apiUrl]);
 
-  // Logout function
+
   const logout = useCallback(() => {
     setIsLoggedIn(false);
     setUserData(null);
     localStorage.removeItem('userData');
-    localStorage.removeItem('userId'); // Clear user ID on logout
+    localStorage.removeItem('userId'); 
     setSuccess('Logged out successfully!');
     setError('');
     console.log('User logged out'); 

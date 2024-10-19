@@ -148,25 +148,58 @@ app.post('/write', async (req, res) => {
 
 
 
+
 app.get('/posts', (req, res) => {
-  console.log('Received request for posts'); 
 
   const sql = `
-    SELECT p.*, s.fullName 
-    FROM posts p 
-    JOIN sign s ON p.user_id = s.id
-    ORDER BY p.created_at DESC`; 
+    SELECT posts.*, sign.fullName 
+    FROM posts 
+    JOIN sign ON posts.user_id = sign.id`; 
 
-  db.query(sql, (err, rows) => {
+  db.query(sql, (err, results) => {
     if (err) {
       console.error('Database error:', err);
-      return res.status(500).json({ success: false, message: 'Error fetching posts' });
+      return res.status(500).json({ success: false, message: 'Error fetching posts', error: err.message });
     }
 
-    console.log('Fetched posts:', rows);
-    return res.status(200).json(rows);
+    return res.status(200).json({
+      success: true,
+      posts: results, 
+    });
   });
 });
+
+
+
+
+app.get('/posts/:id', (req, res) => {
+  const postId = req.params.id; 
+
+  const sql = `
+    SELECT posts.*, sign.fullName 
+    FROM posts 
+    JOIN sign ON posts.user_id = sign.id 
+    WHERE posts.id = ?`; 
+
+  db.query(sql, [postId], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ success: false, message: 'Error fetching post', error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      post: results[0], 
+    });
+  });
+});
+
+
+
 
 
 

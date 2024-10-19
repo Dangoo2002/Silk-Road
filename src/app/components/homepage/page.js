@@ -7,41 +7,70 @@ export default function Landing() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''; 
-    console.log(`Fetching from: ${apiUrl}/posts`);
-
-    fetch(`${apiUrl}/posts`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => setPosts(data))
-      .catch(error => console.error('Error fetching data:', error));
+    fetchPosts();
   }, []);
 
+  const fetchPosts = async () => {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const endpoint = `${apiUrl}/posts`; 
+      const response = await fetch(endpoint);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching posts:', errorText);
+        alert('Failed to fetch posts');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data && data.success) {
+        setPosts(data.posts); 
+      } else {
+        alert('Failed to fetch posts');
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      alert('An error occurred while fetching posts');
+    }
+  };
+
+  const truncateText = (text, wordLimit) => {
+    const words = text.split(' ');
+    if (words.length > wordLimit) {
+      return words.slice(0, wordLimit).join(' ') + '...';
+    }
+    return text;
+  };
+
   return (
-    <div className={styles.container}>
-      {posts.length > 0 ? (
-        posts.map((post, index) => (
-          <div key={index} className={styles.postContainer}>
-            <div className={styles.textSection}>
-              <h1>{post.title}</h1>
-              <p>
-                {post.description.split(' ').slice(0, 50).join(' ') + '...'} 
-              </p>
-              <a className={styles.readMore} href={post.link}>Read More</a>
-              <p className={styles.author}>By: {post.fullName}</p>
-            </div>
-            <div className={styles.imageSection}>
-              <img src={post.imageUrl} alt={post.title} />
+    <div className={styles.homeContainer}>
+      <h1 className={styles.homeTitle}>All Blogs</h1>
+      <div className={styles.cardsContainer}>
+        {posts.map((post, index) => (
+          <div key={post.id} className={styles.card}>
+            <img src={post.imageUrl} alt={post.title} className={styles.cardImage} />
+            <h2 className={styles.cardTitle}>{post.title}</h2>
+            <p className={styles.cardDescription}>
+              {truncateText(post.description, 5)}{' '}
+              <a href={`/post/${post.id}`} className={styles.cardLink}>
+                Read More
+              </a>
+            </p>
+            <div className={styles.cardFooter}>
+              <div className={styles.userInfo}>
+                <img 
+                  src="/user-symbol.jpg" 
+                  alt="User" 
+                  className={styles.userImage} 
+                />
+                <span className={styles.userName}>{post.fullName}</span>
+              </div>
             </div>
           </div>
-        ))
-      ) : (
-        <p>Loading posts...</p>
-      )}
+        ))}
+      </div>
     </div>
   );
 }
