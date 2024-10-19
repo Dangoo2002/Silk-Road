@@ -131,6 +131,7 @@ export default function WritePost() {
               onChange={handleChange}
               required
               className={styles.writePostInput}
+                placeholder='Use short and valid image links'
             />
           </div>
 
