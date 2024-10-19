@@ -15,7 +15,7 @@ export default function BlogPost({ params }) {
 
   const fetchPost = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
       const response = await fetch(`${apiUrl}/posts/${id}`); 
 
       if (!response.ok) {
