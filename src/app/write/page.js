@@ -34,22 +34,19 @@ export default function WritePost() {
 
     const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
-    // Retrieve user data from local storage
+    
     const userData = JSON.parse(localStorage.getItem('userData'));
-    const userId = userData ? userData.id : null; // Get user ID
-
+    const userId = userData ? userData.id : null; 
     if (!userId) {
-      // Set error message if user is not authenticated
-      setError('You must be logged in to create a blog post.'); // Set the error message
-      return; // Exit if user is not authenticated
+
+      setError('You must be logged in to create a blog post.'); 
+      return; 
     } else {
-      setError(''); // Clear error if user is authenticated
+      setError(''); 
     }
 
-    // Strip HTML tags from description
-    const strippedDescription = formData.description.replace(/<[^>]+>/g, ''); // Regular expression to remove HTML tags
+    const strippedDescription = formData.description.replace(/<[^>]+>/g, ''); 
 
-    // Validate the image URL
     const isValidImageUrl = await validateImageUrl(formData.imageUrl);
     if (!isValidImageUrl) {
       alert('Please enter a valid image URL.');
@@ -80,14 +77,14 @@ export default function WritePost() {
           link: ''
         });
       } else {
-        // Log detailed error information
+     
         const errorResponse = await response.json();
-        console.error('Error saving post:', errorResponse); // Log the error response for debugging
+        console.error('Error saving post:', errorResponse);
         alert(`Error saving post: ${errorResponse.message || 'Unknown error'}`);
       }
       
     } catch (err) {
-      console.error('Network or server error:', err); // Log network errors
+      console.error('Network or server error:', err); 
       alert('An unexpected error occurred while saving the post.');
     }
   };

@@ -12,7 +12,7 @@ export default function Landing() {
 
   const fetchPosts = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
       const endpoint = `${apiUrl}/posts`;
       console.log('Fetching from:', endpoint); // Log for debugging
 

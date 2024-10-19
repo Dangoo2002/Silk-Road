@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
   useEffect(() => {
     const storedUserData = localStorage.getItem('userData');
