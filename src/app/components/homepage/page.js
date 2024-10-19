@@ -13,8 +13,8 @@ export default function Landing() {
   const fetchPosts = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const endpoint = `${apiUrl}/posts`; 
-      console.log('Fetching from:', endpoint); 
+      const endpoint = `${apiUrl}/posts`; // Correctly format the endpoint with backticks
+      console.log('Fetching from:', endpoint); // Log for debugging
 
       const response = await fetch(endpoint);
 
