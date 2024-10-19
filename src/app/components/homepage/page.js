@@ -46,7 +46,7 @@ export default function Landing() {
 
   return (
     <div className={styles.homeContainer}>
-      <h1 className={styles.homeTitle}>All Blogs</h1>
+      <h1 className={styles.homeTitle}>Latest Blogs</h1>
       <div className={styles.cardsContainer}>
         {posts.map((post, index) => (
           <div key={post.id} className={styles.card}>

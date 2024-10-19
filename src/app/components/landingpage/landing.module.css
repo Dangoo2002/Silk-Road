@@ -25,45 +25,45 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: black; /* Text color set to black */
+    color: black; 
 }
 
 .heading {
-    font-size: 1.5rem; /* Main text size */
-    line-height: 1.4; /* Line height for better readability */
-    margin-bottom: 20px; /* Space below the heading */
+    font-size: 1.5rem;
+    line-height: 1.4; 
+    margin-bottom: 20px; 
 }
 
 .getStartedButton {
-    padding: 10px 20px; /* Button padding */
-    font-size: 1.2rem; /* Button text size */
-    color: #fff; /* Text color */
-    background-color: #ff4081; /* Button color */
+    padding: 10px 20px; 
+    font-size: 1.2rem;
+    color: #fff; 
+    background-color: #ff4081;
     border: none;
     font-weight: bold;
-    border-radius: 5px; /* Rounded corners */
+    border-radius: 5px; 
     cursor: pointer;
-    text-decoration: none; /* No underline */
+    text-decoration: none; 
     transition: background-color 0.3s;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 }
 
 .getStartedButton:hover {
-    background-color: #e91e63; /* Darker shade on hover */
+    background-color: #e91e63; 
 }
 
 /* Responsive Styles */
 @media (max-width: 720px) {
     .heading {
-        font-size: 1.5rem; /* Adjust heading size for smaller screens */
+        font-size: 1.5rem;
     }
 }
 
 @media (max-width: 480px) {
     .heading {
-        font-size: 1.2rem; /* Further reduce heading size for mobile */
+        font-size: 1.2rem; 
     }
     .getStartedButton {
-        font-size: 1rem; /* Button text size for mobile */
+        font-size: 1rem; 
     }
 }
