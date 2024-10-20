@@ -4,7 +4,7 @@ import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from './navbar.module.css';
-import { FaUserCircle, FaCaretDown } from 'react-icons/fa';
+import { FaUser, FaCaretDown } from 'react-icons/fa';
 import Loader from '../loader/page';
 
 export default function Nav() {
@@ -60,7 +60,7 @@ export default function Nav() {
           <ul className={styles.navList}>
             {isLoggedIn ? (
               <li className={styles.navItem}>
-                <FaUserCircle className={styles.navLink} onClick={handleAccountRedirect} />
+                <FaUser className={styles.navLink} onClick={handleAccountRedirect} />
                 <FaCaretDown className={styles.dropdownIcon} onClick={toggleDropdown} />
                 {dropdownOpen && (
                   <div className={styles.dropdownCard}>

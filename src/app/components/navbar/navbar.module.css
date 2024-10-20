@@ -28,8 +28,8 @@
   }
   
   .dropdownLink:hover {
-    background-color: orange;
-    color: white;
+  text-decoration: underline;
+    color: black;
   }
   
 .navWrapper {
@@ -42,8 +42,8 @@
 
 .dropdownCard {
     position: absolute;
-    top: 0;
-    right: 220px;
+    top: 15px;
+    right: 240px;
     background-color: white;
     border: 1px solid #ccc;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
@@ -57,6 +57,8 @@
 .dropdownLink {
     margin-right: 15px;
     color: black;
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    font-weight: bold;
 
 }
 
