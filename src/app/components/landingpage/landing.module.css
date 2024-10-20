@@ -11,12 +11,18 @@
 }
 
 .card {
-    background-color: white; /* Card background color */
-    border-radius: 10px; /* Rounded corners */
-    padding: 20px; /* Padding inside the card */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
-    max-width: 800px; /* Max width for the card */
-    width: 90%; /* Responsive width */
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    width: 90%;
+    height: 400px; /* Set height to auto to allow it to expand with text */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    top: 50px;
+    position: relative;
 }
 
 .overlay {
@@ -25,28 +31,32 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    color: black; 
+    color: black;
 }
 
 .heading {
     font-size: 1.5rem;
-    line-height: 1.4; 
-    margin-bottom: 20px; 
+    line-height: 1.4;
+    margin-bottom: 20px;
+    height: auto; /* Remove fixed height */
+    overflow: visible; /* Allow overflow to be visible */
 }
 
 .getStartedButton {
-    padding: 10px 20px; 
+    padding: 10px 20px;
     font-size: 1.2rem;
-    color: #fff; 
+    color: #fff;
     background-color: #ff4081;
     border: none;
     font-weight: bold;
-    border-radius: 5px; 
+    border-radius: 5px;
     cursor: pointer;
-    text-decoration: none; 
+    text-decoration: none;
     transition: background-color 0.3s;
     font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    align-self: center;
 }
+
 
 .getStartedButton:hover {
     background-color: #e91e63; 

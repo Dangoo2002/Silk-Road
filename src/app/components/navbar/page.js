@@ -43,13 +43,16 @@ export default function Nav() {
     <div className={`${styles.cardContainer} ${menuOpen ? styles.active : ''}`}>
       {loading && <Loader />}
       <div className={styles.navWrapper}>
-        <Image
-          src="/silkroadlogo.jpeg"
-          alt="Logo"
-          width={150}
-          height={50}
-          className={styles.logoImage}
-        />
+
+        <Link href="/">
+          <Image
+            src="/silkroadlogo.jpeg"
+            alt="Logo"
+            width={150}
+            height={50}
+            className={styles.logoImage}
+          />
+        </Link>
         <button className={styles.hamburger} onClick={toggleMenu}>
           &#9776;
         </button>
@@ -81,7 +84,7 @@ export default function Nav() {
               </>
             )}
             <li className={styles.navItem}>
-              <button className={styles.writeButton}>
+              <button className={styles.writeButton} style={{ backgroundColor: 'white', color: 'black' }}>
                 <Link href="/write" className={styles.navLink}>Write</Link>
               </button>
             </li>

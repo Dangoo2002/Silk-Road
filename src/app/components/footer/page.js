@@ -7,7 +7,7 @@ const Footer = () => {
     <footer className={styles.footer}>
       <div className={styles.footerSection}>
         <h3>About Silk Road Blog</h3>
-        <p>Silk Road Blog is your go-to platform for the latest articles, tips, and insights on technology, travel, lifestyle, and much more.</p>
+        <p>Silk Road Blog is your go-to platform for the latest articles, tips, and insights on technology, politics, entertainment, and much more.</p>
       </div>
 
       <hr className={styles.hr} />
@@ -16,7 +16,6 @@ const Footer = () => {
         <h3>Quick Links</h3>
         <ul>
           <li><a href="/">Home</a></li>
-          <li><a href="/blog">Blog</a></li>
           <li><a href="/about">About Us</a></li>
           <li><a href="/contact">Contact Us</a></li>
           <li><a href="/privacy">Privacy Policy</a></li>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import styles from './landing.module.css';
 
-const fullText = "Welcome to Silk Road Blogs, where we share stories and experiences from travelers around the globe. Explore diverse cultures, hidden gems, and personal adventures shared by our community. Join us on this journey, connect with like-minded individuals, and ignite your wanderlust. Silk Road Blogs is your gateway to inspiration and travel insights, one story at a time. Whether you are planning a trip or reminiscing about past adventures, we have something for everyone. Dive into our blog and start your adventure today!";
+const fullText = "Welcome to Silk Road Blogs, your go-to destination for the latest stories and insights in politics, technology, entertainment, and automobiles. From Kenya to the global stage, we cover key issues shaping the world today. Whether you're curious about the latest political developments, cutting-edge tech innovations, entertainment trends, or automotive advancements, we've got you covered!";
 
 export default function Get() {
     const [displayedText, setDisplayedText] = useState('');
