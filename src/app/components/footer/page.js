@@ -1,7 +1,7 @@
 import React from 'react';
-import styles from './footer.module.css'; 
-import AboutUs from '../AboutUs/page';
+import styles from './footer.module.css';
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
+import Link from 'next/link';
 
 const Footer = () => {
   return (
@@ -18,7 +18,7 @@ const Footer = () => {
         <ul>
           <li><a href="/">Home</a></li>
           <li><a href="/blog">Blog</a></li>
-          <li><a href="/about">About Us</a></li>
+          <li><Link href="/about">About Us</Link></li>
           <li><a href="/contact">Contact Us</a></li>
           <li><a href="/privacy">Privacy Policy</a></li>
         </ul>
