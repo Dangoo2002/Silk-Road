@@ -1,0 +1,78 @@
+.about-us-div {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+  }
+  
+  #welcomeheading {
+    font-size: 2em;
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+.about-us-div h2 {
+    font-size: 1.5em;
+    color: #555;
+    margin-top: 20px;
+  }
+  
+.about-us-div p {
+    font-size: 1em;
+    color: #666;
+    margin: 10px 0;
+  }
+  
+  .team-members {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin-top: 20px;
+  }
+  
+  .team-members figure {
+    text-align: center;
+    margin: 10px;
+    flex: 1 1 200px;
+  }
+  
+  .team-members img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+  }
+  
+.team-members figcaption {
+    font-size: 0.9em;
+    color: #777;
+  }
+  
+ .team-members a {
+    color: #1a73e8;
+    text-decoration: none;
+  }
+  
+.team-members  a:hover {
+    text-decoration: underline;
+  }
+  
+  @media (max-width: 600px) {
+    .about-us-div {
+      padding: 10px;
+    }
+  
+    .team-members {
+      flex-direction: column;
+      align-items: center;
+    }
+  
+    .team-members figure {
+      flex: 1 1 100%;
+      max-width: 300px;
+    }
+  }
+  
