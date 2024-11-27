@@ -55,9 +55,18 @@
     color: #1a73e8;
     text-decoration: none;
   }
+
+  .icon {
+    margin-left: 10px;
+    color: #0072b1; /* LinkedIn blue */
+    font-size: 1.2em;
+    max-width: 25px;
+    max-height: 25px;
+  }
+  
   
 .team-members  a:hover {
-    text-decoration: underline;
+    text-decoration: aqua;
   }
   
   @media (max-width: 600px) {
@@ -71,8 +80,9 @@
     }
   
     .team-members figure {
-      flex: 1 1 100%;
-      max-width: 300px;
+     flex: 1 1 100%;
+      width: 30%;
+      margin: auto;
     }
   }
   
