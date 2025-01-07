@@ -13,9 +13,11 @@ export default function AccountDetails() {
     const [loading, setLoading] = useState(true);
 
     // Set the base URL using process.env
-    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+
 
     useEffect(() => {
+        console.log("Base URL:", baseUrl);
         if (isLoggedIn && userData?.id) {
             // Fetch user details
             const fetchUserDetails = async () => {
