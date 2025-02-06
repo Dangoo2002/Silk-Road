@@ -35,7 +35,7 @@ export default function Nav() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      window.location.href = '/account-details';
+      window.location.href = '/account';
     }, 2000);
   };
 
