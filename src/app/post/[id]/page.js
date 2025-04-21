@@ -5,31 +5,50 @@ import { HeartIcon, ShareIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/ou
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import Nav from '@/app/components/navbar/page';
 import Footer from '@/app/components/footer/page';
+import { AuthContext } from '@/app/components/AuthContext/AuthContext';
+import { useContext } from 'react';
+
+export const dynamic = 'force-dynamic'; // Disable static optimization
 
 export default function BlogPost({ params }) {
   const { id } = params;
+  const { userData } = useContext(AuthContext); // Get user data from AuthContext
+  const userId = userData?.id || null; // Use authenticated user ID or null
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [commentInput, setCommentInput] = useState('');
   const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(true);
-  const userId = '1'; // Replace with actual user ID from your auth system
 
   useEffect(() => {
-    console.log('Received params.id:', id); // Debug log
-    fetchPost();
+    let isMounted = true;
+    console.log('Received params.id:', id, 'User ID:', userId);
+    if (!id || isNaN(parseInt(id, 10))) {
+      console.error('Invalid post ID:', id);
+      if (isMounted) setLoading(false);
+      return;
+    }
+    setPost(null); // Reset post state
+    fetchPost().then(() => {
+      if (isMounted) setLoading(false);
+    });
     fetchComments();
-  }, [id]);
+    return () => {
+      isMounted = false;
+    };
+  }, [id, userId]);
 
   const fetchPost = async () => {
     try {
       setLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const url = `${apiUrl}/posts/${id}?userId=${userId}`;
-      console.log('Fetching post from:', url); // Debug log
-      const response = await fetch(url);
+      const url = userId
+        ? `${apiUrl}/posts/${id}?userId=${userId}&t=${Date.now()}`
+        : `${apiUrl}/posts/${id}?t=${Date.now()}`;
+      console.log('Fetching post from:', url);
+      const response = await fetch(url, { cache: 'no-store' });
 
-      console.log('Response Status:', response.status); // Debug log
+      console.log('Response Status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Error fetching post:', errorText);
@@ -38,11 +57,15 @@ export default function BlogPost({ params }) {
       }
 
       const data = await response.json();
-      console.log('Fetched Post Data:', data); // Debug log
-
-      if (data && data.success) {
+      console.log('Fetched Post Data:', data);
+      if (data && data.success && data.post) {
+        console.log('Post ID from response:', data.post.id);
+        if (data.post.id !== parseInt(id, 10)) {
+          console.error('Mismatch: Requested ID', id, 'but received ID', data.post.id);
+        }
         setPost(data.post);
       } else {
+        console.error('Invalid response:', data);
         alert('Failed to fetch post');
       }
     } catch (error) {
@@ -56,7 +79,7 @@ export default function BlogPost({ params }) {
   const fetchComments = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const response = await fetch(`${apiUrl}/comments/${id}`);
+      const response = await fetch(`${apiUrl}/comments/${id}`, { cache: 'no-store' });
       const data = await response.json();
 
       if (data && data.success) {
@@ -103,14 +126,38 @@ export default function BlogPost({ params }) {
     }
   };
 
-  const handleShare = () => {
-    const postUrl = `${window.location.origin}/post/${id}`;
-    navigator.clipboard.writeText(postUrl).then(() => {
-      alert('Post URL copied to clipboard!');
-    }).catch((err) => {
-      console.error('Failed to copy URL:', err);
-      alert('Failed to copy URL');
-    });
+  const handleShare = async () => {
+    if (!userId) {
+      alert('Please log in to share a post');
+      return;
+    }
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+      const response = await fetch(`${apiUrl}/shares`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: id, userId }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error sharing post:', errorText);
+        alert('Failed to share post');
+        return;
+      }
+
+      const postUrl = `${window.location.origin}/post/${id}`;
+      navigator.clipboard.writeText(postUrl).then(() => {
+        alert('Post URL copied to clipboard!');
+      }).catch((err) => {
+        console.error('Failed to copy URL:', err);
+        alert('Failed to copy URL');
+      });
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      alert('An error occurred while sharing post');
+    }
   };
 
   const handleCommentSubmit = async () => {
@@ -184,6 +231,8 @@ export default function BlogPost({ params }) {
       </div>
     );
   }
+
+  console.log('Rendering post with ID:', post.id);
 
   return (
     <div className="bg-gray-50 min-h-screen">
