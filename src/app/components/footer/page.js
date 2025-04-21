@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube } from 'react-icons/fa';
 import Link from 'next/link';
 
 const Footer = () => {
   return (
-    <footer className="bg-[var(--background)] text-[var(--foreground)] py-12 px-4">
+    <footer className="bg-gray-200 text-gray-800 py-12 px-4">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl">
         {/* About Section */}
         <div>
@@ -100,7 +101,7 @@ const Footer = () => {
       </div>
 
       {/* Copyright */}
-      <div className="container mx-auto text-center text-sm text-[var(--foreground)] max-w-6xl">
+      <div className="container mx-auto text-center text-sm text-gray-800 max-w-6xl">
         © Silk Road 2025
       </div>
     </footer>
