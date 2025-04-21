@@ -3,6 +3,7 @@ import { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'; // Updated icon names
 
 export default function AccountDetails() {
   const { userData, isLoggedIn } = useContext(AuthContext);
@@ -15,6 +16,7 @@ export default function AccountDetails() {
     newPassword: '',
     confirmNewPassword: '',
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
@@ -109,49 +111,52 @@ export default function AccountDetails() {
       alert('New passwords do not match');
       return;
     }
-    // Placeholder: Implement backend endpoint for password change
     alert('Password change is not yet implemented on the backend');
     setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'personalDetails':
         return (
-          <div className="p-6 bg-white rounded-lg shadow-md">
+          <div className="p-4 sm:p-6 bg-white rounded-lg shadow-md">
             {loading ? (
-              <p className="text-gray-600">Loading...</p>
+              <p className="text-gray-600 text-center">Loading...</p>
             ) : userDetails ? (
               <>
-                <h2 className="text-2xl font-semibold text-gray-800 mb-4">Personal Details</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">Personal Details</h2>
                 <div className="space-y-4">
-                  <p className="text-lg">
+                  <p className="text-base sm:text-lg">
                     <span className="font-medium">Name:</span> {userDetails.name}
                   </p>
-                  <p className="text-lg">
+                  <p className="text-base sm:text-lg">
                     <span className="font-medium">Email:</span> {userDetails.email}
                   </p>
                 </div>
                 <button
                   onClick={handleDeleteAccount}
-                  className="mt-6 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  className="mt-6 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
                 >
                   Delete Account
                 </button>
               </>
             ) : (
-              <p className="text-gray-600">No user details found.</p>
+              <p className="text-gray-600 text-center">No user details found.</p>
             )}
           </div>
         );
       case 'myBlogs':
         return (
-          <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">My Blogs</h2>
+          <div className="p-4 sm:p-6 bg-white rounded-lg shadow-md">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-6">My Blogs</h2>
             {loading ? (
-              <p className="text-gray-600">Loading...</p>
+              <p className="text-gray-600 text-center">Loading...</p>
             ) : userBlogs.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {userBlogs.map((blog) => (
                   <div
                     key={blog.id}
@@ -165,7 +170,7 @@ export default function AccountDetails() {
                       />
                     )}
                     <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 line-clamp-2">
                         {blog.title}
                       </h3>
                       <p className="text-gray-600 text-sm mt-2 line-clamp-3">
@@ -173,13 +178,13 @@ export default function AccountDetails() {
                       </p>
                       <div className="mt-4 flex gap-2">
                         <Link href={`/edit/${blog.id}`}>
-                          <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                          <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                             Edit
                           </button>
                         </Link>
                         <button
                           onClick={() => handleDeleteBlog(blog.id)}
-                          className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                          className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
                         >
                           Delete
                         </button>
@@ -189,15 +194,15 @@ export default function AccountDetails() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-600">No blogs found.</p>
+              <p className="text-gray-600 text-center">No blogs found.</p>
             )}
           </div>
         );
       case 'changePassword':
         return (
-          <div className="p-6 bg-white rounded-lg shadow-md">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">Change Password</h2>
-            <form onSubmit={handlePasswordChange} className="space-y-4 max-w-md">
+          <div className="p-4 sm:p-6 bg-white rounded-lg shadow-md">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-6">Change Password</h2>
+            <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Current Password
@@ -208,7 +213,7 @@ export default function AccountDetails() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, currentPassword: e.target.value })
                   }
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   required
                 />
               </div>
@@ -222,7 +227,7 @@ export default function AccountDetails() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, newPassword: e.target.value })
                   }
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   required
                 />
               </div>
@@ -236,13 +241,13 @@ export default function AccountDetails() {
                   onChange={(e) =>
                     setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
                   }
-                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                   required
                 />
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Change Password
               </button>
@@ -255,39 +260,71 @@ export default function AccountDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      <aside className="w-64 bg-white shadow-md">
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-800">Account Settings</h2>
-        </div>
-        <ul className="mt-4">
-          <li
-            className={`px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
-              activeTab === 'personalDetails' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
-            }`}
-            onClick={() => setActiveTab('personalDetails')}
-          >
-            Personal Details
-          </li>
-          <li
-            className={`px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
-              activeTab === 'myBlogs' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
-            }`}
-            onClick={() => setActiveTab('myBlogs')}
-          >
-            My Blogs
-          </li>
-          <li
-            className={`px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${
-              activeTab === 'changePassword' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
-            }`}
-            onClick={() => setActiveTab('changePassword')}
-          >
-            Change Password
-          </li>
-        </ul>
-      </aside>
-      <main className="flex-1 p-8">{renderContent()}</main>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Mobile Header with Toggle Button */}
+      <header className="flex items-center justify-between p-4 bg-white shadow-md sm:hidden">
+        <h2 className="text-lg font-bold text-gray-800">Account Settings</h2>
+        <button onClick={toggleSidebar} className="text-gray-600 focus:outline-none">
+          {isSidebarOpen ? (
+            <XMarkIcon className="w-6 h-6" />
+          ) : (
+            <Bars3Icon className="w-6 h-6" />
+          )}
+        </button>
+      </header>
+
+      <div className="flex flex-1 flex-col sm:flex-row">
+        {/* Sidebar */}
+        <aside
+          className={`${
+            isSidebarOpen ? 'block' : 'hidden'
+          } sm:block w-full sm:w-64 bg-white shadow-md sm:shadow-none absolute sm:static z-10 sm:z-auto`}
+        >
+          <div className="p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 hidden sm:block">
+              Account Settings
+            </h2>
+          </div>
+          <ul className="mt-2 sm:mt-4">
+            <li
+              className={`px-4 sm:px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm sm:text-base ${
+                activeTab === 'personalDetails' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
+              }`}
+              onClick={() => {
+                setActiveTab('personalDetails');
+                setIsSidebarOpen(false);
+              }}
+            >
+              Personal Details
+            </li>
+            <li
+              className={`px-4 sm:px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm sm:text-base ${
+                activeTab === 'myBlogs' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
+              }`}
+              onClick={() => {
+                setActiveTab('myBlogs');
+                setIsSidebarOpen(false);
+              }}
+            >
+              My Blogs
+            </li>
+            <li
+              className={`px-4 sm:px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm sm:text-base ${
+                activeTab === 'changePassword' ? 'bg-blue-50 text-blue-600 font-semibold' : ''
+              }`}
+              onClick={() => {
+                setActiveTab('changePassword');
+                setIsSidebarOpen(false);
+              }}
+            >
+              Change Password
+            </li>
+          </ul>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-4 sm:p-8">{renderContent()}</main>
+      </div>
     </div>
   );
 }
