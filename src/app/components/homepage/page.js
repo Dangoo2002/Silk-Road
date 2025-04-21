@@ -1,30 +1,34 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { HeartIcon, ShareIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import Link from 'next/link';
+import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function Landing() {
+  const { userData } = useContext(AuthContext); // Get user data from AuthContext
+  const userId = userData?.id || null; // Use authenticated user ID or null
   const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [comments, setComments] = useState({});
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
   const postsPerPage = 6;
-  const userId = '1'; // Replace with actual user ID from your auth system
 
   useEffect(() => {
     fetchPosts();
-  }, []);
+  }, [userId]); // Add userId as a dependency to refetch when it changes
 
   const fetchPosts = async () => {
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const endpoint = `${apiUrl}/posts?userId=${userId}`; // Include userId for is_liked
+      const endpoint = userId
+        ? `${apiUrl}/posts?userId=${userId}&t=${Date.now()}` // Include userId for is_liked
+        : `${apiUrl}/posts?t=${Date.now()}`; // Fetch without userId if not logged in
       console.log('Fetching from:', endpoint);
 
-      const response = await fetch(endpoint);
+      const response = await fetch(endpoint, { cache: 'no-store' });
 
       console.log('Response Status:', response.status);
       console.log('Response Headers:', response.headers);
@@ -46,7 +50,7 @@ export default function Landing() {
         // Fetch comments for each post
         const commentsData = {};
         for (const post of sortedPosts) {
-          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`);
+          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, { cache: 'no-store' });
           const commentsResult = await commentsResponse.json();
           if (commentsResult.success) {
             commentsData[post.id] = commentsResult.comments;
