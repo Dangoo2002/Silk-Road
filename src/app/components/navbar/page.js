@@ -250,26 +250,26 @@ export default function SocialMediaNav() {
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-2xl dark:shadow-2xl z-50 p-4 border-r border-gray-200 dark:border-gray-700"
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="md:hidden fixed top-0 left-0 w-4/5 h-full bg-white dark:bg-gray-900 shadow-2xl dark:shadow-2xl z-50 p-6"
           >
-            <div className="flex justify-between items-center mb-6">
-              <Link href="/" className="flex items-center space-x-2 group">
+            <div className="flex justify-between items-center mb-8">
+              <Link href="/" className="flex items-center space-x-2 group" onClick={toggleMenu}>
                 <div className="relative overflow-hidden rounded-lg">
                   <Image
                     src="/silkroadlogo.jpeg"
                     alt="Silk Road Blogs Logo"
                     width={32}
                     height={32}
-                    className="w-8 h-8 sm:w-10 sm:h-10 object-cover transform group-hover:scale-105 transition-all duration-300"
+                    className="w-10 h-10 object-cover transform group-hover:scale-110 transition-all duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="flex flex-col relative">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                  <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                     Silk Road
                   </span>
-                  <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300">
+                  <span className="text-sm font-light tracking-wider text-gray-700 dark:text-gray-300">
                     Blogs
                   </span>
                   <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
@@ -277,91 +277,122 @@ export default function SocialMediaNav() {
               </Link>
               <button
                 onClick={toggleMenu}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="Close menu"
               >
-                <XMarkIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+                <XMarkIcon className="h-7 w-7 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
-            <ul className="flex flex-col gap-4 items-center">
-              <li>
+            <ul className="flex flex-col gap-4">
+              <motion.li
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 <Link
                   href="/notifications"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                  className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-all duration-300 shadow-sm"
                   onClick={toggleMenu}
                 >
-                  <BellIcon className="h-5 w-5" />
+                  <BellIcon className="h-6 w-6" />
                   Notifications
                 </Link>
-              </li>
+              </motion.li>
               {isLoggedIn ? (
                 <>
-                  <li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
                     <Link
                       href={`/profile/${userData?.id}`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-all duration-300 shadow-sm"
                       onClick={toggleMenu}
                     >
-                      <UserCircleIcon className="h-5 w-5"/>
+                      <UserCircleIcon className="h-6 w-6" />
                       Profile
                     </Link>
-                  </li>
-                  <li>
+                  </motion.li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
                     <button
                       onClick={() => {
                         handleAccountRedirect();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors w-full text-left text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-all duration-300 shadow-sm w-full text-left"
                     >
-                      <UserCircleIcon className="h-5 w-5" />
+                      <UserCircleIcon className="h-6 w-6" />
                       Account
                     </button>
-                  </li>
-                  <li>
+                  </motion.li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
                     <button
                       onClick={() => {
                         handleLogout();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-red-500 w-full text-left"
+                      className="flex items-center gap-3 px-4 py-3 text-base font-medium text-red-500 dark:text-red-400 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900 dark:hover:to-pink-900 transition-all duration-300 shadow-sm w-full text-left"
                     >
-                      <UserCircleIcon className="h-5 w-5" />
+                      <UserCircleIcon className="h-6 w-6" />
                       Logout
                     </button>
-                  </li>
+                  </motion.li>
                 </>
               ) : (
                 <>
-                  <li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
                     <Link
                       href="/login"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 rounded-xl hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 dark:hover:from-indigo-900 dark:hover:to-purple-900 transition-all duration-300 shadow-sm"
                       onClick={toggleMenu}
                     >
+                      <UserCircleIcon className="h-6 w-6" />
                       Login
                     </Link>
-                  </li>
-                  <li>
+                  </motion.li>
+                  <motion.li
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
                     <Link
                       href="/signup"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-full transition-colors"
+                      className="flex items-center gap-3 px-4 py-3 text-base font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-all duration-300 shadow-md"
                       onClick={toggleMenu}
                     >
+                      <UserCircleIcon className="h-6 w-6" />
                       Sign Up
                     </Link>
-                  </li>
+                  </motion.li>
                 </>
               )}
-              <li>
+              <motion.li
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: isLoggedIn ? 0.5 : 0.4 }}
+              >
                 <Link
                   href="/write"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-full transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 text-base font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-all duration-300 shadow-md"
                   onClick={toggleMenu}
                 >
+                  <UserCircleIcon className="h-6 w-6" />
                   Post
                 </Link>
-              </li>
+              </motion.li>
             </ul>
           </motion.nav>
         )}
