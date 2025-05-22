@@ -481,6 +481,20 @@ export default function SocialMediaHome() {
     setExpandedImage(null);
   };
 
+  const handleSuggestedPostClick = useCallback((postId) => {
+    const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+    if (postElement) {
+      postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Optional: Add a temporary highlight effect
+      postElement.classList.add('highlight-post');
+      setTimeout(() => {
+        postElement.classList.remove('highlight-post');
+      }, 2000);
+    } else {
+      setError('Post not found on this page.');
+    }
+  }, []);
+
   useEffect(() => {
     if (token) {
       fetchPosts(1);
@@ -530,6 +544,16 @@ export default function SocialMediaHome() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 pt-16">
+      <style jsx>{`
+        .highlight-post {
+          animation: highlight 2s ease-in-out;
+        }
+        @keyframes highlight {
+          0% { background-color: rgba(99, 102, 241, 0.2); }
+          50% { background-color: rgba(99, 102, 241, 0.4); }
+          100% { background-color: rgba(99, 102, 241, 0.2); }
+        }
+      `}</style>
       <AnimatePresence>
         {error && (
           <motion.div
@@ -651,10 +675,10 @@ export default function SocialMediaHome() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
               ) : (
                 suggestedPosts.slice(0, 5).map((post) => (
-                  <Link
+                  <div
                     key={post.id}
-                    href={`/post/${post.id}`}
-                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    onClick={() => handleSuggestedPostClick(post.id)}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 cursor-pointer"
                   >
                     <Image
                       src={post.imageUrls[0] || DEFAULT_IMAGE}
@@ -677,7 +701,7 @@ export default function SocialMediaHome() {
                         {post.views || 0} views
                       </p>
                     </div>
-                  </Link>
+                  </div>
                 ))
               )}
             </div>

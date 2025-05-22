@@ -79,11 +79,11 @@ export default function SocialMediaNav() {
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           <div className="flex flex-col relative">
-            <span className="text-lg sm:text-xl font-bold tracking-tight text-black dark:text-black lowercase">
-              silk road
+            <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lowercase">
+              Silk Road
             </span>
-            <span className="text-xs font-light tracking-wider text-black/70 dark:text-black/70 lowercase">
-              blogs
+            <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300 lowercase">
+              Blogs
             </span>
             <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
           </div>
@@ -266,10 +266,10 @@ export default function SocialMediaNav() {
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="flex flex-col relative">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight text-black dark:text-black lowercase">
+                  <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lowercase">
                     silk road
                   </span>
-                  <span className="text-xs font-light tracking-wider text-black/70 dark:text-black/70 lowercase">
+                  <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300 lowercase">
                     blogs
                   </span>
                   <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
