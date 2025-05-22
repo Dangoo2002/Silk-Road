@@ -51,15 +51,15 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         const newPosts = data.posts
-          .filter(post => post.imageUrls?.length > 0)
+          .filter(post => Array.isArray(post.imageUrls) && post.imageUrls.length > 0)
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .map(post => ({
             ...post,
-            imageUrls: post.imageUrls?.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
-            author_image: post.author_image || '/user-symbol.jpg',
+            imageUrls: Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
+            author_image: post.author_image || DEFAULT_IMAGE,
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
-            tags: post.tags ? JSON.parse(post.tags) : [],
+            tags: Array.isArray(post.tags) ? post.tags : [],
           }));
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
@@ -73,7 +73,7 @@ export default function SocialMediaHome() {
           if (commentsResult.success) {
             commentsData[post.id] = commentsResult.comments.map(comment => ({
               ...comment,
-              author_image: comment.author_image || '/user-symbol.jpg',
+              author_image: comment.author_image || DEFAULT_IMAGE,
             }));
           }
         }
@@ -85,10 +85,13 @@ export default function SocialMediaHome() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, apiUrl, userId, DEFAULT_IMAGE]);
+  }, [token, apiUrl, userId]);
 
   const fetchStories = useCallback(async () => {
-    if (!userId || !token) return;
+    if (!userId || !token) {
+      setError('Authentication required to fetch stories.');
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/stories?currentUserId=${userId}`, {
         cache: 'no-store',
@@ -102,20 +105,56 @@ export default function SocialMediaHome() {
       if (data.success) {
         const storiesWithUserLikes = data.stories.map((story) => ({
           ...story,
-          imageUrls: story.imageUrls?.length > 0 ? story.imageUrls : [DEFAULT_IMAGE],
+          imageUrls: Array.isArray(story.imageUrls) && story.imageUrls.length > 0 ? story.imageUrls : [DEFAULT_IMAGE],
           is_liked: story.is_liked || false,
           likes_count: story.likes_count || 0,
-          comments: story.comments || [],
-          author_image: story.author_image || '/user-symbol.jpg',
-          tags: story.tags ? JSON.parse(story.tags) : [],
+          comments: Array.isArray(story.comments) ? story.comments : [],
+          author_image: story.author_image || DEFAULT_IMAGE,
+          tags: Array.isArray(story.tags) ? story.tags : [],
         }));
         setStories(storiesWithUserLikes);
+      } else {
+        throw new Error('No stories found in response');
       }
     } catch (error) {
       console.error('Stories error:', error.message);
       setError(`Failed to load stories: ${error.message}`);
     }
-  }, [userId, token, apiUrl, DEFAULT_IMAGE]);
+  }, [userId, token, apiUrl]);
+
+  const fetchStoryById = useCallback(async (storyId) => {
+    if (!userId || !token) {
+      setError('Authentication required to fetch story.');
+      return null;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/stories/${storyId}?currentUserId=${userId}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to fetch story: ${response.status}`);
+      }
+      const data = await response.json();
+      if (data.success) {
+        return {
+          ...data.story,
+          imageUrls: Array.isArray(data.story.imageUrls) && data.story.imageUrls.length > 0 ? data.story.imageUrls : [DEFAULT_IMAGE],
+          is_liked: data.story.is_liked || false,
+          likes_count: data.story.likes_count || 0,
+          comments: Array.isArray(data.story.comments) ? data.story.comments : [],
+          author_image: data.story.author_image || DEFAULT_IMAGE,
+          tags: Array.isArray(data.story.tags) ? data.story.tags : [],
+        };
+      }
+      throw new Error('No story found in response');
+    } catch (error) {
+      console.error(`Story ${storyId} error:`, error.message);
+      setError(`Failed to load story ${storyId}: ${error.message}`);
+      return null;
+    }
+  }, [userId, token, apiUrl]);
 
   const fetchStoryComments = useCallback(async (storyId) => {
     if (!token) {
@@ -140,7 +179,7 @@ export default function SocialMediaHome() {
                   ...story,
                   comments: data.comments.map(comment => ({
                     ...comment,
-                    author_image: comment.author_image || '/user-symbol.jpg',
+                    author_image: comment.author_image || DEFAULT_IMAGE,
                   })),
                 }
               : story
@@ -153,9 +192,44 @@ export default function SocialMediaHome() {
     }
   }, [token, apiUrl]);
 
+  const fetchSuggestedUsers = useCallback(async () => {
+    if (!userId || !token) {
+      setError('Authentication required to fetch users.');
+      return;
+    }
+    try {
+      // Fetch users associated with posts/stories (example: user IDs 1, 2, 3)
+      const userIds = [1, 2, 3]; // Replace with dynamic logic (e.g., from posts/stories)
+      const users = [];
+      for (const id of userIds) {
+        const response = await fetch(`${apiUrl}/user/${id}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.warn(`Failed to fetch user ${id}: ${errorData.message}`);
+          continue;
+        }
+        const data = await response.json();
+        if (data.success) {
+          users.push({
+            ...data.user,
+            image: data.user.image || DEFAULT_IMAGE,
+            is_followed: !!data.user.is_followed,
+          });
+        }
+      }
+      setSuggestedUsers(users);
+    } catch (error) {
+      console.error('Users error:', error.message);
+      setError(`Failed to load users: ${error.message}`);
+    }
+  }, [userId, token, apiUrl]);
+
   const fetchSuggestedPosts = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/suggested-posts?limit=5&userId=${userId}`, {
+      const response = await fetch(`${apiUrl}/posts?limit=5&userId=${userId}`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -166,49 +240,21 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         setSuggestedPosts(data.posts
-          .filter(post => post.imageUrls?.length > 0)
+          .filter(post => Array.isArray(post.imageUrls) && post.imageUrls.length > 0)
           .map(post => ({
             ...post,
-            imageUrls: post.imageUrls?.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
-            author_image: post.author_image || '/user-symbol.jpg',
+            imageUrls: Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
+            author_image: post.author_image || DEFAULT_IMAGE,
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
-            tags: post.tags ? JSON.parse(post.tags) : [],
+            tags: Array.isArray(post.tags) ? post.tags : [],
           })));
       }
     } catch (error) {
       console.error('Suggested posts error:', error.message);
       setError(`Failed to load suggested posts: ${error.message}`);
     }
-  }, [token, apiUrl, userId, DEFAULT_IMAGE]);
-
-  const fetchSuggestedUsers = useCallback(async () => {
-    if (!userId || !token) {
-      setError('Authentication required to fetch suggested users.');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=10`, {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch suggested users: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        setSuggestedUsers(data.users.map(user => ({
-          ...user,
-          image: user.image || '/user-symbol.jpg',
-          is_followed: !!user.is_followed,
-        })));
-      }
-    } catch (error) {
-      console.error('Suggested users error:', error.message);
-      setError(`Failed to load suggested users: ${error.message}`);
-    }
-  }, [userId, token, apiUrl]);
+  }, [token, apiUrl, userId]);
 
   const fetchTrendingTopics = useCallback(async () => {
     try {
@@ -258,7 +304,7 @@ export default function SocialMediaHome() {
       if (data.success) {
         setFollowers(data.followers.slice(0, 5).map(user => ({
           ...user,
-          image: user.image || '/user-symbol.jpg',
+          image: user.image || DEFAULT_IMAGE,
         })));
       }
     } catch (error) {
@@ -285,7 +331,7 @@ export default function SocialMediaHome() {
       if (data.success) {
         setFollowing(data.following.slice(0, 5).map(user => ({
           ...user,
-          image: user.image || '/user-symbol.jpg',
+          image: user.image || DEFAULT_IMAGE,
         })));
       }
     } catch (error) {
@@ -488,7 +534,7 @@ export default function SocialMediaHome() {
                   {
                     ...result.comment,
                     fullName: userData?.name || 'User',
-                    author_image: userData?.image || '/user-symbol.jpg',
+                    author_image: userData?.image || DEFAULT_IMAGE,
                   },
                 ],
               }
@@ -590,7 +636,7 @@ export default function SocialMediaHome() {
         [postId]: [...(prev[postId] || []), { 
           ...result.comment, 
           fullName: userData?.name || 'User',
-          author_image: userData?.image || '/user-symbol.jpg',
+          author_image: userData?.image || DEFAULT_IMAGE,
         }],
       }));
       setCommentInput((prev) => ({ ...prev, [postId]: '' }));
@@ -656,96 +702,19 @@ export default function SocialMediaHome() {
       setStoryProgress((prev) => {
         if (prev >= 100) {
           if (selectedStoryIndex < stories.length - 1) {
-            setSelectedStoryIndex(selectedStoryIndex + 1);
+            setSelectedStoryIndex((prev) => prev + 1);
             return 0;
           } else {
             setSelectedStoryIndex(null);
             return 0;
           }
         }
-        return prev + 1;
+        return prev + (100 / (5 * 60)); // 5 seconds per story
       });
-    }, 100);
+    }, 1000 / 60);
     return () => clearInterval(progressInterval);
   }, [selectedStoryIndex, isPaused, stories.length]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const postId = entry.target.dataset.postId;
-            if (postId) {
-              trackPostView(postId);
-            }
-          }
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    const postElements = document.querySelectorAll('.post-container');
-    postElements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [posts, trackPostView]);
-
-  const openStory = useCallback((index) => {
-    setSelectedStoryIndex(index);
-    setStoryProgress(0);
-    setIsPaused(false);
-  }, []);
-
-  const closeStory = useCallback(() => {
-    setSelectedStoryIndex(null);
-    setStoryProgress(0);
-    setIsPaused(false);
-    setStoryCommentInput('');
-  }, []);
-
-  const goToNextStory = useCallback(() => {
-    if (selectedStoryIndex < stories.length - 1) {
-      setSelectedStoryIndex(selectedStoryIndex + 1);
-      setStoryProgress(0);
-      setStoryCommentInput('');
-    } else {
-      closeStory();
-    }
-  }, [selectedStoryIndex, stories.length, closeStory]);
-
-  const goToPrevStory = useCallback(() => {
-    if (selectedStoryIndex > 0) {
-      setSelectedStoryIndex(selectedStoryIndex - 1);
-      setStoryProgress(0);
-      setStoryCommentInput('');
-    }
-  }, [selectedStoryIndex]);
-
-  const togglePause = useCallback(() => {
-    setIsPaused((prev) => !prev);
-  }, []);
-
-  const togglePostExpand = useCallback((postId) => {
-    setExpandedPost((prev) => (prev === postId ? null : postId));
-    setShowComments((prev) => ({ ...prev, [postId]: true }));
-  }, []);
-
-  const toggleComments = useCallback((postId) => {
-    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
-  }, []);
-
-  const formatDateTime = useCallback((dateString) => {
-    if (!dateString) return 'Just now';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Just now';
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  }, []);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark pt-16">
