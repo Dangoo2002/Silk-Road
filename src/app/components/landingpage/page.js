@@ -29,7 +29,7 @@ export default function SocialMediaHome() {
   const [error, setError] = useState('');
   const [viewedPosts, setViewedPosts] = useState(new Set());
 
-  const PLACEHOLDER_IMAGE = '/api/placeholder/400/300';
+  const DEFAULT_IMAGE = 'https://silkroadbackend-production.up.railway.app/api/images/default.jpg';
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
@@ -50,13 +50,16 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        const newPosts = data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(post => ({
-          ...post,
-          image: post.imageUrl || PLACEHOLDER_IMAGE,
-          author_image: post.author_image || '/user-symbol.jpg',
-          author: post.author || 'Anonymous',
-          created_at: post.created_at || new Date().toISOString(),
-        }));
+        const newPosts = data.posts
+          .filter(post => post.imageUrl) // Ensure posts have images
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .map(post => ({
+            ...post,
+            image: post.imageUrl || DEFAULT_IMAGE,
+            author_image: post.author_image || '/user-symbol.jpg',
+            author: post.author || 'Anonymous',
+            created_at: post.created_at || new Date().toISOString(),
+          }));
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
         const commentsData = {};
@@ -80,7 +83,7 @@ export default function SocialMediaHome() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, apiUrl, userId, PLACEHOLDER_IMAGE]);
+  }, [token, apiUrl, userId, DEFAULT_IMAGE]);
 
   const fetchStories = useCallback(async () => {
     if (!userId || !token) return;
@@ -97,7 +100,7 @@ export default function SocialMediaHome() {
       if (data.success) {
         const storiesWithUserLikes = data.stories.map((story) => ({
           ...story,
-          image: story.imageUrl || PLACEHOLDER_IMAGE,
+          image: story.imageUrl || DEFAULT_IMAGE,
           is_liked: story.is_liked || false,
           likes_count: story.likes_count || 0,
           comments: story.comments || [],
@@ -108,7 +111,7 @@ export default function SocialMediaHome() {
     } catch (error) {
       setError('Failed to load stories. Please try again.');
     }
-  }, [userId, token, apiUrl, PLACEHOLDER_IMAGE]);
+  }, [userId, token, apiUrl, DEFAULT_IMAGE]);
 
   const fetchStoryComments = useCallback(async (storyId) => {
     if (!token) {
@@ -157,18 +160,20 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setSuggestedPosts(data.posts.map(post => ({
-          ...post,
-          image: post.imageUrl || PLACEHOLDER_IMAGE,
-          author_image: post.author_image || '/user-symbol.jpg',
-          author: post.author || 'Anonymous',
-          created_at: post.created_at || new Date().toISOString(),
-        }));
+        setSuggestedPosts(data.posts
+          .filter(post => post.imageUrl) // Ensure suggested posts have images
+          .map(post => ({
+            ...post,
+            image: post.imageUrl || DEFAULT_IMAGE,
+            author_image: post.author_image || '/user-symbol.jpg',
+            author: post.author || 'Anonymous',
+            created_at: post.created_at || new Date().toISOString(),
+          })));
       }
     } catch (error) {
       setError('Failed to load suggested posts. Please try again.');
     }
-  }, [token, apiUrl, userId, PLACEHOLDER_IMAGE]);
+  }, [token, apiUrl, userId, DEFAULT_IMAGE]);
 
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId || !token) {
@@ -190,7 +195,7 @@ export default function SocialMediaHome() {
           ...user,
           image: user.image || '/user-symbol.jpg',
           is_followed: !!user.is_followed,
-        }));
+        })));
       }
     } catch (error) {
       setError('Failed to load suggested users. Please try again.');
@@ -245,7 +250,7 @@ export default function SocialMediaHome() {
         setFollowers(data.followers.slice(0, 5).map(user => ({
           ...user,
           image: user.image || '/user-symbol.jpg',
-        }));
+        })));
       }
     } catch (error) {
       setError('Failed to load followers. Please try again.');
@@ -271,7 +276,7 @@ export default function SocialMediaHome() {
         setFollowing(data.following.slice(0, 5).map(user => ({
           ...user,
           image: user.image || '/user-symbol.jpg',
-        }));
+        })));
       }
     } catch (error) {
       setError('Failed to load following. Please try again.');
@@ -777,7 +782,7 @@ export default function SocialMediaHome() {
                           height={60}
                           className="w-full h-full rounded-full object-cover"
                           onError={(e) => {
-                            e.target.src = PLACEHOLDER_IMAGE;
+                            e.target.src = DEFAULT_IMAGE;
                           }}
                         />
                       </div>
@@ -809,7 +814,7 @@ export default function SocialMediaHome() {
                       height={60}
                       className="rounded-xl object-cover"
                       onError={(e) => {
-                        e.target.src = PLACEHOLDER_IMAGE;
+                        e.target.src = DEFAULT_IMAGE;
                       }}
                     />
                     <div>
@@ -876,18 +881,16 @@ export default function SocialMediaHome() {
                         }`}
                         dangerouslySetInnerHTML={{ __html: post.description || '' }}
                       />
-                      {post.image && (
-                        <Image
-                          src={post.image}
-                          alt={post.title || 'Post'}
-                          width={600}
-                          height={400}
-                          className="w-full h-64 rounded-xl object-cover mb-3"
-                          onError={(e) => {
-                            e.target.src = PLACEHOLDER_IMAGE;
-                          }}
-                        />
-                      )}
+                      <Image
+                        src={post.image}
+                        alt={post.title || 'Post'}
+                        width={600}
+                        height={400}
+                        className="w-full h-64 rounded-xl object-cover mb-3"
+                        onError={(e) => {
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
+                      />
                     </div>
                     <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-2 mb-3">
                       <div className="flex items-center gap-4">
@@ -1164,7 +1167,7 @@ export default function SocialMediaHome() {
                 fill
                 className="object-cover"
                 onError={(e) => {
-                  e.target.src = PLACEHOLDER_IMAGE;
+                  e.target.src = DEFAULT_IMAGE;
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
