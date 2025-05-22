@@ -125,7 +125,7 @@ export default function SocialMediaHome() {
 
   const fetchSuggestedPosts = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/posts?limit=5&userId=${userId}`, {
+      const response = await fetch(`${apiUrl}/posts?limit=5&userId=${userId}&sort=created_at&order=desc`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -135,8 +135,10 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setSuggestedPosts(data.posts
+        const sortedPosts = data.posts
           .filter(post => Array.isArray(post.imageUrls))
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5)
           .map(post => ({
             ...post,
             imageUrls: Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
@@ -144,7 +146,8 @@ export default function SocialMediaHome() {
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
             tags: Array.isArray(post.tags) ? post.tags : [],
-          })));
+          }));
+        setSuggestedPosts(sortedPosts);
       }
     } catch (error) {
       console.error('Suggested posts error:', error.message);
@@ -154,7 +157,7 @@ export default function SocialMediaHome() {
 
   const fetchTrendingTopics = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/trending-topics?limit=5`, {
+      const response = await fetch(`${apiUrl}/trending-topics?limit=4&sort=views&order=desc`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -164,24 +167,25 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setTrendingTopics(data.topics);
+        const sortedTopics = data.topics
+          .sort((a, b) => (b.views || 0) - (a.views || 0))
+          .slice(0, 4);
+        setTrendingTopics(sortedTopics);
       } else {
         setTrendingTopics([
-          { id: 1, name: 'AI in Africa', shares: 1500 },
-          { id: 2, name: 'Kenya Elections', shares: 1200 },
-          { id: 3, name: 'Electric Vehicles', shares: 800 },
-          { id: 4, name: 'Tech Startups', shares: 600 },
-          { id: 5, name: 'Climate Change', shares: 400 },
+          { id: 1, name: 'AI in Africa', views: 1500 },
+          { id: 2, name: 'Kenya Elections', views: 1200 },
+          { id: 3, name: 'Electric Vehicles', views: 800 },
+          { id: 4, name: 'Tech Startups', views: 600 },
         ]);
       }
     } catch (error) {
       console.error('Trending topics error:', error.message);
       setTrendingTopics([
-        { id: 1, name: 'AI in Africa', shares: 1500 },
-        { id: 2, name: 'Kenya Elections', shares: 1200 },
-        { id: 3, name: 'Electric Vehicles', shares: 800 },
-        { id: 4, name: 'Tech Startups', shares: 600 },
-        { id: 5, name: 'Climate Change', shares: 400 },
+        { id: 1, name: 'AI in Africa', views: 1500 },
+        { id: 2, name: 'Kenya Elections', views: 1200 },
+        { id: 3, name: 'Electric Vehicles', views: 800 },
+        { id: 4, name: 'Tech Startups', views: 600 },
       ]);
     }
   }, [token, apiUrl]);
@@ -541,14 +545,14 @@ export default function SocialMediaHome() {
               <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
             ) : (
               <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {trendingTopics.map((topic) => (
+                {trendingTopics.slice(0, 4).map((topic) => (
                   <Link
                     key={topic.id}
                     href={`/topic/${topic.id}`}
                     className="flex-shrink-0 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                   >
                     <p className="text-sm font-semibold">{topic.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.shares} shares</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
                   </Link>
                 ))}
               </div>
@@ -560,7 +564,7 @@ export default function SocialMediaHome() {
               {suggestedPosts.length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
               ) : (
-                suggestedPosts.map((post) => (
+                suggestedPosts.slice(0, 5).map((post) => (
                   <Link
                     key={post.id}
                     href={`/post/${post.id}`}
@@ -568,7 +572,7 @@ export default function SocialMediaHome() {
                   >
                     <Image
                       src={post.imageUrls[0] || DEFAULT_IMAGE}
-                      alt={post.title || 'Post PradaPost'}
+                      alt={post.title || 'Post'}
                       width={80}
                       height={60}
                       className="rounded-xl object-cover"
@@ -860,14 +864,14 @@ export default function SocialMediaHome() {
                 {trendingTopics.length === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
                 ) : (
-                  trendingTopics.map((topic) => (
+                  trendingTopics.slice(0, 4).map((topic) => (
                     <Link
                       key={topic.id}
                       href={`/topic/${topic.id}`}
                       className="block p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <p className="text-sm font-semibold">{topic.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{topic.shares} shares</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
                     </Link>
                   ))
                 )}
