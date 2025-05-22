@@ -1,24 +1,18 @@
-
 'use client';
 import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, ChevronLeft, ChevronRight, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX, Tag } from 'lucide-react';
+import { X, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX, Tag } from 'lucide-react';
 import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function SocialMediaHome() {
   const { userData, token } = useContext(AuthContext);
   const userId = userData?.id || null;
-  const [stories, setStories] = useState([]);
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState({});
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
   const [expandedPost, setExpandedPost] = useState(null);
-  const [storyCommentInput, setStoryCommentInput] = useState('');
-  const [selectedStoryIndex, setSelectedStoryIndex] = useState(null);
-  const [storyProgress, setStoryProgress] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,29 +31,7 @@ export default function SocialMediaHome() {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   };
-const getStoryTimeRemaining = (createdAt) => {
-  const now = new Date();
-  const created = new Date(createdAt);
-  const hoursPassed = (now - created) / (1000 * 60 * 60);
-  const hoursLeft = Math.max(0, 24 - hoursPassed);
-  return (hoursLeft / 24) * 100;
-};
 
-// Helper function to display time remaining text
-const getTimeRemainingText = (createdAt) => {
-  const now = new Date();
-  const created = new Date(createdAt);
-  const hoursPassed = (now - created) / (1000 * 60 * 60);
-  const hoursLeft = Math.max(0, 24 - hoursPassed);
-  
-  if (hoursLeft > 1) {
-    return `${Math.floor(hoursLeft)}h remaining`;
-  } else if (hoursLeft > 0) {
-    const minutesLeft = Math.floor(hoursLeft * 60);
-    return `${minutesLeft}m remaining`;
-  }
-  return 'Expired soon';
-};
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
       setError('Authentication required. Please log in again.');
@@ -77,7 +49,6 @@ const getTimeRemainingText = (createdAt) => {
         throw new Error(errorData.message || `Failed to fetch posts: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Fetched posts:', data); // Debug log
       if (data.success) {
         const newPosts = data.posts
           .filter(post => Array.isArray(post.imageUrls))
@@ -116,116 +87,6 @@ const getTimeRemainingText = (createdAt) => {
     }
   }, [token, apiUrl, userId]);
 
-  const fetchStories = useCallback(async () => {
-    if (!userId || !token) {
-      setError('Authentication required to fetch stories.');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/stories?currentUserId=${userId}`, {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch stories: ${response.status}`);
-      }
-      const data = await response.json();
-      console.log('Fetched stories:', data); // Debug log
-      if (data.success) {
-        const storiesWithUserLikes = data.stories.map((story) => ({
-          ...story,
-          imageUrls: Array.isArray(story.imageUrls) && story.imageUrls.length > 0 ? story.imageUrls : [DEFAULT_IMAGE],
-          is_liked: story.is_liked || false,
-          likes_count: story.likes_count || 0,
-          comments: Array.isArray(story.comments) ? story.comments : [],
-          author_image: story.author_image || DEFAULT_IMAGE,
-          tags: Array.isArray(story.tags) ? story.tags : [],
-        }));
-        setStories(storiesWithUserLikes);
-      } else {
-        throw new Error('No stories found in response');
-      }
-    } catch (error) {
-      console.error('Stories error:', error.message);
-      setError(`Failed to load stories: ${error.message}`);
-    }
-  }, [userId, token, apiUrl]);
-
-  const fetchStoryById = useCallback(async (storyId) => {
-    if (!userId || !token) {
-      setError('Authentication required to fetch story.');
-      return null;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/stories/${storyId}?currentUserId=${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Story not found');
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to fetch story: ${response.status}`);
-      }
-  
-      const data = await response.json();
-      if (data.success) {
-        return {
-          ...data.story,
-          imageUrls: Array.isArray(data.story.imageUrls) ? data.story.imageUrls : [DEFAULT_IMAGE],
-          is_liked: data.story.is_liked || false,
-          likes_count: data.story.likes_count || 0,
-          comments: Array.isArray(data.story.comments) ? data.story.comments : [],
-          author_image: data.story.author_image || DEFAULT_IMAGE,
-          tags: Array.isArray(data.story.tags) ? data.story.tags : [],
-        };
-      }
-      throw new Error('No story found in response');
-    } catch (error) {
-      console.error(`Story ${storyId} error:`, error.message);
-      setError(`Failed to load story: ${error.message}`);
-      return null;
-    }
-  }, [userId, token, apiUrl]);
-
-  const fetchStoryComments = useCallback(async (storyId) => {
-    if (!token) {
-      setError('Authentication required. Please log in again.');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/story-comments/${storyId}`, {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch story comments: ${response.status}`);
-      }
-      const data = await response.json();
-      if (data.success) {
-        setStories((prev) =>
-          prev.map((story) =>
-            story.id === storyId
-              ? {
-                  ...story,
-                  comments: data.comments.map(comment => ({
-                    ...comment,
-                    author_image: comment.author_image || DEFAULT_IMAGE,
-                  })),
-                }
-              : story
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Story comments error:', error.message);
-      setError(`Failed to load story comments: ${error.message}`);
-    }
-  }, [token, apiUrl]);
-
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId || !token) {
       setError('Authentication required to fetch users.');
@@ -234,7 +95,6 @@ const getTimeRemainingText = (createdAt) => {
     try {
       const userIds = [...new Set([
         ...posts.map(post => post.userId),
-        ...stories.map(story => story.userId),
       ])].filter(id => id !== userId).slice(0, 5);
       const users = [];
       for (const id of userIds) {
@@ -261,7 +121,7 @@ const getTimeRemainingText = (createdAt) => {
       console.error('Users error:', error.message);
       setError(`Failed to load users: ${error.message}`);
     }
-  }, [userId, token, apiUrl, posts, stories]);
+  }, [userId, token, apiUrl, posts]);
 
   const fetchSuggestedPosts = useCallback(async () => {
     try {
@@ -294,7 +154,7 @@ const getTimeRemainingText = (createdAt) => {
 
   const fetchTrendingTopics = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/trending-topics?limit=3`, {
+      const response = await fetch(`${apiUrl}/trending-topics?limit=5`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -310,6 +170,8 @@ const getTimeRemainingText = (createdAt) => {
           { id: 1, name: 'AI in Africa', shares: 1500 },
           { id: 2, name: 'Kenya Elections', shares: 1200 },
           { id: 3, name: 'Electric Vehicles', shares: 800 },
+          { id: 4, name: 'Tech Startups', shares: 600 },
+          { id: 5, name: 'Climate Change', shares: 400 },
         ]);
       }
     } catch (error) {
@@ -318,6 +180,8 @@ const getTimeRemainingText = (createdAt) => {
         { id: 1, name: 'AI in Africa', shares: 1500 },
         { id: 2, name: 'Kenya Elections', shares: 1200 },
         { id: 3, name: 'Electric Vehicles', shares: 800 },
+        { id: 4, name: 'Tech Startups', shares: 600 },
+        { id: 5, name: 'Climate Change', shares: 400 },
       ]);
     }
   }, [token, apiUrl]);
@@ -434,13 +298,12 @@ const getTimeRemainingText = (createdAt) => {
         )
       );
       fetchFollowing();
-      fetchStories();
       fetchPosts(1, true);
     } catch (error) {
       console.error('Follow error:', error.message);
       setError(`An error occurred while following user: ${error.message}`);
     }
-  }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
+  }, [userId, token, apiUrl, fetchFollowing, fetchPosts]);
 
   const handleUnfollow = useCallback(async (followId) => {
     if (!userId || !token) {
@@ -470,120 +333,12 @@ const getTimeRemainingText = (createdAt) => {
         )
       );
       fetchFollowing();
-      fetchStories();
       fetchPosts(1, true);
     } catch (error) {
       console.error('Unfollow error:', error.message);
       setError(`An error occurred while unfollowing user: ${error.message}`);
     }
-  }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
-
-  const handleStoryLike = useCallback(async (storyId, isLiked) => {
-    if (!userId || !token) {
-      setError('Please log in to like a story');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/story-likes`, {
-        method: isLiked ? 'DELETE' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ storyId, userId }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
-          setError('Your session has expired. Please log in again.');
-          return;
-        }
-        throw new Error(errorData.message || 'Failed to update story like');
-      }
-      setStories((prev) =>
-        prev.map((story) =>
-          story.id === storyId
-            ? {
-                ...story,
-                is_liked: !isLiked,
-                likes_count: isLiked ? story.likes_count - 1 : story.likes_count + 1,
-              }
-            : story
-        )
-      );
-    } catch (error) {
-      console.error('Story like error:', error.message);
-      setError(`An error occurred while updating story like: ${error.message}`);
-    }
-  }, [userId, token, apiUrl]);
-
-  const handleStoryShare = useCallback((storyId) => {
-    if (!navigator.clipboard) {
-      setError('Clipboard API not supported in this browser');
-      return;
-    }
-    const storyUrl = `${window.location.origin}/story/${storyId}`;
-    navigator.clipboard.writeText(storyUrl).then(() => {
-      setError('');
-      alert('Story URL copied to clipboard!');
-    }).catch((err) => {
-      console.error('Story share error:', err);
-      setError('Failed to copy story URL');
-    });
-  }, []);
-
-  const handleStoryCommentSubmit = useCallback(async (storyId) => {
-    if (!userId || !token) {
-      setError('Please log in to comment');
-      return;
-    }
-    const content = storyCommentInput.trim();
-    if (!content) {
-      setError('Comment cannot be empty');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/story-comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ storyId, userId, content }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
-          setError('Your session has expired. Please log in again.');
-          return;
-        }
-        throw new Error(errorData.message || 'Failed to post comment');
-      }
-      const result = await response.json();
-      setStories((prev) =>
-        prev.map((story) =>
-          story.id === storyId
-            ? {
-                ...story,
-                comments: [
-                  ...(story.comments || []),
-                  {
-                    ...result.comment,
-                    fullName: userData?.name || 'User',
-                    author_image: userData?.image || DEFAULT_IMAGE,
-                  },
-                ],
-              }
-            : story
-        )
-      );
-      setStoryCommentInput('');
-      fetchStoryComments(storyId);
-    } catch (error) {
-      console.error('Story comment error:', error.message);
-      setError(`An error occurred while posting comment: ${error.message}`);
-    }
-  }, [userId, token, storyCommentInput, userData, apiUrl, fetchStoryComments]);
+  }, [userId, token, apiUrl, fetchFollowing, fetchPosts]);
 
   const handlePostLike = useCallback(async (postId, isLiked) => {
     if (!userId || !token) {
@@ -695,48 +450,8 @@ const getTimeRemainingText = (createdAt) => {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   }, []);
 
-  const openStory = useCallback(async (index) => {
-  try {
-    const story = stories[index];
-    if (!story) {
-      throw new Error('Story not found');
-    }
-    
-    const updatedStory = await fetchStoryById(story.id);
-    if (!updatedStory) {
-      throw new Error('Failed to load story');
-    }
-
-    setStories(prev =>
-      prev.map(s => (s.id === story.id ? updatedStory : s))
-    );
-    setSelectedStoryIndex(index);
-    setStoryProgress(0);
-  } catch (error) {
-    console.error('Story open error:', error);
-    setError(error.message);
-    setSelectedStoryIndex(null);
-  }
-}, [stories, fetchStoryById]);
-
-  const closeStory = useCallback(() => {
-    setSelectedStoryIndex(null);
-    setStoryProgress(0);
-  }, []);
-
-  const goToPrevStory = useCallback(() => {
-    setSelectedStoryIndex((prev) => Math.max(0, prev - 1));
-    setStoryProgress(0);
-  }, []);
-
-  const goToNextStory = useCallback(() => {
-    setSelectedStoryIndex((prev) => Math.min(stories.length - 1, prev + 1));
-    setStoryProgress(0);
-  }, [stories.length]);
-
   useEffect(() => {
     if (token) {
-      fetchStories();
       fetchPosts(1);
       fetchFollowers();
       fetchFollowing();
@@ -746,7 +461,6 @@ const getTimeRemainingText = (createdAt) => {
 
     const refreshInterval = setInterval(() => {
       if (token) {
-        fetchStories();
         fetchPosts(1, true);
         fetchFollowers();
         fetchFollowing();
@@ -756,13 +470,13 @@ const getTimeRemainingText = (createdAt) => {
     }, 7 * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
-  }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, token]);
+  }, [fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, token]);
 
   useEffect(() => {
-    if (posts.length > 0 || stories.length > 0) {
+    if (posts.length > 0) {
       fetchSuggestedUsers();
     }
-  }, [posts, stories, fetchSuggestedUsers]);
+  }, [posts, fetchSuggestedUsers]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -782,25 +496,6 @@ const getTimeRemainingText = (createdAt) => {
   useEffect(() => {
     if (page > 1 && token) fetchPosts(page);
   }, [page, fetchPosts, token]);
-
-  useEffect(() => {
-    if (selectedStoryIndex === null || isPaused) return;
-    const progressInterval = setInterval(() => {
-      setStoryProgress((prev) => {
-        if (prev >= 100) {
-          if (selectedStoryIndex < stories.length - 1) {
-            setSelectedStoryIndex((prev) => prev + 1);
-            return 0;
-          } else {
-            setSelectedStoryIndex(null);
-            return 0;
-          }
-        }
-        return prev + (100 / (5 * 60)); // 5 seconds per story
-      });
-    }, 1000 / 60);
-    return () => clearInterval(progressInterval);
-  }, [selectedStoryIndex, isPaused, stories.length]);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark pt-16">
@@ -838,36 +533,23 @@ const getTimeRemainingText = (createdAt) => {
             </div>
           )}
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-heading">Stories</h2>
-            {stories.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No stories available</p>
+            <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Trending Topics
+            </h2>
+            {trendingTopics.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
             ) : (
               <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {stories.map((story, index) => (
-                  <div
-                    key={story.id}
-                    className="flex-shrink-0 cursor-pointer group w-20"
-                    onClick={() => openStory(index)}
+                {trendingTopics.map((topic) => (
+                  <Link
+                    key={topic.id}
+                    href={`/topic/${topic.id}`}
+                    className="flex-shrink-0 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                   >
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark p-[2px] group-hover:scale-105 transition-transform duration-350">
-                        <Image
-                          src={story.imageUrls[0] || DEFAULT_IMAGE}
-                          alt={story.title || 'Story'}
-                          width={60}
-                          height={60}
-                          className="w-full h-full rounded-full object-cover"
-                          onError={(e) => {
-                            console.error(`Failed to load story thumbnail: ${story.imageUrls[0]}`);
-                            e.target.src = DEFAULT_IMAGE;
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <p className="mt-2 text-center text-xs font-medium truncate">
-                      {story.author?.split(' ')[0] || 'User'}
-                    </p>
-                  </div>
+                    <p className="text-sm font-semibold">{topic.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.shares} shares</p>
+                  </Link>
                 ))}
               </div>
             )}
@@ -886,7 +568,7 @@ const getTimeRemainingText = (createdAt) => {
                   >
                     <Image
                       src={post.imageUrls[0] || DEFAULT_IMAGE}
-                      alt={post.title || 'Post'}
+                      alt={post.title || 'Post PradaPost'}
                       width={80}
                       height={60}
                       className="rounded-xl object-cover"
@@ -906,6 +588,62 @@ const getTimeRemainingText = (createdAt) => {
                       </p>
                     </div>
                   </Link>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6 lg:hidden">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
+              <UserPlus className="w-5 h-5" />
+              Suggested Users
+            </h2>
+            <div className="space-y-3">
+              {suggestedUsers.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
+              ) : (
+                suggestedUsers.map((user) => (
+                  <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350">
+                    <Image
+                      src={user.image || DEFAULT_IMAGE}
+                      alt="User"
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover"
+                      onError={(e) => {
+                        console.error(`Failed to load suggested user image: ${user.image}`);
+                        e.target.src = DEFAULT_IMAGE;
+                      }}
+                    />
+                    <div className="flex-1">
+                      <Link
+                        href={`/profile/${user.id}`}
+                        className="text-sm font-semibold hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
+                      >
+                        {user.name || 'User'}
+                      </Link>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                    </div>
+                    <button
+                      onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
+                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors duration-350 ${
+                        user.is_followed
+                          ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                          : 'bg-primary-light dark:bg-primary-dark text-white hover:bg-primary-dark dark:hover:bg-primary-light'
+                      }`}
+                    >
+                      {user.is_followed ? (
+                        <>
+                          <UserX className="w-4 h-4" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="w-4 h-4" />
+                          Follow
+                        </>
+                      )}
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -1125,7 +863,7 @@ const getTimeRemainingText = (createdAt) => {
                   trendingTopics.map((topic) => (
                     <Link
                       key={topic.id}
-                      href={`/post/${topic.id}`}
+                      href={`/topic/${topic.id}`}
                       className="block p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <p className="text-sm font-semibold">{topic.name}</p>
@@ -1258,205 +996,6 @@ const getTimeRemainingText = (createdAt) => {
           </div>
         </div>
       </div>
-      {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
-  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-    <div className="relative w-full max-w-md h-[80vh] bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden">
-      {/* Story progress bar with time remaining indicator */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-600">
-        <div
-          className="h-full bg-primary-light dark:bg-primary-dark transition-all duration-100"
-          style={{ 
-            width: `${storyProgress}%`,
-            backgroundColor: storyProgress < 20 ? '#ef4444' : '' // Red when almost expired
-          }}
-        />
-        <div 
-          className="absolute top-0 right-0 h-full bg-gray-400 opacity-20"
-          style={{ 
-            width: `${100 - getStoryTimeRemaining(stories[selectedStoryIndex].created_at)}%` 
-          }}
-        />
-      </div>
-      
-      {/* Close button */}
-      <button
-        onClick={closeStory}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-350 z-10"
-      >
-        <X className="w-6 h-6" />
-      </button>
-      
-      {/* Navigation buttons */}
-      <button
-        onClick={goToPrevStory}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350 z-10"
-        disabled={selectedStoryIndex === 0}
-      >
-        <ChevronLeft className="w-8 h-8" />
-      </button>
-      <button
-        onClick={goToNextStory}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350 z-10"
-        disabled={selectedStoryIndex === stories.length - 1}
-      >
-        <ChevronRight className="w-8 h-8" />
-      </button>
-
-      {/* Story content */}
-      <div className="relative h-[60%]">
-        {/* Story images */}
-        {stories[selectedStoryIndex].imageUrls.map((url, index) => (
-          <div 
-            key={index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${index === 0 ? 'opacity-100' : 'opacity-0'}`}
-          >
-            <div className="relative w-full h-full">
-              <Image
-                src={url || DEFAULT_IMAGE}
-                alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
-                fill
-                className="object-cover"
-                priority
-                onError={(e) => {
-                  console.error(`Failed to load story image: ${url}`);
-                  e.target.src = DEFAULT_IMAGE;
-                }}
-              />
-            </div>
-          </div>
-        ))}
-        
-        {/* Story metadata overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-          <h3 className="text-white text-lg font-semibold">
-            {stories[selectedStoryIndex].title || 'Untitled'}
-          </h3>
-          <p className="text-white/80 text-sm line-clamp-2">
-            {stories[selectedStoryIndex].description || ''}
-          </p>
-          <div className="flex items-center gap-2 mt-2">
-            <Link
-              href={`/profile/${stories[selectedStoryIndex].userId}`}
-              className="text-white text-sm font-medium hover:text-primary-light transition-colors duration-350"
-            >
-              {stories[selectedStoryIndex].author || 'Anonymous'}
-            </Link>
-            <span className="text-white/70 text-xs">
-              {formatDateTime(stories[selectedStoryIndex].created_at)}
-            </span>
-            {stories[selectedStoryIndex].category && (
-              <span className="text-white/70 text-xs">
-                • {stories[selectedStoryIndex].category}
-              </span>
-            )}
-            {/* Time remaining indicator */}
-            <span className="ml-auto text-xs text-white/70">
-              {getTimeRemainingText(stories[selectedStoryIndex].created_at)}
-            </span>
-          </div>
-          {stories[selectedStoryIndex].tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {stories[selectedStoryIndex].tags.map((tag, index) => (
-                <span
-                  key={index}
-                  className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                >
-                  <Tag className="w-3 h-3" />
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Story actions and comments */}
-      <div className="p-4 h-[40%] flex flex-col">
-        <div className="flex items-center gap-4 mb-4">
-          <button
-            onClick={() => handleStoryLike(stories[selectedStoryIndex].id, stories[selectedStoryIndex].is_liked)}
-            className="flex items-center gap-1 text-white hover:text-accent-light transition-colors duration-350"
-          >
-            <ThumbsUp
-              className={`w-5 h-5 ${stories[selectedStoryIndex].is_liked ? 'fill-accent-light text-accent-light' : ''}`}
-            />
-            <span className="text-sm">{stories[selectedStoryIndex].likes_count || 0}</span>
-          </button>
-          <button
-            onClick={() => handleStoryShare(stories[selectedStoryIndex].id)}
-            className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
-          >
-            <Share className="w-5 h-5" />
-            <span className="text-sm">Share</span>
-          </button>
-          {stories[selectedStoryIndex].link && (
-            <a
-              href={stories[selectedStoryIndex].link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
-            >
-              <ExternalLink className="w-5 h-5" />
-              <span className="text-sm">Link</span>
-            </a>
-          )}
-        </div>
-
-        {/* Comments section */}
-        <div className="space-y-2 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 mb-4">
-          {(stories[selectedStoryIndex].comments || []).map((comment) => (
-            <div key={comment.id} className="flex gap-2">
-              <div className="relative w-6 h-6">
-                <Image
-                  src={comment.author_image || DEFAULT_IMAGE}
-                  alt="User"
-                  fill
-                  className="rounded-full object-cover"
-                  onError={(e) => {
-                    console.error(`Failed to load comment author image: ${comment.author_image}`);
-                    e.target.src = DEFAULT_IMAGE;
-                  }}
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-white text-sm font-medium">
-                    {comment.fullName || 'User'}
-                  </span>
-                  <span className="text-white/70 text-xs">
-                    {formatDateTime(comment.created_at)}
-                  </span>
-                </div>
-                <p className="text-white/90 text-sm">
-                  {comment.content}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Comment input */}
-        <div className="flex gap-2 mt-auto">
-          <input
-            type="text"
-            value={storyCommentInput}
-            onChange={(e) => setStoryCommentInput(e.target.value)}
-            placeholder="Add a comment..."
-            className="flex-1 p-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350"
-            onFocus={() => setIsPaused(true)}
-            onBlur={() => setIsPaused(false)}
-          />
-          <button
-            onClick={() => handleStoryCommentSubmit(stories[selectedStoryIndex].id)}
-            className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
-          >
-            Send
-          </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
