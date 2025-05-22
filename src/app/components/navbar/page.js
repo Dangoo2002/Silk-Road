@@ -251,7 +251,7 @@ export default function SocialMediaNav() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3 }}
-            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-lg dark:shadow-xl z-50 p-4"
+            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl z-50 p-4"
           >
             <div className="flex justify-between items-center mb-6">
               <Link href="/" className="flex items-center space-x-2 group">
@@ -267,10 +267,10 @@ export default function SocialMediaNav() {
                 </div>
                 <div className="flex flex-col relative">
                   <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lowercase">
-                    silk road
+                    Silk Road
                   </span>
                   <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300 lowercase">
-                    blogs
+                    Blogs
                   </span>
                   <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
                 </div>
@@ -302,7 +302,7 @@ export default function SocialMediaNav() {
                       className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                       onClick={toggleMenu}
                     >
-                      <UserCircleIcon className="h-5 w-5" />
+                      <UserCircleIcon className="h-5 w-5"/>
                       Profile
                     </Link>
                   </li>
