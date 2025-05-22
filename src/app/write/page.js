@@ -18,7 +18,8 @@ export default function WritePost({ existingStory = null }) {
     contentType: existingStory ? 'story' : 'post',
     title: existingStory?.title || '',
     description: existingStory?.description || '',
-    imageUrls: existingStory?.imageUrl ? [existingStory.imageUrl] : [],
+    imageUrls: existingStory?.imageUrls ? existingStory.imageUrls : [],
+    imageIds: existingStory?.imageIds ? existingStory.imageIds : [],
     link: existingStory?.link || '',
     tags: existingStory?.tags || [],
     category: existingStory?.category || 'General',
@@ -27,7 +28,7 @@ export default function WritePost({ existingStory = null }) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [previewImages, setPreviewImages] = useState(existingStory?.imageUrl ? [existingStory.imageUrl] : []);
+  const [previewImages, setPreviewImages] = useState(existingStory?.imageUrls ? existingStory.imageUrls : []);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const router = useRouter();
@@ -98,8 +99,10 @@ export default function WritePost({ existingStory = null }) {
       if (data.success) {
         setFormData((prev) => {
           const newImageUrls = [...prev.imageUrls, ...data.imageUrls];
+          const newImageIds = [...prev.imageIds, ...data.imageIds];
           console.log('Updated imageUrls:', newImageUrls);
-          return { ...prev, imageUrls: newImageUrls };
+          console.log('Updated imageIds:', newImageIds);
+          return { ...prev, imageUrls: newImageUrls, imageIds: newImageIds };
         });
       } else {
         throw new Error('Image upload response not successful');
@@ -139,6 +142,7 @@ export default function WritePost({ existingStory = null }) {
     setFormData((prev) => ({
       ...prev,
       imageUrls: prev.imageUrls.filter((_, i) => i !== index),
+      imageIds: prev.imageIds.filter((_, i) => i !== index),
     }));
     setPreviewImages((prev) => {
       const newPreviews = prev.filter((_, i) => i !== index);
@@ -190,7 +194,7 @@ export default function WritePost({ existingStory = null }) {
       setSubmitting(false);
       return;
     }
-    if (formData.contentType === 'post' && !formData.imageUrls.length) {
+    if (formData.contentType === 'post' && !formData.imageIds.length) {
       setError('At least one image is required for posts.');
       setSubmitting(false);
       return;
@@ -207,10 +211,8 @@ export default function WritePost({ existingStory = null }) {
       return;
     }
 
-    const imageId = formData.imageUrls[0]?.match(/\/api\/images\/(\d+)/)?.[1] || null;
-    console.log('Raw image URL:', formData.imageUrls[0]);
     console.log('imageUrls:', formData.imageUrls);
-    console.log('imageId:', imageId);
+    console.log('imageIds:', formData.imageIds);
 
     const endpoint = formData.contentType === 'story' ? '/stories' : '/write';
     const strippedDescription = formData.contentType === 'story' ? (formData.description || '').replace(/<[^>]+>/g, '') : formData.description;
@@ -220,7 +222,7 @@ export default function WritePost({ existingStory = null }) {
       contentType: formData.contentType,
       title: formData.title,
       description: strippedDescription || null,
-      imageId,
+      imageIds: formData.imageIds,
       link: formData.link || null,
       category: formData.category || null,
       tags: formData.tags || [],
@@ -256,6 +258,7 @@ export default function WritePost({ existingStory = null }) {
         title: '',
         description: '',
         imageUrls: [],
+        imageIds: [],
         link: '',
         tags: [],
         category: 'General',
