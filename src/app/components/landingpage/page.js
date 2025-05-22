@@ -29,14 +29,12 @@ export default function SocialMediaHome() {
   const [suggestedPosts, setSuggestedPosts] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
 
-  // Fetch posts from followed users
+  // Fetch all posts from the posts endpoint
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
-    if (!userId || following.length === 0) return;
     setIsLoading(true);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const userIds = following.map((user) => user.id).join(',');
-      const endpoint = `${apiUrl}/posts?userIds=${userIds}&page=${pageNum}&limit=20&t=${Date.now()}`;
+      const endpoint = `${apiUrl}/posts?page=${pageNum}&limit=20&t=${Date.now()}`;
       const response = await fetch(endpoint, { cache: 'no-store' });
 
       if (!response.ok) {
@@ -65,14 +63,14 @@ export default function SocialMediaHome() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, following]);
+  }, []);
 
-  // Fetch stories from followed users
+  // Fetch stories from followed users and the current user
   const fetchStories = useCallback(async () => {
-    if (!userId || following.length === 0) return;
+    if (!userId) return;
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const userIds = following.map((user) => user.id).join(',');
+      const userIds = [...following.map((user) => user.id), userId].join(',');
       const response = await fetch(`${apiUrl}/stories?userIds=${userIds}`, { cache: 'no-store' });
       if (!response.ok) {
         console.error('Error fetching stories:', await response.text());
@@ -137,7 +135,6 @@ export default function SocialMediaHome() {
       const response = await fetch(`${apiUrl}/trending-topics?sort=shares&limit=3`, { cache: 'no-store' });
       if (!response.ok) {
         console.error('Error fetching trending topics:', await response.text());
-        // Fallback to sample data if API fails
         setTrendingTopics([
           { name: "AI in Africa", shares: 1500 },
           { name: "Kenya Elections", shares: 1200 },
@@ -149,7 +146,6 @@ export default function SocialMediaHome() {
       if (data.success) {
         setTrendingTopics(data.topics);
       } else {
-        // Fallback to sample data if API returns no data
         setTrendingTopics([
           { name: "AI in Africa", shares: 1500 },
           { name: "Kenya Elections", shares: 1200 },
@@ -158,7 +154,6 @@ export default function SocialMediaHome() {
       }
     } catch (error) {
       console.error('Error fetching trending topics:', error);
-      // Fallback to sample data
       setTrendingTopics([
         { name: "AI in Africa", shares: 1500 },
         { name: "Kenya Elections", shares: 1200 },
@@ -601,7 +596,7 @@ export default function SocialMediaHome() {
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
             <h2 className="text-lg font-semibold mb-4 font-heading">Stories</h2>
             {stories.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No stories from followed users</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">No stories available</p>
             ) : (
               <div className="flex flex-wrap gap-2 justify-between">
                 {stories.map((story, index) => (
@@ -670,7 +665,7 @@ export default function SocialMediaHome() {
           <div className="space-y-6">
             {posts.length === 0 && !isLoading ? (
               <div className="text-center py-4">
-                <span className="text-gray-500 dark:text-gray-400">No posts from followed users</span>
+                <span className="text-gray-500 dark:text-gray-400">No posts available</span>
               </div>
             ) : (
               posts.map((post) => (
@@ -1085,7 +1080,8 @@ export default function SocialMediaHome() {
                     e.stopPropagation();
                     handleStoryCommentSubmit(stories[selectedStoryIndex].id);
                   }}
-                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
+                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full impunity
+                  hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
                 >
                   Post
                 </button>
