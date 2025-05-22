@@ -79,6 +79,7 @@ export default function WritePost({ existingStory = null }) {
     Array.from(files).forEach((file) => formDataToSend.append('images', file));
 
     try {
+      console.log('Uploading images to:', `${apiUrl}/api/upload-images`);
       const response = await fetch(`${apiUrl}/api/upload-images`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -95,12 +96,16 @@ export default function WritePost({ existingStory = null }) {
         throw new Error(data.message || 'Failed to upload images');
       }
       if (data.success) {
-        setFormData((prev) => ({
-          ...prev,
-          imageUrls: [...prev.imageUrls, ...data.imageUrls],
-        }));
+        setFormData((prev) => {
+          const newImageUrls = [...prev.imageUrls, ...data.imageUrls];
+          console.log('Updated imageUrls:', newImageUrls);
+          return { ...prev, imageUrls: newImageUrls };
+        });
+      } else {
+        throw new Error('Image upload response not successful');
       }
     } catch (err) {
+      console.error('Image upload error:', err);
       setError('Failed to upload images: ' + err.message);
       setPreviewImages((prev) => {
         prev.slice(-files.length).forEach((url) => URL.revokeObjectURL(url));
@@ -168,9 +173,10 @@ export default function WritePost({ existingStory = null }) {
     console.log('userData:', userData);
     console.log('token:', token);
 
-    if (!token) {
+    if (!token || !userData?.id) {
       setError('You must be logged in to create a post.');
       router.push('/login');
+      setSubmitting(false);
       return;
     }
 
@@ -184,35 +190,41 @@ export default function WritePost({ existingStory = null }) {
       setSubmitting(false);
       return;
     }
+    if (formData.contentType === 'post' && !formData.imageUrls.length) {
+      setError('At least one image is required for posts.');
+      setSubmitting(false);
+      return;
+    }
     if (formData.link && !validateUrl(formData.link)) {
       setError('Please provide a valid URL for the link.');
       setSubmitting(false);
       return;
     }
     const categories = ['General', 'Technology', 'Lifestyle', 'Travel', 'Food', 'News', 'Entertainment'];
-    if (!categories.includes(formData.category)) {
+    if (formData.contentType === 'post' && !categories.includes(formData.category)) {
       setError('Invalid category selected.');
       setSubmitting(false);
       return;
     }
 
     const imageId = formData.imageUrls[0]?.match(/\/api\/images\/(\d+)/)?.[1] || null;
+    console.log('Raw image URL:', formData.imageUrls[0]);
     console.log('imageUrls:', formData.imageUrls);
     console.log('imageId:', imageId);
 
     const endpoint = formData.contentType === 'story' ? '/stories' : '/write';
-    const strippedDescription = formData.contentType === 'story' ? formData.description.replace(/<[^>]+>/g, '') : formData.description;
+    const strippedDescription = formData.contentType === 'story' ? (formData.description || '').replace(/<[^>]+>/g, '') : formData.description;
 
     const requestBody = {
-      userId: userData?.id,
+      userId: userData.id,
       contentType: formData.contentType,
       title: formData.title,
-      description: strippedDescription,
+      description: strippedDescription || null,
       imageId,
-      link: formData.link,
-      category: formData.category,
-      tags: formData.tags,
-      reading_time: formData.reading_time || '5 min',
+      link: formData.link || null,
+      category: formData.category || null,
+      tags: formData.tags || [],
+      ...(formData.contentType === 'post' && { reading_time: formData.reading_time || '5 min' }),
     };
     console.log('Request body:', requestBody);
 
@@ -231,6 +243,7 @@ export default function WritePost({ existingStory = null }) {
         if (errorData.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
           router.push('/login');
+          setSubmitting(false);
           return;
         }
         throw new Error(errorData.message || `Failed to save ${formData.contentType}`);
@@ -322,7 +335,7 @@ export default function WritePost({ existingStory = null }) {
           </div>
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-              Category
+              Category {formData.contentType === 'story' && '(Optional)'}
             </label>
             <select
               id="category"
@@ -331,6 +344,7 @@ export default function WritePost({ existingStory = null }) {
               onChange={handleChange}
               className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm"
             >
+              <option value="">Select a category</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -355,7 +369,7 @@ export default function WritePost({ existingStory = null }) {
           </div>
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-              Description
+              Description {formData.contentType === 'story' && '(Optional)'}
             </label>
             <div className="mt-1 relative">
               {formData.contentType === 'post' ? (
@@ -412,7 +426,9 @@ export default function WritePost({ existingStory = null }) {
             </AnimatePresence>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Images (up to 5, optional)</label>
+            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+              Images {formData.contentType === 'post' ? '(Required, up to 5)' : '(Optional, up to 5)'}
+            </label>
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -506,20 +522,22 @@ export default function WritePost({ existingStory = null }) {
               className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
             />
           </div>
-          <div>
-            <label htmlFor="reading_time" className="block text-sm font-medium text-gray-500 dark:text-gray-400">
-              Reading Time (e.g., "5 min")
-            </label>
-            <input
-              id="reading_time"
-              type="text"
-              name="reading_time"
-              value={formData.reading_time}
-              onChange={handleChange}
-              placeholder="e.g., 5 min"
-              className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
-            />
-          </div>
+          {formData.contentType === 'post' && (
+            <div>
+              <label htmlFor="reading_time" className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                Reading Time (e.g., "5 min")
+              </label>
+              <input
+                id="reading_time"
+                type="text"
+                name="reading_time"
+                value={formData.reading_time}
+                onChange={handleChange}
+                placeholder="e.g., 5 min"
+                className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
+              />
+            </div>
+          )}
           {error && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
               <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
