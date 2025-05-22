@@ -2,7 +2,7 @@
 import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, ChevronLeft, ChevronRight, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX, Tag } from 'lucide-react';
 import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function SocialMediaHome() {
@@ -51,14 +51,15 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         const newPosts = data.posts
-          .filter(post => post.imageUrl) // Ensure posts have images
+          .filter(post => post.imageUrls?.length > 0) // Ensure posts have images
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .map(post => ({
             ...post,
-            image: post.imageUrl || DEFAULT_IMAGE,
+            imageUrls: post.imageUrls || [DEFAULT_IMAGE],
             author_image: post.author_image || '/user-symbol.jpg',
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
+            tags: post.tags ? JSON.parse(post.tags) : [],
           }));
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
@@ -100,11 +101,12 @@ export default function SocialMediaHome() {
       if (data.success) {
         const storiesWithUserLikes = data.stories.map((story) => ({
           ...story,
-          image: story.imageUrl || DEFAULT_IMAGE,
+          imageUrls: story.imageUrls?.length > 0 ? story.imageUrls : [DEFAULT_IMAGE],
           is_liked: story.is_liked || false,
           likes_count: story.likes_count || 0,
           comments: story.comments || [],
           author_image: story.author_image || '/user-symbol.jpg',
+          tags: story.tags ? JSON.parse(story.tags) : [],
         }));
         setStories(storiesWithUserLikes);
       }
@@ -161,13 +163,14 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         setSuggestedPosts(data.posts
-          .filter(post => post.imageUrl) // Ensure suggested posts have images
+          .filter(post => post.imageUrls?.length > 0)
           .map(post => ({
             ...post,
-            image: post.imageUrl || DEFAULT_IMAGE,
+            imageUrls: post.imageUrls || [DEFAULT_IMAGE],
             author_image: post.author_image || '/user-symbol.jpg',
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
+            tags: post.tags ? JSON.parse(post.tags) : [],
           })));
       }
     } catch (error) {
@@ -776,7 +779,7 @@ export default function SocialMediaHome() {
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark p-[2px] group-hover:scale-105 transition-transform duration-350">
                         <Image
-                          src={story.image}
+                          src={story.imageUrls[0]}
                           alt={story.title || 'Story'}
                           width={60}
                           height={60}
@@ -808,7 +811,7 @@ export default function SocialMediaHome() {
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                   >
                     <Image
-                      src={post.image}
+                      src={post.imageUrls[0]}
                       alt={post.title || 'Post'}
                       width={80}
                       height={60}
@@ -864,7 +867,7 @@ export default function SocialMediaHome() {
                           {post.author || 'Anonymous'}
                         </Link>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDateTime(post.created_at)}
+                          {formatDateTime(post.created_at)} • {post.category || 'General'}
                         </p>
                       </div>
                     </div>
@@ -881,16 +884,34 @@ export default function SocialMediaHome() {
                         }`}
                         dangerouslySetInnerHTML={{ __html: post.description || '' }}
                       />
-                      <Image
-                        src={post.image}
-                        alt={post.title || 'Post'}
-                        width={600}
-                        height={400}
-                        className="w-full h-64 rounded-xl object-cover mb-3"
-                        onError={(e) => {
-                          e.target.src = DEFAULT_IMAGE;
-                        }}
-                      />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                        {post.imageUrls.map((url, index) => (
+                          <Image
+                            key={index}
+                            src={url}
+                            alt={`${post.title || 'Post'} image ${index + 1}`}
+                            width={600}
+                            height={400}
+                            className="w-full h-64 rounded-xl object-cover"
+                            onError={(e) => {
+                              e.target.src = DEFAULT_IMAGE;
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {post.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
+                            >
+                              <Tag className="w-3 h-3" />
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-2 mb-3">
                       <div className="flex items-center gap-4">
@@ -912,11 +933,22 @@ export default function SocialMediaHome() {
                         </button>
                         <button
                           onClick={() => handlePostShare(post.id)}
-                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
+                          class Elektronik className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
                         >
                           <Share className="w-5 h-5" />
                           <span className="text-sm">Share</span>
                         </button>
+                        {post.link && (
+                          <a
+                            href={post.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
+                          >
+                            <ExternalLink className="w-5 h-5" />
+                            <span className="text-sm">Link</span>
+                          </a>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
                         <Eye className="w-5 h-5" />
@@ -1161,15 +1193,20 @@ export default function SocialMediaHome() {
               <ChevronRight className="w-8 h-8" />
             </button>
             <div className="relative h-[60%]">
-              <Image
-                src={stories[selectedStoryIndex].image}
-                alt={stories[selectedStoryIndex].title || 'Story'}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  e.target.src = DEFAULT_IMAGE;
-                }}
-              />
+              <div className="w-full h-full overflow-x-auto flex snap-x snap-mandatory">
+                {stories[selectedStoryIndex].imageUrls.map((url, index) => (
+                  <Image
+                    key={index}
+                    src={url}
+                    alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
+                    fill
+                    className="object-cover snap-center"
+                    onError={(e) => {
+                      e.target.src = DEFAULT_IMAGE;
+                    }}
+                  />
+                ))}
+              </div>
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                 <h3 className="text-white text-lg font-semibold">{stories[selectedStoryIndex].title || 'Untitled'}</h3>
                 <p className="text-white/80 text-sm line-clamp-2">{stories[selectedStoryIndex].description || ''}</p>
@@ -1181,7 +1218,23 @@ export default function SocialMediaHome() {
                     {stories[selectedStoryIndex].author || 'Anonymous'}
                   </Link>
                   <span className="text-white/70 text-xs">{formatDateTime(stories[selectedStoryIndex].created_at)}</span>
+                  {stories[selectedStoryIndex].category && (
+                    <span className="text-white/70 text-xs">• {stories[selectedStoryIndex].category}</span>
+                  )}
                 </div>
+                {stories[selectedStoryIndex].tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {stories[selectedStoryIndex].tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
+                      >
+                        <Tag className="w-3 h-3" />
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="p-4 h-[40%] flex flex-col">
