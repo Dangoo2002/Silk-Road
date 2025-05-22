@@ -34,6 +34,10 @@ export default function SocialMediaHome() {
 
   // Fetch posts
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
+    if (!token && userId) {
+      setError('Authentication required. Please log in again.');
+      return;
+    }
     setIsLoading(true);
     try {
       const endpoint = `${apiUrl}/posts?page=${pageNum}&limit=20&t=${Date.now()}&userId=${userId}`;
@@ -48,11 +52,16 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        const newPosts = data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(post => ({
-          ...post,
-          image: post.imageUrl || PLACEHOLDER_IMAGE,
-          author_image: post.author_image || '/user-symbol.jpg',
-        }));
+        const newPosts = data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(post => {
+          console.log('Post data:', post); // Debug post data
+          return {
+            ...post,
+            image: post.imageUrl || PLACEHOLDER_IMAGE,
+            author_image: post.author_image || '/user-symbol.jpg',
+            author: post.author || 'Anonymous',
+            created_at: post.created_at || new Date().toISOString(),
+          };
+        });
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
         const commentsData = {};
@@ -77,7 +86,7 @@ export default function SocialMediaHome() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, apiUrl, userId]);
+  }, [token, apiUrl, userId, PLACEHOLDER_IMAGE]);
 
   // Fetch stories
   const fetchStories = useCallback(async () => {
@@ -110,12 +119,16 @@ export default function SocialMediaHome() {
     }
   }, [userId, token, apiUrl, PLACEHOLDER_IMAGE]);
 
-  // Fetch story comments (used for refreshing after posting a comment)
+  // Fetch story comments
   const fetchStoryComments = useCallback(async (storyId) => {
+    if (!token) {
+      setError('Authentication required. Please log in again.');
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/story-comments/${storyId}`, {
         cache: 'no-store',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const errorData = await response.json();
@@ -146,12 +159,13 @@ export default function SocialMediaHome() {
   // Fetch suggested posts
   const fetchSuggestedPosts = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/posts?sort=views&limit=5&userId=${userId}`, {
+      const response = await fetch(`${apiUrl}/suggested-posts?limit=5&userId=${userId}`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Fetch suggested posts error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch suggested posts');
       }
       const data = await response.json();
@@ -160,6 +174,8 @@ export default function SocialMediaHome() {
           ...post,
           image: post.imageUrl || PLACEHOLDER_IMAGE,
           author_image: post.author_image || '/user-symbol.jpg',
+          author: post.author || 'Anonymous',
+          created_at: post.created_at || new Date().toISOString(),
         })));
       }
     } catch (error) {
@@ -170,14 +186,18 @@ export default function SocialMediaHome() {
 
   // Fetch suggested users
   const fetchSuggestedUsers = useCallback(async () => {
-    if (!userId || !token) return;
+    if (!userId || !token) {
+      setError('Authentication required to fetch suggested users.');
+      return;
+    }
     try {
-      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=5`, {
+      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=10`, {
         cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Fetch suggested users error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch suggested users');
       }
       const data = await response.json();
@@ -185,6 +205,7 @@ export default function SocialMediaHome() {
         setSuggestedUsers(data.users.map(user => ({
           ...user,
           image: user.image || '/user-symbol.jpg',
+          is_followed: !!user.is_followed,
         })));
       }
     } catch (error) {
@@ -196,12 +217,13 @@ export default function SocialMediaHome() {
   // Fetch trending topics
   const fetchTrendingTopics = useCallback(async () => {
     try {
-      const response = await fetch(`${apiUrl}/trending-topics?sort=shares&limit=3`, {
+      const response = await fetch(`${apiUrl}/trending-topics?limit=3`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Fetch trending topics error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch trending topics');
       }
       const data = await response.json();
@@ -209,24 +231,27 @@ export default function SocialMediaHome() {
         setTrendingTopics(data.topics);
       } else {
         setTrendingTopics([
-          { name: 'AI in Africa', shares: 1500 },
-          { name: 'Kenya Elections', shares: 1200 },
-          { name: 'Electric Vehicles', shares: 800 },
+          { id: 1, name: 'AI in Africa', shares: 1500 },
+          { id: 2, name: 'Kenya Elections', shares: 1200 },
+          { id: 3, name: 'Electric Vehicles', shares: 800 },
         ]);
       }
     } catch (error) {
       console.error('Error fetching trending topics:', error);
       setTrendingTopics([
-        { name: 'AI in Africa', shares: 1500 },
-        { name: 'Kenya Elections', shares: 1200 },
-        { name: 'Electric Vehicles', shares: 800 },
+        { id: 1, name: 'AI in Africa', shares: 1500 },
+        { id: 2, name: 'Kenya Elections', shares: 1200 },
+        { id: 3, name: 'Electric Vehicles', shares: 800 },
       ]);
     }
   }, [token, apiUrl]);
 
   // Fetch followers
   const fetchFollowers = useCallback(async () => {
-    if (!userId || !token) return;
+    if (!userId || !token) {
+      setError('Authentication required to fetch followers.');
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/followers/${userId}`, {
         cache: 'no-store',
@@ -234,6 +259,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Fetch followers error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch followers');
       }
       const data = await response.json();
@@ -251,7 +277,10 @@ export default function SocialMediaHome() {
 
   // Fetch following
   const fetchFollowing = useCallback(async () => {
-    if (!userId || !token) return;
+    if (!userId || !token) {
+      setError('Authentication required to fetch following.');
+      return;
+    }
     try {
       const response = await fetch(`${apiUrl}/following/${userId}`, {
         cache: 'no-store',
@@ -259,6 +288,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Fetch following error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch following');
       }
       const data = await response.json();
@@ -464,11 +494,12 @@ export default function SocialMediaHome() {
         )
       );
       setStoryCommentInput('');
+      fetchStoryComments(storyId); // Refresh comments
     } catch (error) {
       console.error('Error posting comment:', error);
       setError('An error occurred while posting comment');
     }
-  }, [userId, token, storyCommentInput, userData, apiUrl]);
+  }, [userId, token, storyCommentInput, userData, apiUrl, fetchStoryComments]);
 
   // Handle post like
   const handlePostLike = useCallback(async (postId, isLiked) => {
@@ -569,26 +600,30 @@ export default function SocialMediaHome() {
 
   // Initial fetch and refresh
   useEffect(() => {
-    fetchStories();
-    fetchPosts(1);
-    fetchFollowers();
-    fetchFollowing();
-    fetchSuggestedUsers();
-    fetchSuggestedPosts();
-    fetchTrendingTopics();
-
-    const refreshInterval = setInterval(() => {
+    if (token) {
       fetchStories();
-      fetchPosts(1, true);
+      fetchPosts(1);
       fetchFollowers();
       fetchFollowing();
       fetchSuggestedUsers();
       fetchSuggestedPosts();
       fetchTrendingTopics();
+    }
+
+    const refreshInterval = setInterval(() => {
+      if (token) {
+        fetchStories();
+        fetchPosts(1, true);
+        fetchFollowers();
+        fetchFollowing();
+        fetchSuggestedUsers();
+        fetchSuggestedPosts();
+        fetchTrendingTopics();
+      }
     }, 7 * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
-  }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics]);
+  }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics, token]);
 
   // Infinite scroll
   useEffect(() => {
@@ -607,8 +642,8 @@ export default function SocialMediaHome() {
   }, [hasMore, isLoading]);
 
   useEffect(() => {
-    if (page > 1) fetchPosts(page);
-  }, [page, fetchPosts]);
+    if (page > 1 && token) fetchPosts(page);
+  }, [page, fetchPosts, token]);
 
   // Story progress
   useEffect(() => {
@@ -628,7 +663,7 @@ export default function SocialMediaHome() {
       });
     }, 100);
     return () => clearInterval(progressInterval);
-  }, [selectedStoryIndex, isPaused, stories]);
+  }, [selectedStoryIndex, isPaused, stories.length]);
 
   // Track post views on visibility
   useEffect(() => {
@@ -637,7 +672,9 @@ export default function SocialMediaHome() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const postId = entry.target.dataset.postId;
-            trackPostView(postId);
+            if (postId) {
+              trackPostView(postId);
+            }
           }
         });
       },
@@ -671,7 +708,7 @@ export default function SocialMediaHome() {
     } else {
       closeStory();
     }
-  }, [selectedStoryIndex, stories, closeStory]);
+  }, [selectedStoryIndex, stories.length, closeStory]);
 
   const goToPrevStory = useCallback(() => {
     if (selectedStoryIndex > 0) {
@@ -695,9 +732,9 @@ export default function SocialMediaHome() {
   }, []);
 
   const formatDateTime = useCallback((dateString) => {
-    if (!dateString) return 'Unknown time';
+    if (!dateString) return 'Just now';
     const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid date';
+    if (isNaN(date.getTime())) return 'Just now';
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
@@ -728,7 +765,10 @@ export default function SocialMediaHome() {
                   width={40}
                   height={40}
                   className="rounded-full object-cover"
-                  onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                  onError={(e) => {
+                    const target = e.target;
+                    target.src = '/user-symbol.jpg';
+                  }}
                 />
                 <Link
                   href="/write"
@@ -759,7 +799,10 @@ export default function SocialMediaHome() {
                           width={60}
                           height={60}
                           className="w-full h-full rounded-full object-cover"
-                          onError={(e) => (e.target.src = PLACEHOLDER_IMAGE)}
+                          onError={(e) => {
+                            const target = e.target;
+                            target.src = PLACEHOLDER_IMAGE;
+                          }}
                         />
                       </div>
                     </div>
@@ -789,7 +832,10 @@ export default function SocialMediaHome() {
                       width={80}
                       height={60}
                       className="rounded-xl object-cover"
-                      onError={(e) => (e.target.src = PLACEHOLDER_IMAGE)}
+                      onError={(e) => {
+                        const target = e.target;
+                        target.src = PLACEHOLDER_IMAGE;
+                      }}
                     />
                     <div>
                       <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
@@ -826,7 +872,10 @@ export default function SocialMediaHome() {
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                        onError={(e) => {
+                          const target = e.target;
+                          target.src = '/user-symbol.jpg';
+                        }}
                       />
                       <div>
                         <Link
@@ -860,7 +909,10 @@ export default function SocialMediaHome() {
                           width={600}
                           height={400}
                           className="w-full h-64 rounded-xl object-cover mb-3"
-                          onError={(e) => (e.target.src = PLACEHOLDER_IMAGE)}
+                          onError={(e) => {
+                            const target = e.target;
+                            target.src = PLACEHOLDER_IMAGE;
+                          }}
                         />
                       )}
                     </div>
@@ -923,7 +975,10 @@ export default function SocialMediaHome() {
                                 width={24}
                                 height={24}
                                 className="rounded-full object-cover"
-                                onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                                onError={(e) => {
+                                  const target = e.target;
+                                  target.src = '/user-symbol.jpg';
+                                }}
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
@@ -970,8 +1025,8 @@ export default function SocialMediaHome() {
                 ) : (
                   trendingTopics.map((topic) => (
                     <Link
-                      key={topic.name}
-                      href={`/search?q=${encodeURIComponent(topic.name)}`}
+                      key={topic.id}
+                      href={`/post/${topic.id}`}
                       className="block p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <p className="text-sm font-semibold">{topic.name}</p>
@@ -998,7 +1053,10 @@ export default function SocialMediaHome() {
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                        onError={(e) => {
+                          const target = e.target;
+                          target.src = '/user-symbol.jpg';
+                        }}
                       />
                       <div className="flex-1">
                         <Link
@@ -1052,7 +1110,10 @@ export default function SocialMediaHome() {
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                        onError={(e) => {
+                          const target = e.target;
+                          target.src = '/user-symbol.jpg';
+                        }}
                       />
                       <div>
                         <p className="text-sm font-semibold">{user.name || 'User'}</p>
@@ -1081,7 +1142,10 @@ export default function SocialMediaHome() {
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                        onError={(e) => {
+                          const target = e.target;
+                          target.src = '/user-symbol.jpg';
+                        }}
                       />
                       <div>
                         <p className="text-sm font-semibold">{user.name || 'User'}</p>
@@ -1130,7 +1194,10 @@ export default function SocialMediaHome() {
                 alt={stories[selectedStoryIndex].title || 'Story'}
                 fill
                 className="object-cover"
-                onError={(e) => (e.target.src = PLACEHOLDER_IMAGE)}
+                onError={(e) => {
+                  const target = e.target;
+                  target.src = PLACEHOLDER_IMAGE;
+                }}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
                 <h3 className="text-white text-lg font-semibold">{stories[selectedStoryIndex].title || 'Untitled'}</h3>
@@ -1185,7 +1252,10 @@ export default function SocialMediaHome() {
                       width={24}
                       height={24}
                       className="rounded-full object-cover"
-                      onError={(e) => (e.target.src = '/user-symbol.jpg')}
+                      onError={(e) => {
+                        const target = e.target;
+                        target.src = '/user-symbol.jpg';
+                      }}
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
