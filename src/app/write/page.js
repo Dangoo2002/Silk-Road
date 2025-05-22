@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill/dist/quill.snow.css';
 import { useRouter } from 'next/navigation';
@@ -9,10 +9,12 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import Picker from 'emoji-picker-react';
 import { XMarkIcon, PlusIcon, PhotoIcon } from '@heroicons/react/24/outline';
+import { AuthContext } from './path-to-AuthContext'; // Adjust the import path to your AuthContext file
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function WritePost() {
+  const { token } = useContext(AuthContext); // Access token from AuthContext
   const [formData, setFormData] = useState({
     contentType: 'post',
     title: '',
@@ -67,6 +69,12 @@ export default function WritePost() {
 
   // Handle file selection
   const handleFileChange = async (files) => {
+    if (!token) {
+      setError('You must be logged in to upload images. Please log in again.');
+      router.push('/login');
+      return;
+    }
+
     if (formData.imageUrls.length + files.length > 5) {
       setError('Maximum 5 images allowed.');
       return;
@@ -83,11 +91,20 @@ export default function WritePost() {
     try {
       const response = await fetch(`${apiUrl}/api/upload-images`, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`, // Add Authorization header
+        },
         body: formDataToSend,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload images');
+        const errorData = await response.json();
+        if (errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          router.push('/login');
+          return;
+        }
+        throw new Error(errorData.message || 'Failed to upload images');
       }
 
       const data = await response.json();
@@ -100,7 +117,7 @@ export default function WritePost() {
         throw new Error(data.message || 'Image upload failed');
       }
     } catch (err) {
-      setError('Failed to upload images. Please try again.');
+      setError('Failed to upload images: ' + err.message);
       setPreviewImages((prev) => {
         const newPreviews = prev.slice(0, prev.length - files.length);
         newPreviews.forEach((url, idx) => {
@@ -212,6 +229,7 @@ export default function WritePost() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Add Authorization header
         },
         body: JSON.stringify({
           ...formData,
@@ -220,34 +238,39 @@ export default function WritePost() {
         }),
       });
 
-      if (response.ok) {
-        alert(`${formData.contentType.charAt(0).toUpperCase() + formData.contentType.slice(1)} saved successfully!`);
-        router.push('/');
-        setFormData({
-          contentType: 'post',
-          title: '',
-          description: '',
-          imageUrls: [],
-          link: '',
-          tags: [], // Consistent with input handling
-          category: 'General',
-        });
-        setPreviewImages((prev) => {
-          prev.forEach((url) => URL.revokeObjectURL(url));
-          return [];
-        });
-      } else {
-        const errorResponse = await response.json();
-        setError(`Error saving ${formData.contentType}: ${errorResponse.message || 'Unknown error'}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          router.push('/login');
+          return;
+        }
+        throw new Error(errorData.message || 'Failed to save post');
       }
+
+      alert(`${formData.contentType.charAt(0).toUpperCase() + formData.contentType.slice(1)} saved successfully!`);
+      router.push('/');
+      setFormData({
+        contentType: 'post',
+        title: '',
+        description: '',
+        imageUrls: [],
+        link: '',
+        tags: [],
+        category: 'General',
+      });
+      setPreviewImages((prev) => {
+        prev.forEach((url) => URL.revokeObjectURL(url));
+        return [];
+      });
     } catch (err) {
-      setError(`An unexpected error occurred while saving the ${formData.contentType}.`);
+      setError(`An unexpected error occurred while saving the ${formData.contentType}: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!userId) {
+  if (!userId || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark pt-16 px-4 sm:px-6 lg:px-8">
         <motion.div
