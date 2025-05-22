@@ -1258,22 +1258,59 @@ export default function SocialMediaHome() {
           </div>
         </div>
       </div>
-      {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
+      {/* Stories Section */}
+<div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
+  <h2 className="text-lg font-semibold mb-4 font-heading">Stories</h2>
+  {stories.length === 0 ? (
+    <p className="text-sm text-gray-500 dark:text-gray-400">No stories available</p>
+  ) : (
+    <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+      {stories.map((story, index) => (
+        <div
+          key={story.id}
+          className="flex-shrink-0 cursor-pointer group w-20"
+          onClick={() => openStory(index)}
+        >
+          <div className="relative">
+            <div className={`w-16 h-16 rounded-full overflow-hidden border-4 p-[2px] group-hover:scale-105 transition-transform duration-350 ${
+              viewedPosts.has(story.id) 
+                ? 'border-gray-300 dark:border-gray-500' 
+                : 'border-transparent bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark'
+            }`}>
+              <div className="relative w-full h-full">
+                <Image
+                  src={story.imageUrls?.[0] || DEFAULT_IMAGE}
+                  alt={story.title || 'Story'}
+                  fill
+                  className="rounded-full object-cover"
+                  onError={(e) => {
+                    console.error(`Failed to load story thumbnail: ${story.imageUrls?.[0]}`);
+                    e.target.src = DEFAULT_IMAGE;
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="mt-2 text-center text-xs font-medium truncate">
+            {story.author?.split(' ')[0] || 'User'}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+
+{/* Story Viewer Popup */}
+{selectedStoryIndex !== null && stories[selectedStoryIndex] && (
   <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
     <div className="relative w-full max-w-md h-[80vh] bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden">
-      {/* Story progress bar with time remaining indicator */}
+      {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-600">
         <div
           className="h-full bg-primary-light dark:bg-primary-dark transition-all duration-100"
           style={{ 
             width: `${storyProgress}%`,
-            backgroundColor: storyProgress < 20 ? '#ef4444' : '' // Red when almost expired
-          }}
-        />
-        <div 
-          className="absolute top-0 right-0 h-full bg-gray-400 opacity-20"
-          style={{ 
-            width: `${100 - getStoryTimeRemaining(stories[selectedStoryIndex].created_at)}%` 
+            backgroundColor: storyProgress < 20 ? '#ef4444' : ''
           }}
         />
       </div>
@@ -1304,25 +1341,24 @@ export default function SocialMediaHome() {
 
       {/* Story content */}
       <div className="relative h-[60%]">
-        {/* Story images */}
-        {stories[selectedStoryIndex].imageUrls.map((url, index) => (
+        {stories[selectedStoryIndex].imageUrls?.map((url, index) => (
           <div 
             key={index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${index === 0 ? 'opacity-100' : 'opacity-0'}`}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${
+              index === 0 ? 'opacity-100' : 'opacity-0'
+            }`}
           >
-            <div className="relative w-full h-full">
-              <Image
-                src={url || DEFAULT_IMAGE}
-                alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
-                fill
-                className="object-cover"
-                priority
-                onError={(e) => {
-                  console.error(`Failed to load story image: ${url}`);
-                  e.target.src = DEFAULT_IMAGE;
-                }}
-              />
-            </div>
+            <Image
+              src={url || DEFAULT_IMAGE}
+              alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
+              fill
+              className="object-cover"
+              priority
+              onError={(e) => {
+                console.error(`Failed to load story image: ${url}`);
+                e.target.src = DEFAULT_IMAGE;
+              }}
+            />
           </div>
         ))}
         
@@ -1349,12 +1385,11 @@ export default function SocialMediaHome() {
                 • {stories[selectedStoryIndex].category}
               </span>
             )}
-            {/* Time remaining indicator */}
             <span className="ml-auto text-xs text-white/70">
               {getTimeRemainingText(stories[selectedStoryIndex].created_at)}
             </span>
           </div>
-          {stories[selectedStoryIndex].tags.length > 0 && (
+          {stories[selectedStoryIndex].tags?.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {stories[selectedStoryIndex].tags.map((tag, index) => (
                 <span
@@ -1369,7 +1404,6 @@ export default function SocialMediaHome() {
           )}
         </div>
       </div>
-
       {/* Story actions and comments */}
       <div className="p-4 h-[40%] flex flex-col">
         <div className="flex items-center gap-4 mb-4">
