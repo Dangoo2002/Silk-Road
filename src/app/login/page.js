@@ -34,11 +34,13 @@ export default function Login() {
         <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-purple-300/30 rounded-full animate-float-delayed"></div>
         <div className="absolute top-1/2 left-3/4 w-3 h-3 bg-pink-300/20 rounded-full animate-float-slow"></div>
         <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-blue-300/25 rounded-full animate-float-fast"></div>
+        <div className="absolute top-2/3 left-1/3 w-2.5 h-2.5 bg-emerald-300/20 rounded-full animate-float"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-yellow-300/25 rounded-full animate-float-delayed"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md mx-4 sm:mx-auto">
         {/* Main Card */}
-        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-8 sm:p-10 space-y-8 transform transition-all duration-700 hover:scale-[1.02] hover:shadow-3xl hover:bg-white/15">
+        <div className="bg-white/95 backdrop-blur-md border border-white/30 rounded-3xl shadow-2xl p-8 sm:p-10 space-y-8 transform transition-all duration-700 hover:scale-[1.02] hover:shadow-3xl hover:bg-white">
           
           {/* Logo with Glow Effect */}
           <div className="flex justify-center relative">
@@ -54,10 +56,10 @@ export default function Login() {
 
           {/* Title with Gradient Text */}
           <div className="text-center space-y-3">
-            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-gray-800 via-purple-900 to-pink-900 bg-clip-text text-transparent tracking-tight leading-tight">
               Welcome Back
             </h1>
-            <p className="text-white/70 text-base sm:text-lg font-light tracking-wide">
+            <p className="text-gray-600 text-base sm:text-lg font-light tracking-wide">
               Continue your creative journey
             </p>
             <div className="w-20 h-1 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full mx-auto"></div>
@@ -65,7 +67,7 @@ export default function Login() {
 
           {/* Success/Error Messages with Enhanced Styling */}
           {success && (
-            <div className="bg-emerald-500/20 backdrop-blur-sm text-emerald-100 p-4 rounded-2xl flex items-center gap-3 border border-emerald-400/30 animate-slide-up">
+            <div className="bg-emerald-500/20 backdrop-blur-sm text-emerald-800 p-4 rounded-2xl flex items-center gap-3 border border-emerald-400/30 animate-slide-up">
               <div className="flex-shrink-0 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -76,7 +78,7 @@ export default function Login() {
           )}
 
           {error && (
-            <div className="bg-red-500/20 backdrop-blur-sm text-red-100 p-4 rounded-2xl flex items-center gap-3 border border-red-400/30 animate-slide-up">
+            <div className="bg-red-500/20 backdrop-blur-sm text-red-800 p-4 rounded-2xl flex items-center gap-3 border border-red-400/30 animate-slide-up">
               <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
                 <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -122,7 +124,7 @@ export default function Login() {
 
           {/* Enhanced Signup Link */}
           <div className="text-center">
-            <p className="text-white/60 text-sm sm:text-base">
+            <p className="text-gray-600 text-sm sm:text-base">
               Don't have an account?{' '}
               <Link 
                 href="/signup" 
