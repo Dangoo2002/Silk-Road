@@ -653,7 +653,7 @@ export default function SocialMediaHome() {
                 {trendingTopics.map((topic) => (
                   <Link
                     key={topic.id}
-                    href={`/topic/${topic.id}`}
+                    href={`/`}
                     className="flex-shrink-0 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
                   >
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
