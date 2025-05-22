@@ -3,7 +3,7 @@ import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX } from 'lucide-react';
-import { AuthContext } from '../components/AuthContext/AuthContext';
+import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function SocialMediaHome() {
   const { userData, token } = useContext(AuthContext);
