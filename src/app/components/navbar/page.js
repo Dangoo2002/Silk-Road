@@ -66,23 +66,27 @@ export default function SocialMediaNav() {
       {loading && <Loader />}
       <div className="container mx-auto px-4 py-3 flex items-center justify-between h-full">
         {/* Logo and Title */}
-        <Link href="/" className="flex items-center gap-2 max-h-14">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
+        <Link href="/" className="flex items-center space-x-2 group max-h-14">
+          <div className="relative overflow-hidden rounded-lg">
             <Image
               src="/silkroadlogo.jpeg"
               alt="Silk Road Blogs Logo"
-              width={80}
+              width={32}
               height={32}
-              className="object-contain"
+              className="w-8 h-8 sm:w-10 sm:h-10 object-cover transform group-hover:scale-105 transition-all duration-300"
               priority
             />
-          </motion.div>
-          <span className="text-sm font-bold tracking-tight lowercase text-black font-poppins hover:underline hover:underline-offset-4 hover:decoration-indigo-500 transition-all duration-300 dark:text-black">
-            silk road blogs
-          </span>
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          </div>
+          <div className="flex flex-col relative">
+            <span className="text-lg sm:text-xl font-bold tracking-tight text-black dark:text-black lowercase">
+              silk road
+            </span>
+            <span className="text-xs font-light tracking-wider text-black/70 dark:text-black/70 lowercase">
+              blogs
+            </span>
+            <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
+          </div>
         </Link>
 
         {/* Search Bar (Desktop) */}
@@ -250,17 +254,26 @@ export default function SocialMediaNav() {
             className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-lg dark:shadow-xl z-50 p-4"
           >
             <div className="flex justify-between items-center mb-6">
-              <Link href="/" className="flex items-center gap-2">
-                <Image
-                  src="/silkroadlogo.jpeg"
-                  alt="Silk Road Blogs Logo"
-                  width={80}
-                  height={32}
-                  className="object-contain"
-                />
-                <span className="text-sm font-bold tracking-tight lowercase text-black font-poppins">
-                  silk road blogs
-                </span>
+              <Link href="/" className="flex items-center space-x-2 group">
+                <div className="relative overflow-hidden rounded-lg">
+                  <Image
+                    src="/silkroadlogo.jpeg"
+                    alt="Silk Road Blogs Logo"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 sm:w-10 sm:h-10 object-cover transform group-hover:scale-105 transition-all duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
+                <div className="flex flex-col relative">
+                  <span className="text-lg sm:text-xl font-bold tracking-tight text-black dark:text-black lowercase">
+                    silk road
+                  </span>
+                  <span className="text-xs font-light tracking-wider text-black/70 dark:text-black/70 lowercase">
+                    blogs
+                  </span>
+                  <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
+                </div>
               </Link>
               <button
                 onClick={toggleMenu}
