@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
@@ -28,6 +29,9 @@ export default function SocialMediaHome() {
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [suggestedPosts, setSuggestedPosts] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
+
+  // Default placeholder image
+  const PLACEHOLDER_IMAGE = '/api/placeholder/400/300';
 
   // Fetch all posts from the posts endpoint
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
@@ -80,6 +84,7 @@ export default function SocialMediaHome() {
       if (data.success) {
         const storiesWithUserLikes = data.stories.map((story) => ({
           ...story,
+          image: story.imageUrl || PLACEHOLDER_IMAGE, // Use imageUrl and fallback
           is_liked: storyLikes[story.id] || false,
           likes_count: storyLikes[story.id]?.count || story.likes_count,
           comments: storyComments[story.id] || [],
@@ -102,26 +107,32 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setSuggestedPosts(data.posts);
+        setSuggestedPosts(data.posts.map(post => ({
+          ...post,
+          image: post.imageUrl || PLACEHOLDER_IMAGE, // Ensure image fallback
+        })));
       }
     } catch (error) {
       console.error('Error fetching suggested posts:', error);
     }
   }, []);
 
-  // Fetch suggested users (sorted by post count)
+  // Fetch suggested users (all users excluding current user and followed users)
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId) return;
     try {
       const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-      const response = await fetch(`${apiUrl}/suggested-users?sort=posts&limit=5&userId=${userId}`, { cache: 'no-store' });
+      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=5`, { cache: 'no-store' });
       if (!response.ok) {
         console.error('Error fetching suggested users:', await response.text());
         return;
       }
       const data = await response.json();
       if (data.success) {
-        setSuggestedUsers(data.users);
+        setSuggestedUsers(data.users.map(user => ({
+          ...user,
+          image: user.image || '/user-symbol.jpg', // Ensure image fallback
+        })));
       }
     } catch (error) {
       console.error('Error fetching suggested users:', error);
@@ -639,7 +650,7 @@ export default function SocialMediaHome() {
                     className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                   >
                     <Image
-                      src={post.image || "/api/placeholder/80/60"}
+                      src={post.image}
                       alt={post.title}
                       width={80}
                       height={60}
@@ -856,7 +867,7 @@ export default function SocialMediaHome() {
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <Image
-                        src={user.image || "/api/placeholder/40/40"}
+                        src={user.image || "/user-symbol.jpg"}
                         alt={user.name}
                         width={40}
                         height={40}
@@ -889,7 +900,7 @@ export default function SocialMediaHome() {
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <Image
-                        src={user.image || "/api/placeholder/40/40"}
+                        src={user.image || "/user-symbol.jpg"}
                         alt={user.name}
                         width={40}
                         height={40}
@@ -925,7 +936,7 @@ export default function SocialMediaHome() {
                         className="flex items-center gap-3 flex-1"
                       >
                         <Image
-                          src={user.image || "/api/placeholder/40/40"}
+                          src={user.image}
                           alt={user.name}
                           width={40}
                           height={40}
@@ -996,7 +1007,7 @@ export default function SocialMediaHome() {
                 <p className="text-white font-medium">{stories[selectedStoryIndex].author}</p>
                 <p className="text-gray-300 text-sm flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {stories[selectedStoryIndex].publishedAt}
+                  {formatDateTime(stories[selectedStoryIndex].created_at)}
                 </p>
               </div>
             </div>
@@ -1030,7 +1041,7 @@ export default function SocialMediaHome() {
                 {stories[selectedStoryIndex].title}
               </h2>
               <p className="text-gray-200 text-sm md:text-base mb-4 line-clamp-3">
-                {stories[selectedStoryIndex].caption}
+                {stories[selectedStoryIndex].description}
               </p>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
@@ -1080,8 +1091,7 @@ export default function SocialMediaHome() {
                     e.stopPropagation();
                     handleStoryCommentSubmit(stories[selectedStoryIndex].id);
                   }}
-                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full impunity
-                  hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
+                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
                 >
                   Post
                 </button>
