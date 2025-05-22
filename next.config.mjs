@@ -1,12 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images: {
-      domains: [
-        'encrypted-tbn0.gstatic.com',
-        'images.squarespace-cdn.com'
-      ],
-    },
-  };
-  
-  export default nextConfig;
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'silkroadbackend-production.up.railway.app',
+        pathname: '/api/images/**',
+      },
+    ],
+  },
+};
+export default nextConfig;
   
