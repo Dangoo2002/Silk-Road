@@ -37,7 +37,29 @@ export default function SocialMediaHome() {
     const date = new Date(dateString);
     return date.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   };
-
+  const getStoryTimeRemaining = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const hoursPassed = (now - created) / (1000 * 60 * 60);
+    const hoursLeft = Math.max(0, 24 - hoursPassed);
+    return (hoursLeft / 24) * 100;
+  };
+  
+  // Helper function to display time remaining text
+  const getTimeRemainingText = (createdAt) => {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const hoursPassed = (now - created) / (1000 * 60 * 60);
+    const hoursLeft = Math.max(0, 24 - hoursPassed);
+    
+    if (hoursLeft > 1) {
+      return `${Math.floor(hoursLeft)}h remaining`;
+    } else if (hoursLeft > 0) {
+      const minutesLeft = Math.floor(hoursLeft * 60);
+      return `${minutesLeft}m remaining`;
+    }
+    return 'Expired soon';
+  };
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
       setError('Authentication required. Please log in again.');
@@ -1237,152 +1259,199 @@ export default function SocialMediaHome() {
         </div>
       </div>
       {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-          <div className="relative w-full max-w-md h-[80vh] bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-600">
-              <div
-                className="h-full bg-primary-light dark:bg-primary-dark transition-all duration-100"
-                style={{ width: `${storyProgress}%` }}
+  <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <div className="relative w-full max-w-md h-[80vh] bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden">
+      {/* Story progress bar with time remaining indicator */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-600">
+        <div
+          className="h-full bg-primary-light dark:bg-primary-dark transition-all duration-100"
+          style={{ 
+            width: `${storyProgress}%`,
+            backgroundColor: storyProgress < 20 ? '#ef4444' : '' // Red when almost expired
+          }}
+        />
+        <div 
+          className="absolute top-0 right-0 h-full bg-gray-400 opacity-20"
+          style={{ 
+            width: `${100 - getStoryTimeRemaining(stories[selectedStoryIndex].created_at)}%` 
+          }}
+        />
+      </div>
+      
+      {/* Close button */}
+      <button
+        onClick={closeStory}
+        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-350 z-10"
+      >
+        <X className="w-6 h-6" />
+      </button>
+      
+      {/* Navigation buttons */}
+      <button
+        onClick={goToPrevStory}
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350 z-10"
+        disabled={selectedStoryIndex === 0}
+      >
+        <ChevronLeft className="w-8 h-8" />
+      </button>
+      <button
+        onClick={goToNextStory}
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350 z-10"
+        disabled={selectedStoryIndex === stories.length - 1}
+      >
+        <ChevronRight className="w-8 h-8" />
+      </button>
+
+      {/* Story content */}
+      <div className="relative h-[60%]">
+        {/* Story images */}
+        {stories[selectedStoryIndex].imageUrls.map((url, index) => (
+          <div 
+            key={index}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-300 ${index === 0 ? 'opacity-100' : 'opacity-0'}`}
+          >
+            <div className="relative w-full h-full">
+              <Image
+                src={url || DEFAULT_IMAGE}
+                alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
+                fill
+                className="object-cover"
+                priority
+                onError={(e) => {
+                  console.error(`Failed to load story image: ${url}`);
+                  e.target.src = DEFAULT_IMAGE;
+                }}
               />
             </div>
-            <button
-              onClick={closeStory}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-350"
+          </div>
+        ))}
+        
+        {/* Story metadata overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+          <h3 className="text-white text-lg font-semibold">
+            {stories[selectedStoryIndex].title || 'Untitled'}
+          </h3>
+          <p className="text-white/80 text-sm line-clamp-2">
+            {stories[selectedStoryIndex].description || ''}
+          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <Link
+              href={`/profile/${stories[selectedStoryIndex].userId}`}
+              className="text-white text-sm font-medium hover:text-primary-light transition-colors duration-350"
             >
-              <X className="w-6 h-6" />
-            </button>
-            <button
-              onClick={goToPrevStory}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350"
-              disabled={selectedStoryIndex === 0}
+              {stories[selectedStoryIndex].author || 'Anonymous'}
+            </Link>
+            <span className="text-white/70 text-xs">
+              {formatDateTime(stories[selectedStoryIndex].created_at)}
+            </span>
+            {stories[selectedStoryIndex].category && (
+              <span className="text-white/70 text-xs">
+                • {stories[selectedStoryIndex].category}
+              </span>
+            )}
+            {/* Time remaining indicator */}
+            <span className="ml-auto text-xs text-white/70">
+              {getTimeRemainingText(stories[selectedStoryIndex].created_at)}
+            </span>
+          </div>
+          {stories[selectedStoryIndex].tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {stories[selectedStoryIndex].tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
+                >
+                  <Tag className="w-3 h-3" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Story actions and comments */}
+      <div className="p-4 h-[40%] flex flex-col">
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() => handleStoryLike(stories[selectedStoryIndex].id, stories[selectedStoryIndex].is_liked)}
+            className="flex items-center gap-1 text-white hover:text-accent-light transition-colors duration-350"
+          >
+            <ThumbsUp
+              className={`w-5 h-5 ${stories[selectedStoryIndex].is_liked ? 'fill-accent-light text-accent-light' : ''}`}
+            />
+            <span className="text-sm">{stories[selectedStoryIndex].likes_count || 0}</span>
+          </button>
+          <button
+            onClick={() => handleStoryShare(stories[selectedStoryIndex].id)}
+            className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
+          >
+            <Share className="w-5 h-5" />
+            <span className="text-sm">Share</span>
+          </button>
+          {stories[selectedStoryIndex].link && (
+            <a
+              href={stories[selectedStoryIndex].link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
             >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-            <button
-              onClick={goToNextStory}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350"
-              disabled={selectedStoryIndex === stories.length - 1}
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
-            <div className="relative h-[60%]">
-              <div className="w-full h-full overflow-x-auto flex snap-x snap-mandatory">
-                {stories[selectedStoryIndex].imageUrls.map((url, index) => (
-                  <Image
-                    key={index}
-                    src={url || DEFAULT_IMAGE}
-                    alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
-                    fill
-                    className="object-cover snap-center"
-                    onError={(e) => {
-                      console.error(`Failed to load story image: ${url}`);
-                      e.target.src = DEFAULT_IMAGE;
-                    }}
-                  />
-                ))}
+              <ExternalLink className="w-5 h-5" />
+              <span className="text-sm">Link</span>
+            </a>
+          )}
+        </div>
+
+        {/* Comments section */}
+        <div className="space-y-2 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 mb-4">
+          {(stories[selectedStoryIndex].comments || []).map((comment) => (
+            <div key={comment.id} className="flex gap-2">
+              <div className="relative w-6 h-6">
+                <Image
+                  src={comment.author_image || DEFAULT_IMAGE}
+                  alt="User"
+                  fill
+                  className="rounded-full object-cover"
+                  onError={(e) => {
+                    console.error(`Failed to load comment author image: ${comment.author_image}`);
+                    e.target.src = DEFAULT_IMAGE;
+                  }}
+                />
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                <h3 className="text-white text-lg font-semibold">{stories[selectedStoryIndex].title || 'Untitled'}</h3>
-                <p className="text-white/80 text-sm line-clamp-2">{stories[selectedStoryIndex].description || ''}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Link
-                    href={`/profile/${stories[selectedStoryIndex].userId}`}
-                    className="text-white text-sm font-medium hover:text-primary-light transition-colors duration-350"
-                  >
-                    {stories[selectedStoryIndex].author || 'Anonymous'}
-                  </Link>
-                  <span className="text-white/70 text-xs">{formatDateTime(stories[selectedStoryIndex].created_at)}</span>
-                  {stories[selectedStoryIndex].category && (
-                    <span className="text-white/70 text-xs">• {stories[selectedStoryIndex].category}</span>
-                  )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-white text-sm font-medium">
+                    {comment.fullName || 'User'}
+                  </span>
+                  <span className="text-white/70 text-xs">
+                    {formatDateTime(comment.created_at)}
+                  </span>
                 </div>
-                {stories[selectedStoryIndex].tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {stories[selectedStoryIndex].tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                      >
-                        <Tag className="w-3 h-3" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                <p className="text-white/90 text-sm">
+                  {comment.content}
+                </p>
               </div>
             </div>
-            <div className="p-4 h-[40%] flex flex-col">
-              <div className="flex items-center gap-4 mb-4">
-                <button
-                  onClick={() => handleStoryLike(stories[selectedStoryIndex].id, stories[selectedStoryIndex].is_liked)}
-                  className="flex items-center gap-1 text-white hover:text-accent-light transition-colors duration-350"
-                >
-                  <ThumbsUp
-                    className={`w-5 h-5 ${stories[selectedStoryIndex].is_liked ? 'fill-accent-light text-accent-light' : ''}`}
-                  />
-                  <span className="text-sm">{stories[selectedStoryIndex].likes_count || 0}</span>
-                </button>
-                <button
-                  onClick={() => handleStoryShare(stories[selectedStoryIndex].id)}
-                  className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
-                >
-                  <Share className="w-5 h-5" />
-                  <span className="text-sm">Share</span>
-                </button>
-                {stories[selectedStoryIndex].link && (
-                  <a
-                    href={stories[selectedStoryIndex].link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                    <span className="text-sm">Link</span>
-                  </a>
-                )}
-              </div>
-              <div className="space-y-2 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 mb-4">
-                {(stories[selectedStoryIndex].comments || []).map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
-                    <Image
-                      src={comment.author_image || DEFAULT_IMAGE}
-                      alt="User"
-                      width={24}
-                      height={24}
-                      className="rounded-full object-cover"
-                      onError={(e) => {
-                        console.error(`Failed to load comment author image: ${comment.author_image}`);
-                        e.target.src = DEFAULT_IMAGE;
-                      }}
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-sm font-medium">{comment.fullName || 'User'}</span>
-                        <span className="text-white/70 text-xs">
-                          {formatDateTime(comment.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-white/90 text-sm">{comment.content}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-auto">
-                <input
-                  type="text"
-                  value={storyCommentInput}
-                  onChange={(e) => setStoryCommentInput(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 p-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350"
-                  onFocus={() => setIsPaused(true)}
-                  onBlur={() => setIsPaused(false)}
-                />
-                <button
-                  onClick={() => handleStoryCommentSubmit(stories[selectedStoryIndex].id)}
-                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
-                >
-                  Send
-                </button>
+          ))}
+        </div>
+
+        {/* Comment input */}
+        <div className="flex gap-2 mt-auto">
+          <input
+            type="text"
+            value={storyCommentInput}
+            onChange={(e) => setStoryCommentInput(e.target.value)}
+            placeholder="Add a comment..."
+            className="flex-1 p-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350"
+            onFocus={() => setIsPaused(true)}
+            onBlur={() => setIsPaused(false)}
+          />
+          <button
+            onClick={() => handleStoryCommentSubmit(stories[selectedStoryIndex].id)}
+            className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
+          >
+            Send
+          </button>
               </div>
             </div>
           </div>
