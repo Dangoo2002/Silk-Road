@@ -22,6 +22,7 @@ export default function WritePost({ existingStory = null }) {
     link: existingStory?.link || '',
     tags: existingStory?.tags || [],
     category: existingStory?.category || 'General',
+    reading_time: existingStory?.reading_time || '5 min',
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -48,10 +49,16 @@ export default function WritePost({ existingStory = null }) {
   };
 
   const handleChange = (e) => {
+    if (!e || !e.target) {
+      console.error('Invalid event object in handleChange:', e);
+      return;
+    }
+    console.log('handleChange called with:', e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleDescriptionChange = (value) => {
+    console.log('handleDescriptionChange called with:', value);
     setFormData({ ...formData, description: value });
   };
 
@@ -77,16 +84,16 @@ export default function WritePost({ existingStory = null }) {
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
       });
+      const data = await response.json();
+      console.log('Image upload response:', data);
       if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message === 'Invalid token') {
+        if (data.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
           router.push('/login');
           return;
         }
-        throw new Error(errorData.message || 'Failed to upload images');
+        throw new Error(data.message || 'Failed to upload images');
       }
-      const data = await response.json();
       if (data.success) {
         setFormData((prev) => ({
           ...prev,
@@ -136,6 +143,11 @@ export default function WritePost({ existingStory = null }) {
   };
 
   const handleTagsChange = (e) => {
+    if (!e || !e.target) {
+      console.error('Invalid event object in handleTagsChange:', e);
+      return;
+    }
+    console.log('handleTagsChange called with:', e.target.value);
     const tags = e.target.value.split(',').map((tag) => tag.trim()).filter((tag) => tag);
     if (tags.length > 10) {
       setError('Maximum 10 tags allowed.');
@@ -153,6 +165,9 @@ export default function WritePost({ existingStory = null }) {
     setSubmitting(true);
     setError('');
 
+    console.log('userData:', userData);
+    console.log('token:', token);
+
     if (!token) {
       setError('You must be logged in to create a post.');
       router.push('/login');
@@ -169,11 +184,6 @@ export default function WritePost({ existingStory = null }) {
       setSubmitting(false);
       return;
     }
-    if (!formData.imageUrls.length) {
-      setError('At least one image is required.');
-      setSubmitting(false);
-      return;
-    }
     if (formData.link && !validateUrl(formData.link)) {
       setError('Please provide a valid URL for the link.');
       setSubmitting(false);
@@ -186,16 +196,25 @@ export default function WritePost({ existingStory = null }) {
       return;
     }
 
-    // Extract imageId from the first image URL (e.g., /api/images/123 -> 123)
-    const imageId = formData.imageUrls[0]?.match(/\/api\/images\/(\d+)/)?.[1];
-    if (!imageId) {
-      setError('Invalid image ID.');
-      setSubmitting(false);
-      return;
-    }
+    const imageId = formData.imageUrls[0]?.match(/\/api\/images\/(\d+)/)?.[1] || null;
+    console.log('imageUrls:', formData.imageUrls);
+    console.log('imageId:', imageId);
 
     const endpoint = formData.contentType === 'story' ? '/stories' : '/write';
     const strippedDescription = formData.contentType === 'story' ? formData.description.replace(/<[^>]+>/g, '') : formData.description;
+
+    const requestBody = {
+      userId: userData?.id,
+      contentType: formData.contentType,
+      title: formData.title,
+      description: strippedDescription,
+      imageId,
+      link: formData.link,
+      category: formData.category,
+      tags: formData.tags,
+      reading_time: formData.reading_time || '5 min',
+    };
+    console.log('Request body:', requestBody);
 
     try {
       const response = await fetch(`${apiUrl}${endpoint}`, {
@@ -204,16 +223,7 @@ export default function WritePost({ existingStory = null }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          userId: userData?.id,
-          contentType: formData.contentType,
-          title: formData.title,
-          description: strippedDescription,
-          imageId, // Send single imageId
-          link: formData.link,
-          category: formData.category,
-          tags: formData.tags,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -236,6 +246,7 @@ export default function WritePost({ existingStory = null }) {
         link: '',
         tags: [],
         category: 'General',
+        reading_time: '5 min',
       });
       setPreviewImages((prev) => {
         prev.forEach((url) => URL.revokeObjectURL(url));
@@ -401,7 +412,7 @@ export default function WritePost({ existingStory = null }) {
             </AnimatePresence>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Images (up to 5)</label>
+            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Images (up to 5, optional)</label>
             <div
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -492,6 +503,20 @@ export default function WritePost({ existingStory = null }) {
               name="tags"
               onChange={handleTagsChange}
               placeholder="e.g., travel, food, tech"
+              className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
+            />
+          </div>
+          <div>
+            <label htmlFor="reading_time" className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+              Reading Time (e.g., "5 min")
+            </label>
+            <input
+              id="reading_time"
+              type="text"
+              name="reading_time"
+              value={formData.reading_time}
+              onChange={handleChange}
+              placeholder="e.g., 5 min"
               className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
             />
           </div>
