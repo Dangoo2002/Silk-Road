@@ -247,11 +247,11 @@ export default function SocialMediaNav() {
       <AnimatePresence>
         {menuOpen && (
           <motion.nav
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
+            initial={{ x: '-100%', opacity: 1 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-100%', opacity: 1 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="md:hidden fixed top-0 left-0 w-4/5 h-full bg-white dark:bg-gray-900 shadow-2xl dark:shadow-2xl z-50 p-6"
+            className="md:hidden fixed top-0 left-0 w-4/5 h-full bg-white/100 dark:bg-gray-900/100 shadow-2xl dark:shadow-2xl z-50 p-6 isolate"
           >
             <div className="flex justify-between items-center mb-8">
               <Link href="/" className="flex items-center space-x-2 group" onClick={toggleMenu}>
