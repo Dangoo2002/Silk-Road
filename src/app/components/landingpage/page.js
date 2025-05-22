@@ -29,7 +29,7 @@ export default function SocialMediaHome() {
   const [error, setError] = useState('');
   const [viewedPosts, setViewedPosts] = useState(new Set());
 
-  const DEFAULT_IMAGE = 'https://silkroadbackend-production.up.railway.app/api/images/default.jpg';
+  const DEFAULT_IMAGE = '/default.jpg';
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
@@ -51,7 +51,7 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         const newPosts = data.posts
-          .filter(post => Array.isArray(post.imageUrls) && post.imageUrls.length > 0)
+          .filter(post => Array.isArray(post.imageUrls))
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .map(post => ({
             ...post,
@@ -198,8 +198,11 @@ export default function SocialMediaHome() {
       return;
     }
     try {
-      // Fetch users associated with posts/stories (example: user IDs 1, 2, 3)
-      const userIds = [1, 2, 3]; // Replace with dynamic logic (e.g., from posts/stories)
+      // Derive user IDs from posts and stories
+      const userIds = [...new Set([
+        ...posts.map(post => post.userId),
+        ...stories.map(story => story.userId),
+      ])].filter(id => id !== userId).slice(0, 5); // Limit to 5 users
       const users = [];
       for (const id of userIds) {
         const response = await fetch(`${apiUrl}/user/${id}`, {
@@ -225,7 +228,7 @@ export default function SocialMediaHome() {
       console.error('Users error:', error.message);
       setError(`Failed to load users: ${error.message}`);
     }
-  }, [userId, token, apiUrl]);
+  }, [userId, token, apiUrl, posts, stories]);
 
   const fetchSuggestedPosts = useCallback(async () => {
     try {
@@ -240,7 +243,7 @@ export default function SocialMediaHome() {
       const data = await response.json();
       if (data.success) {
         setSuggestedPosts(data.posts
-          .filter(post => Array.isArray(post.imageUrls) && post.imageUrls.length > 0)
+          .filter(post => Array.isArray(post.imageUrls))
           .map(post => ({
             ...post,
             imageUrls: Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
@@ -657,7 +660,6 @@ export default function SocialMediaHome() {
       fetchPosts(1);
       fetchFollowers();
       fetchFollowing();
-      fetchSuggestedUsers();
       fetchSuggestedPosts();
       fetchTrendingTopics();
     }
@@ -668,14 +670,19 @@ export default function SocialMediaHome() {
         fetchPosts(1, true);
         fetchFollowers();
         fetchFollowing();
-        fetchSuggestedUsers();
         fetchSuggestedPosts();
         fetchTrendingTopics();
       }
     }, 7 * 60 * 1000);
 
     return () => clearInterval(refreshInterval);
-  }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics, token]);
+  }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, token]);
+
+  useEffect(() => {
+    if (posts.length > 0 || stories.length > 0) {
+      fetchSuggestedUsers();
+    }
+  }, [posts, stories, fetchSuggestedUsers]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -715,601 +722,374 @@ export default function SocialMediaHome() {
     return () => clearInterval(progressInterval);
   }, [selectedStoryIndex, isPaused, stories.length]);
 
-
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark pt-16">
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       {error && (
-        <div className="fixed top-20 left-0 right-0 mx-auto max-w-md bg-red-600 text-white p-4 rounded-xl shadow-lg z-50">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           {error}
-          <button onClick={() => setError('')} className="ml-2 text-white">
-            <X className="w-4 h-4" />
-          </button>
         </div>
       )}
-      <div className="container mx-auto px-4 py-8 lg:flex lg:gap-6">
-        <div className="lg:w-2/3">
-          {userId && (
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
-              <div className="flex items-center gap-3">
+      {/* Stories Section */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-3">Stories</h2>
+        <div className="flex space-x-4 overflow-x-auto pb-4">
+          {stories.map((story, index) => (
+            <div
+              key={story.id}
+              className="flex-none w-16 cursor-pointer"
+              onClick={async () => {
+                const updatedStory = await fetchStoryById(story.id);
+                if (updatedStory) {
+                  setStories((prev) =>
+                    prev.map((s) => (s.id === story.id ? updatedStory : s))
+                  );
+                  setSelectedStoryIndex(index);
+                }
+              }}
+            >
+              <div className="relative w-16 h-16 rounded-full border-2 border-blue-500">
                 <Image
-                  src={userData?.image || '/user-symbol.jpg'}
-                  alt="User"
-                  width={40}
-                  height={40}
+                  src={story.author_image}
+                  alt={story.author}
+                  fill
                   className="rounded-full object-cover"
-                  onError={(e) => {
-                    console.error(`Failed to load user image: ${userData?.image}`);
-                    e.target.src = '/user-symbol.jpg';
-                  }}
+                  onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
                 />
-                <Link
-                  href="/write"
-                  className="flex-1 p-2 bg-background-light dark:bg-background-dark rounded-full text-gray-500 dark:text-gray-400 text-sm hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
-                >
-                  What's on your mind, {userData?.name || 'User'}?
-                </Link>
               </div>
+              <p className="text-center text-xs mt-1 truncate">{story.author}</p>
             </div>
-          )}
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-heading">Stories</h2>
-            {stories.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No stories available</p>
-            ) : (
-              <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {stories.map((story, index) => (
-                  <div
-                    key={story.id}
-                    className="flex-shrink-0 cursor-pointer group w-20"
-                    onClick={() => openStory(index)}
-                  >
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark p-[2px] group-hover:scale-105 transition-transform duration-350">
-                        <Image
-                          src={story.imageUrls[0]}
-                          alt={story.title || 'Story'}
-                          width={60}
-                          height={60}
-                          className="w-full h-full rounded-full object-cover"
-                          onError={(e) => {
-                            console.error(`Failed to load story thumbnail: ${story.imageUrls[0]}`);
-                            e.target.src = '/default.jpg';
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <p className="mt-2 text-center text-xs font-medium truncate">
-                      {story.author?.split(' ')[0] || 'User'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4 mb-6">
-            <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {suggestedPosts.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
-              ) : (
-                suggestedPosts.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/post/${post.id}`}
-                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
-                  >
-                    <Image
-                      src={post.imageUrls[0]}
-                      alt={post.title || 'Post'}
-                      width={80}
-                      height={60}
-                      className="rounded-xl object-cover"
-                      onError={(e) => {
-                        console.error(`Failed to load suggested post image: ${post.imageUrls[0]}`);
-                        e.target.src = '/default.jpg';
-                      }}
-                    />
-                    <div>
-                      <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {post.category || 'General'} • {post.author || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        <Eye className="inline w-3 h-3 mr-1" />
-                        {post.views || 0} views
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-          <div className="space-y-6">
-            {posts.length === 0 && !isLoading ? (
-              <div className="text-center py-4">
-                <span className="text-gray-500 dark:text-gray-400">No posts available</span>
-              </div>
-            ) : (
-              posts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark hover:shadow-card dark:hover:shadow-card-dark transition-all duration-350 post-container"
-                  data-post-id={post.id}
-                >
-                  <div className="p-4">
-                    <div className="flex items-center gap-3 mb-3">
-                      <Image
-                        src={post.author_image}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load author image: ${post.author_image}`);
-                          e.target.src = '/user-symbol.jpg';
-                        }}
-                      />
-                      <div>
-                        <Link
-                          href={`/profile/${post.userId}`}
-                          className="text-sm font-semibold hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                        >
-                          {post.author || 'Anonymous'}
-                        </Link>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDateTime(post.created_at)} • {post.category || 'General'}
-                        </p>
-                      </div>
-                    </div>
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => togglePostExpand(post.id)}
-                    >
-                      <h2 className="text-lg font-semibold mb-2 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350 font-heading">
-                        {post.title || 'Untitled'}
-                      </h2>
-                      <p
-                        className={`text-sm text-gray-600 dark:text-gray-300 mb-3 transition-all duration-350 ${
-                          expandedPost === post.id ? '' : 'line-clamp-3'
-                        }`}
-                        dangerouslySetInnerHTML={{ __html: post.description || '' }}
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-                        {post.imageUrls.map((url, index) => (
-                          <Image
-                            key={index}
-                            src={url}
-                            alt={`${post.title || 'Post'} image ${index + 1}`}
-                            width={600}
-                            height={400}
-                            className="w-full h-64 rounded-xl object-cover"
-                            onError={(e) => {
-                              console.error(`Failed to load post image: ${url}`);
-                              e.target.src = '/default.jpg';
-                            }}
-                          />
-                        ))}
-                      </div>
-                      {post.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {post.tags.map((tag, index) => (
-                            <span
-                              key={index}
-                              className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                            >
-                              <Tag className="w-3 h-3" />
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-2 mb-3">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => handlePostLike(post.id, post.is_liked)}
-                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-accent-light dark:hover:text-accent-dark transition-colors duration-350"
-                        >
-                          <ThumbsUp
-                            className={`w-5 h-5 ${post.is_liked ? 'fill-accent-light dark:fill-accent-dark text-accent-light dark:text-accent-dark' : ''}`}
-                          />
-                          <span className="text-sm">{post.likes_count || 0}</span>
-                        </button>
-                        <button
-                          onClick={() => toggleComments(post.id)}
-                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                        >
-                          <MessageCircle className="w-5 h-5" />
-                          <span className="text-sm">{post.comments_count || 0}</span>
-                        </button>
-                        <button
-                          onClick={() => handlePostShare(post.id)}
-                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                        >
-                          <Share className="w-5 h-5" />
-                          <span className="text-sm">Share</span>
-                        </button>
-                        {post.link && (
-                          <a
-                            href={post.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                          >
-                            <ExternalLink className="w-5 h-5" />
-                            <span className="text-sm">Link</span>
-                          </a>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                        <Eye className="w-5 h-5" />
-                        <span className="text-sm">{post.views || 0}</span>
-                      </div>
-                    </div>
-                    {showComments[post.id] && (
-                      <div className="mt-3">
-                        <div className="mb-3">
-                          <textarea
-                            value={commentInput[post.id] || ''}
-                            onChange={(e) =>
-                              setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
-                            }
-                            placeholder="Add a comment..."
-                            className="w-full p-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 resize-none"
-                            rows="2"
-                          />
-                          <button
-                            onClick={() => handlePostCommentSubmit(post.id)}
-                            className="mt-2 px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
-                          >
-                            Post
-                          </button>
-                        </div>
-                        <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                          {(comments[post.id] || []).map((comment) => (
-                            <div key={comment.id} className="flex gap-2">
-                              <Image
-                                src={comment.author_image}
-                                alt="User"
-                                width={24}
-                                height={24}
-                                className="rounded-full object-cover"
-                                onError={(e) => {
-                                  console.error(`Failed to load comment author image: ${comment.author_image}`);
-                                  e.target.src = '/user-symbol.jpg';
-                                }}
-                              />
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {formatDateTime(comment.created_at)}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-300">
-                                  {comment.content}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-            {isLoading && (
-              <div className="text-center py-4">
-                <span className="text-gray-500 dark:text-gray-400">Loading...</span>
-              </div>
-            )}
-            {!hasMore && posts.length > 0 && (
-              <div className="text-center py-4">
-                <span className="text-gray-500 dark:text-gray-400">No more posts to load</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="hidden lg:block lg:w-1/3">
-          <div className="sticky top-20 space-y-6">
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
-                <TrendingUp className="w-5 h-5" />
-                Trending Topics
-              </h2>
-              <div className="space-y-3">
-                {trendingTopics.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
-                ) : (
-                  trendingTopics.map((topic) => (
-                    <Link
-                      key={topic.id}
-                      href={`/post/${topic.id}`}
-                      className="block p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
-                    >
-                      <p className="text-sm font-semibold">{topic.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{topic.shares} shares</p>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
-                <UserPlus className="w-5 h-5" />
-                Suggested Users
-              </h2>
-              <div className="space-y-3">
-                {suggestedUsers.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
-                ) : (
-                  suggestedUsers.map((user) => (
-                    <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350">
-                      <Image
-                        src={user.image}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load suggested user image: ${user.image}`);
-                          e.target.src = '/user-symbol.jpg';
-                        }}
-                      />
-                      <div className="flex-1">
-                        <Link
-                          href={`/profile/${user.id}`}
-                          className="text-sm font-semibold hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                        >
-                          {user.name || 'User'}
-                        </Link>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
-                      </div>
-                      <button
-                        onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
-                        className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors duration-350 ${
-                          user.is_followed
-                            ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                            : 'bg-primary-light dark:bg-primary-dark text-white hover:bg-primary-dark dark:hover:bg-primary-light'
-                        }`}
-                      >
-                        {user.is_followed ? (
-                          <>
-                            <UserX className="w-4 h-4" />
-                            Unfollow
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4" />
-                            Follow
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4">
-              <h2 className="text-lg font-semibold mb-4 font-heading">Followers</h2>
-              <div className="space-y-3">
-                {followers.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No followers yet</p>
-                ) : (
-                  followers.map((user) => (
-                    <Link
-                      key={user.id}
-                      href={`/profile/${user.id}`}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
-                    >
-                      <Image
-                        src={user.image}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load follower image: ${user.image}`);
-                          e.target.src = '/user-symbol.jpg';
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
-                      </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark p-4">
-              <h2 className="text-lg font-semibold mb-4 font-heading">Following</h2>
-              <div className="space-y-3">
-                {following.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Not following anyone yet</p>
-                ) : (
-                  following.map((user) => (
-                    <Link
-                      key={user.id}
-                      href={`/profile/${user.id}`}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
-                    >
-                      <Image
-                        src={user.image}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load following image: ${user.image}`);
-                          e.target.src = '/user-symbol.jpg';
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
-                      </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
-      {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
-          <div className="relative w-full max-w-md h-[80vh] bg-surface-light dark:bg-surface-dark rounded-xl overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-600">
+
+      {/* Story Viewer Modal */}
+      {selectedStoryIndex !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+          <button
+            className="absolute top-4 right-4 text-white"
+            onClick={() => setSelectedStoryIndex(null)}
+          >
+            <X size={24} />
+          </button>
+          <div className="relative w-full max-w-md h-[70vh]">
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-300">
               <div
-                className="h-full bg-primary-light dark:bg-primary-dark transition-all duration-100"
+                className="h-full bg-blue-500"
                 style={{ width: `${storyProgress}%` }}
               />
             </div>
+            <div className="w-full h-full overflow-x-auto flex snap-x snap-mandatory">
+              {stories[selectedStoryIndex].imageUrls.map((url, index) => (
+                <Image
+                  key={index}
+                  src={url}
+                  alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
+                  fill
+                  className="object-cover snap-center"
+                  onError={(e) => {
+                    console.error(`Failed to load story image: ${url}`);
+                    e.target.src = DEFAULT_IMAGE;
+                  }}
+                />
+              ))}
+            </div>
+            <div className="absolute bottom-4 left-4 right-4 text-white">
+              <h3 className="text-lg font-semibold">{stories[selectedStoryIndex].title}</h3>
+              <p className="text-sm">By {stories[selectedStoryIndex].author}</p>
+              <div className="flex items-center space-x-4 mt-2">
+                <button
+                  onClick={() => handleStoryLike(stories[selectedStoryIndex].id, stories[selectedStoryIndex].is_liked)}
+                  className="flex items-center space-x-1"
+                >
+                  <ThumbsUp size={20} fill={stories[selectedStoryIndex].is_liked ? 'white' : 'none'} />
+                  <span>{stories[selectedStoryIndex].likes_count}</span>
+                </button>
+                <button
+                  onClick={() => handleStoryShare(stories[selectedStoryIndex].id)}
+                  className="flex items-center space-x-1"
+                >
+                  <Share size={20} />
+                </button>
+                <button
+                  onClick={() => fetchStoryComments(stories[selectedStoryIndex].id)}
+                  className="flex items-center space-x-1"
+                >
+                  <MessageCircle size={20} />
+                  <span>{stories[selectedStoryIndex].comments.length}</span>
+                </button>
+              </div>
+              <div className="mt-2">
+                {stories[selectedStoryIndex].comments.map((comment) => (
+                  <div key={comment.id} className="text-sm">
+                    <span className="font-semibold">{comment.fullName}</span>: {comment.content}
+                  </div>
+                ))}
+                <div className="flex mt-2">
+                  <input
+                    type="text"
+                    value={storyCommentInput}
+                    onChange={(e) => setStoryCommentInput(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-transparent border-b border-white text-white placeholder-gray-300"
+                  />
+                  <button
+                    onClick={() => handleStoryCommentSubmit(stories[selectedStoryIndex].id)}
+                    className="ml-2 text-blue-400"
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            </div>
             <button
-              onClick={closeStory}
-              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors duration-350"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            <button
-              onClick={goToPrevStory}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white"
+              onClick={() => setSelectedStoryIndex((prev) => Math.max(0, prev - 1))}
               disabled={selectedStoryIndex === 0}
             >
-              <ChevronLeft className="w-8 h-8" />
+              <ChevronLeft size={32} />
             </button>
             <button
-              onClick={goToNextStory}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors duration-350"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white"
+              onClick={() => setSelectedStoryIndex((prev) => Math.min(stories.length - 1, prev + 1))}
               disabled={selectedStoryIndex === stories.length - 1}
             >
-              <ChevronRight className="w-8 h-8" />
+              <ChevronRight size={32} />
             </button>
-            <div className="relative h-[60%]">
-              <div className="w-full h-full overflow-x-auto flex snap-x snap-mandatory">
-                {stories[selectedStoryIndex].imageUrls.map((url, index) => (
+            <button
+              className="absolute bottom-4 right-4 text-white"
+              onClick={() => setIsPaused((prev) => !prev)}
+            >
+              {isPaused ? 'Play' : 'Pause'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {/* Posts */}
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="bg-white rounded-xl shadow-md mb-6 p-6"
+              ref={(el) => {
+                if (el) {
+                  const observer = new IntersectionObserver(
+                    ([entry]) => {
+                      if (entry.isIntersecting) {
+                        trackPostView(post.id);
+                        observer.unobserve(el);
+                      }
+                    },
+                    { threshold: 0.5 }
+                  );
+                  observer.observe(el);
+                }
+              }}
+            >
+              <div className="flex items-center mb-4">
+                <Image
+                  src={post.author_image}
+                  alt={post.author}
+                  width={40}
+                  height={40}
+                  className="rounded-full mr-3"
+                  onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
+                />
+                <div>
+                  <Link href={`/profile/${post.userId}`}>
+                    <span className="font-semibold hover:underline">{post.author}</span>
+                  </Link>
+                  <p className="text-gray-500 text-sm">
+                    {new Date(post.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <Link href={`/post/${post.id}`}>
+                <h3 className="text-xl font-semibold mb-2 hover:underline">{post.title}</h3>
+              </Link>
+              <p
+                className="text-gray-700 mb-4"
+                dangerouslySetInnerHTML={{
+                  __html: expandedPost === post.id ? post.description : post.description.slice(0, 200) + (post.description.length > 200 ? '...' : ''),
+                }}
+              />
+              {post.description.length > 200 && (
+                <button
+                  className="text-blue-500 mb-4"
+                  onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
+                >
+                  {expandedPost === post.id ? 'Show Less' : 'Read More'}
+                </button>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                {post.imageUrls.map((url, index) => (
                   <Image
                     key={index}
                     src={url}
-                    alt={`${stories[selectedStoryIndex].title || 'Story'} image ${index + 1}`}
-                    fill
-                    className="object-cover snap-center"
+                    alt={`${post.title || 'Post'} image ${index + 1}`}
+                    width={600}
+                    height={400}
+                    className="w-full h-64 rounded-xl object-cover"
                     onError={(e) => {
-                      console.error(`Failed to load story image: ${url}`);
-                      e.target.src = '/default.jpg';
+                      console.error(`Failed to load post image: ${url}`);
+                      e.target.src = DEFAULT_IMAGE;
                     }}
                   />
                 ))}
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-                <h3 className="text-white text-lg font-semibold">{stories[selectedStoryIndex].title || 'Untitled'}</h3>
-                <p className="text-white/80 text-sm line-clamp-2">{stories[selectedStoryIndex].description || ''}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Link
-                    href={`/profile/${stories[selectedStoryIndex].userId}`}
-                    className="text-white text-sm font-medium hover:text-primary-light transition-colors duration-350"
-                  >
-                    {stories[selectedStoryIndex].author || 'Anonymous'}
-                  </Link>
-                  <span className="text-white/70 text-xs">{formatDateTime(stories[selectedStoryIndex].created_at)}</span>
-                  {stories[selectedStoryIndex].category && (
-                    <span className="text-white/70 text-xs">• {stories[selectedStoryIndex].category}</span>
-                  )}
-                </div>
-                {stories[selectedStoryIndex].tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {stories[selectedStoryIndex].tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                      >
-                        <Tag className="w-3 h-3" />
-                        {tag}
-                      </span>
-                    ))}
+              <div className="flex items-center justify-between text-gray-500">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <Eye size={20} className="mr-1" />
+                    <span>{post.views || 0}</span>
                   </div>
-                )}
-              </div>
-            </div>
-            <div className="p-4 h-[40%] flex flex-col">
-              <div className="flex items-center gap-4 mb-4">
-                <button
-                  onClick={() => handleStoryLike(stories[selectedStoryIndex].id, stories[selectedStoryIndex].is_liked)}
-                  className="flex items-center gap-1 text-white hover:text-accent-light transition-colors duration-350"
-                >
-                  <ThumbsUp
-                    className={`w-5 h-5 ${stories[selectedStoryIndex].is_liked ? 'fill-accent-light text-accent-light' : ''}`}
-                  />
-                  <span className="text-sm">{stories[selectedStoryIndex].likes_count || 0}</span>
-                </button>
-                <button
-                  onClick={() => handleStoryShare(stories[selectedStoryIndex].id)}
-                  className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
-                >
-                  <Share className="w-5 h-5" />
-                  <span className="text-sm">Share</span>
-                </button>
-                {stories[selectedStoryIndex].link && (
-                  <a
-                    href={stories[selectedStoryIndex].link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-white hover:text-primary-light transition-colors duration-350"
+                  <button
+                    onClick={() => handlePostLike(post.id, post.is_liked)}
+                    className="flex items-center"
                   >
-                    <ExternalLink className="w-5 h-5" />
-                    <span className="text-sm">Link</span>
-                  </a>
+                    <ThumbsUp size={20} fill={post.is_liked ? 'blue' : 'none'} className="mr-1" />
+                    <span>{post.likes_count || 0}</span>
+                  </button>
+                  <button
+                    onClick={() => setShowComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                    className="flex items-center"
+                  >
+                    <MessageCircle size={20} className="mr-1" />
+                    <span>{post.comments_count || 0}</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => handlePostShare(post.id)}
+                  className="flex items-center"
+                >
+                  <Share size={20} />
+                </button>
+              </div>
+              {showComments[post.id] && (
+                <div className="mt-4">
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={commentInput[post.id] || ''}
+                      onChange={(e) =>
+                        setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
+                      }
+                      placeholder="Add a comment..."
+                      className="w-full p-2 border rounded"
+                    />
+                    <button
+                      onClick={() => handlePostCommentSubmit(post.id)}
+                      className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+                    >
+                      Post Comment
+                    </button>
+                  </div>
+                  {(comments[post.id] || []).map((comment) => (
+                    <div key={comment.id} className="flex items-start mb-2">
+                      <Image
+                        src={comment.author_image}
+                        alt={comment.fullName}
+                        width={24}
+                        height={24}
+                        className="rounded-full mr-2"
+                        onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
+                      />
+                      <div>
+                        <span className="font-semibold">{comment.fullName}</span>
+                        <p className="text-gray-700">{comment.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {isLoading && <p className="text-center">Loading more posts...</p>}
+          {!hasMore && posts.length > 0 && (
+            <p className="text-center text-gray-500">No more posts to load</p>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          {/* Suggested Users */}
+          <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+            <h3 className="text-lg font-semibold mb-3">Suggested Users</h3>
+            {suggestedUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <Image
+                    src={user.image}
+                    alt={user.name}
+                    width={32}
+                    height={32}
+                    className="rounded-full mr-2"
+                    onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
+                  />
+                  <Link href={`/profile/${user.id}`}>
+                    <span className="font-semibold hover:underline">{user.name}</span>
+                  </Link>
+                </div>
+                {user.is_followed ? (
+                  <button
+                    onClick={() => handleUnfollow(user.id)}
+                    className="flex items-center text-gray-500 hover:text-red-500"
+                  >
+                    <UserX size={20} className="mr-1" />
+                    Unfollow
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleFollow(user.id)}
+                    className="flex items-center text-blue-500 hover:text-blue-700"
+                  >
+                    <UserPlus size={20} className="mr-1" />
+                    Follow
+                  </button>
                 )}
               </div>
-              <div className="space-y-2 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 mb-4">
-                {(stories[selectedStoryIndex].comments || []).map((comment) => (
-                  <div key={comment.id} className="flex gap-2">
+            ))}
+          </div>
+
+          {/* Trending Topics */}
+          <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+            <h3 className="text-lg font-semibold mb-3">Trending Topics</h3>
+            {trendingTopics.map((topic) => (
+              <div key={topic.id} className="flex items-center mb-2">
+                <TrendingUp size={20} className="mr-2 text-blue-500" />
+                <span>{topic.name} ({topic.shares} shares)</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Suggested Posts */}
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-semibold mb-3">Suggested Posts</h3>
+            {suggestedPosts.map((post) => (
+              <div key={post.id} className="mb-4">
+                <Link href={`/post/${post.id}`}>
+                  <div className="flex items-center">
                     <Image
-                      src={comment.author_image}
-                      alt="User"
-                      width={24}
-                      height={24}
-                      className="rounded-full object-cover"
-                      onError={(e) => {
-                        console.error(`Failed to load comment author image: ${comment.author_image}`);
-                        e.target.src = '/user-symbol.jpg';
-                      }}
+                      src={post.imageUrls[0]}
+                      alt={post.title}
+                      width={60}
+                      height={60}
+                      className="rounded mr-2"
+                      onError={(e) => { e.target.src = DEFAULT_IMAGE; }}
                     />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-sm font-medium">{comment.fullName || 'User'}</span>
-                        <span className="text-white/70 text-xs">
-                          {formatDateTime(comment.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-white/90 text-sm">{comment.content}</p>
+                    <div>
+                      <h4 className="font-semibold hover:underline">{post.title}</h4>
+                      <p className="text-gray-500 text-sm">{post.author}</p>
                     </div>
                   </div>
-                ))}
+                </Link>
               </div>
-              <div className="flex gap-2 mt-auto">
-                <input
-                  type="text"
-                  value={storyCommentInput}
-                  onChange={(e) => setStoryCommentInput(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 p-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark rounded-full focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350"
-                  onFocus={() => setIsPaused(true)}
-                  onBlur={() => setIsPaused(false)}
-                />
-                <button
-                  onClick={() => handleStoryCommentSubmit(stories[selectedStoryIndex].id)}
-                  className="px-4 py-1 bg-primary-light dark:bg-primary-dark text-white rounded-full hover:bg-primary-dark dark:hover:bg-primary-light transition-colors duration-350 text-sm"
-                >
-                  Send
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
