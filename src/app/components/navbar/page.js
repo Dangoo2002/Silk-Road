@@ -62,18 +62,27 @@ export default function SocialMediaNav() {
   };
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark shadow-card dark:shadow-card-dark transition-colors duration-350">
+    <div className="fixed top-0 left-0 w-full z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
       {loading && <Loader />}
-      <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/">
-          <Image
-            src="/silkroadlogo.jpeg"
-            alt="SocialSphere Logo"
-            width={120}
-            height={40}
-            className="object-contain"
-          />
+      <div className="container mx-auto px-4 py-3 flex items-center justify-between h-full">
+        {/* Logo and Title */}
+        <Link href="/" className="flex items-center gap-2 max-h-14">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Image
+              src="/silkroadlogo.jpeg"
+              alt="Silk Road Blogs Logo"
+              width={80}
+              height={32}
+              className="object-contain"
+              priority
+            />
+          </motion.div>
+          <span className="text-sm font-bold tracking-tight lowercase text-black font-poppins hover:underline hover:underline-offset-4 hover:decoration-indigo-500 transition-all duration-300 dark:text-black">
+            silk road blogs
+          </span>
         </Link>
 
         {/* Search Bar (Desktop) */}
@@ -83,7 +92,7 @@ export default function SocialMediaNav() {
             <input
               type="text"
               placeholder="Search posts, people..."
-              className="w-full pl-10 pr-4 py-2 rounded-full bg-surface-light dark:bg-surface-dark text-text-light dark:text-text-dark border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors text-sm"
+              className="w-full pl-10 pr-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-colors text-sm"
             />
           </div>
         </div>
@@ -92,31 +101,31 @@ export default function SocialMediaNav() {
         <div className="flex items-center gap-2 md:hidden">
           <button
             onClick={toggleSearch}
-            className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Toggle search"
           >
-            <MagnifyingGlassIcon className="h-6 w-6" />
+            <MagnifyingGlassIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
           </button>
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? (
-              <MoonIcon className="h-6 w-6" />
+              <MoonIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             ) : (
-              <SunIcon className="h-6 w-6" />
+              <SunIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             )}
           </button>
           <button
             onClick={toggleMenu}
-            className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Toggle menu"
           >
             {menuOpen ? (
-              <XMarkIcon className="h-6 w-6" />
+              <XMarkIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             ) : (
-              <Bars3Icon className="h-6 w-6" />
+              <Bars3Icon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             )}
           </button>
         </div>
@@ -125,20 +134,20 @@ export default function SocialMediaNav() {
         <nav className="hidden md:flex items-center gap-4">
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             aria-label="Toggle theme"
           >
             {theme === 'light' ? (
-              <MoonIcon className="h-6 w-6" />
+              <MoonIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             ) : (
-              <SunIcon className="h-6 w-6" />
+              <SunIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
             )}
           </button>
           <Link
             href="/notifications"
-            className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <BellIcon className="h-6 w-6" />
+            <BellIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
           </Link>
           {isLoggedIn ? (
             <div className="relative">
@@ -147,11 +156,11 @@ export default function SocialMediaNav() {
                 onClick={toggleDropdown}
               >
                 <div className="relative">
-                  <UserCircleIcon className="h-8 w-8 rounded-full bg-surface-light dark:bg-surface-dark p-1" />
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-accent-light dark:bg-accent-dark rounded-full border-2 border-surface-light dark:border-surface-dark"></span>
+                  <UserCircleIcon className="h-8 w-8 rounded-full bg-white/50 dark:bg-gray-800/50 p-1 text-gray-600 dark:text-gray-300" />
+                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-indigo-500 dark:bg-purple-500 rounded-full border-2 border-white dark:border-gray-800"></span>
                 </div>
-                <span className="text-sm font-medium">{userData?.name || 'User'}</span>
-                <ChevronDownIcon className={`h-4 w-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{userData?.name || 'User'}</span>
+                <ChevronDownIcon className={`h-4 w-4 text-gray-600 dark:text-gray-300 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </div>
               <AnimatePresence>
                 {dropdownOpen && (
@@ -159,23 +168,23 @@ export default function SocialMediaNav() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full right-0 mt-2 w-48 bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md text-text-light dark:text-text-dark rounded-lg shadow-card dark:shadow-card-dark border border-gray-200 dark:border-gray-600 p-2 z-50"
+                    className="absolute top-full right-0 mt-2 w-48 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-2 z-50"
                   >
                     <Link
                       href={`/profile/${userData?.id}`}
-                      className="block px-4 py-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-md transition-colors text-sm"
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm"
                     >
                       Profile
                     </Link>
                     <button
                       onClick={handleAccountRedirect}
-                      className="w-full text-left px-4 py-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-md transition-colors text-sm"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm"
                     >
                       Account
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 hover:bg-surface-light dark:hover:bg-surface-dark rounded-md transition-colors text-red-500 text-sm"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-red-500 text-sm"
                     >
                       Logout
                     </button>
@@ -187,13 +196,13 @@ export default function SocialMediaNav() {
             <>
               <Link
                 href="/login"
-                className="px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               >
                 Login
               </Link>
               <Link
                 href="/signup"
-                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark text-white hover:from-primary-dark hover:to-secondary-dark rounded-xl transition-colors"
+                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-colors"
               >
                 Sign Up
               </Link>
@@ -201,7 +210,7 @@ export default function SocialMediaNav() {
           )}
           <Link
             href="/write"
-            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark text-white hover:from-primary-dark hover:to-secondary-dark rounded-xl transition-colors"
+            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-colors"
           >
             Post
           </Link>
@@ -216,14 +225,14 @@ export default function SocialMediaNav() {
             animate={{ scaleX: 1, opacity: 1 }}
             exit={{ scaleX: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden px-4 py-2 bg-surface-light dark:bg-surface-dark border-t border-gray-300 dark:border-gray-600"
+            className="md:hidden px-4 py-2 bg-white/80 dark:bg-gray-900/80 border-t border-gray-300 dark:border-gray-600"
           >
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search posts, people..."
-                className="w-full pl-10 pr-4 py-2 rounded-full bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors text-sm"
+                className="w-full pl-10 pr-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-colors text-sm"
               />
             </div>
           </motion.div>
@@ -238,29 +247,34 @@ export default function SocialMediaNav() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3 }}
-            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-surface-light dark:bg-surface-dark shadow-card dark:shadow-card-dark z-50 p-4"
+            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/90 dark:bg-gray-800/90 backdrop-blur-md shadow-lg dark:shadow-xl z-50 p-4"
           >
             <div className="flex justify-between items-center mb-6">
-              <Image
-                src="/silkroadlogo.jpeg"
-                alt="SocialSphere Logo"
-                width={100}
-                height={32}
-                className="object-contain"
-              />
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/silkroadlogo.jpeg"
+                  alt="Silk Road Blogs Logo"
+                  width={80}
+                  height={32}
+                  className="object-contain"
+                />
+                <span className="text-sm font-bold tracking-tight lowercase text-black font-poppins">
+                  silk road blogs
+                </span>
+              </Link>
               <button
                 onClick={toggleMenu}
-                className="p-2 rounded-full hover:bg-surface-light dark:hover:bg-surface-dark transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 aria-label="Close menu"
               >
-                <XMarkIcon className="h-6 w-6" />
+                <XMarkIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
             <ul className="flex flex-col gap-4 items-center">
               <li>
                 <Link
                   href="/notifications"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors text-text-light dark:text-text-dark"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                   onClick={toggleMenu}
                 >
                   <BellIcon className="h-5 w-5" />
@@ -272,7 +286,7 @@ export default function SocialMediaNav() {
                   <li>
                     <Link
                       href={`/profile/${userData?.id}`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors text-text-light dark:text-text-dark"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                       onClick={toggleMenu}
                     >
                       <UserCircleIcon className="h-5 w-5" />
@@ -285,7 +299,7 @@ export default function SocialMediaNav() {
                         handleAccountRedirect();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors w-full text-left text-text-light dark:text-text-dark"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors w-full text-left text-gray-900 dark:text-gray-100"
                     >
                       <UserCircleIcon className="h-5 w-5" />
                       Account
@@ -297,7 +311,7 @@ export default function SocialMediaNav() {
                         handleLogout();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors text-red-500 w-full text-left"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-red-500 w-full text-left"
                     >
                       <UserCircleIcon className="h-5 w-5" />
                       Logout
@@ -309,7 +323,7 @@ export default function SocialMediaNav() {
                   <li>
                     <Link
                       href="/login"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-surface-light dark:hover:bg-surface-dark rounded-full transition-colors text-text-light dark:text-text-dark"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                       onClick={toggleMenu}
                     >
                       Login
@@ -318,7 +332,7 @@ export default function SocialMediaNav() {
                   <li>
                     <Link
                       href="/signup"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark text-white hover:from-primary-dark hover:to-secondary-dark rounded-full transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-full transition-colors"
                       onClick={toggleMenu}
                     >
                       Sign Up
@@ -329,7 +343,7 @@ export default function SocialMediaNav() {
               <li>
                 <Link
                   href="/write"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark text-white hover:from-primary-dark hover:to-secondary-dark rounded-full transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-full transition-colors"
                   onClick={toggleMenu}
                 >
                   Post
