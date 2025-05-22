@@ -32,7 +32,6 @@ export default function SocialMediaHome() {
   const PLACEHOLDER_IMAGE = '/api/placeholder/400/300';
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
-  // Fetch posts
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
       setError('Authentication required. Please log in again.');
@@ -47,21 +46,17 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch posts error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch posts');
       }
       const data = await response.json();
       if (data.success) {
-        const newPosts = data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(post => {
-          console.log('Post data:', post); // Debug post data
-          return {
-            ...post,
-            image: post.imageUrl || PLACEHOLDER_IMAGE,
-            author_image: post.author_image || '/user-symbol.jpg',
-            author: post.author || 'Anonymous',
-            created_at: post.created_at || new Date().toISOString(),
-          };
-        });
+        const newPosts = data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(post => ({
+          ...post,
+          image: post.imageUrl || PLACEHOLDER_IMAGE,
+          author_image: post.author_image || '/user-symbol.jpg',
+          author: post.author || 'Anonymous',
+          created_at: post.created_at || new Date().toISOString(),
+        }));
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
         const commentsData = {};
@@ -81,14 +76,12 @@ export default function SocialMediaHome() {
         setComments((prev) => (isRefresh ? commentsData : { ...prev, ...commentsData }));
       }
     } catch (error) {
-      console.error('Error fetching posts:', error.message);
       setError('Failed to load posts. Please try again.');
     } finally {
       setIsLoading(false);
     }
   }, [token, apiUrl, userId, PLACEHOLDER_IMAGE]);
 
-  // Fetch stories
   const fetchStories = useCallback(async () => {
     if (!userId || !token) return;
     try {
@@ -98,7 +91,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch stories error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch stories');
       }
       const data = await response.json();
@@ -114,12 +106,10 @@ export default function SocialMediaHome() {
         setStories(storiesWithUserLikes);
       }
     } catch (error) {
-      console.error('Error fetching stories:', error);
       setError('Failed to load stories. Please try again.');
     }
   }, [userId, token, apiUrl, PLACEHOLDER_IMAGE]);
 
-  // Fetch story comments
   const fetchStoryComments = useCallback(async (storyId) => {
     if (!token) {
       setError('Authentication required. Please log in again.');
@@ -151,12 +141,10 @@ export default function SocialMediaHome() {
         );
       }
     } catch (error) {
-      console.error('Error fetching story comments:', error);
       setError('Failed to load story comments. Please try again.');
     }
   }, [token, apiUrl]);
 
-  // Fetch suggested posts
   const fetchSuggestedPosts = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/suggested-posts?limit=5&userId=${userId}`, {
@@ -165,7 +153,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch suggested posts error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch suggested posts');
       }
       const data = await response.json();
@@ -176,15 +163,13 @@ export default function SocialMediaHome() {
           author_image: post.author_image || '/user-symbol.jpg',
           author: post.author || 'Anonymous',
           created_at: post.created_at || new Date().toISOString(),
-        })));
+        }));
       }
     } catch (error) {
-      console.error('Error fetching suggested posts:', error);
       setError('Failed to load suggested posts. Please try again.');
     }
   }, [token, apiUrl, userId, PLACEHOLDER_IMAGE]);
 
-  // Fetch suggested users
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId || !token) {
       setError('Authentication required to fetch suggested users.');
@@ -197,7 +182,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch suggested users error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch suggested users');
       }
       const data = await response.json();
@@ -206,15 +190,13 @@ export default function SocialMediaHome() {
           ...user,
           image: user.image || '/user-symbol.jpg',
           is_followed: !!user.is_followed,
-        })));
+        }));
       }
     } catch (error) {
-      console.error('Error fetching suggested users:', error);
       setError('Failed to load suggested users. Please try again.');
     }
   }, [userId, token, apiUrl]);
 
-  // Fetch trending topics
   const fetchTrendingTopics = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/trending-topics?limit=3`, {
@@ -223,7 +205,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch trending topics error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch trending topics');
       }
       const data = await response.json();
@@ -237,7 +218,6 @@ export default function SocialMediaHome() {
         ]);
       }
     } catch (error) {
-      console.error('Error fetching trending topics:', error);
       setTrendingTopics([
         { id: 1, name: 'AI in Africa', shares: 1500 },
         { id: 2, name: 'Kenya Elections', shares: 1200 },
@@ -246,7 +226,6 @@ export default function SocialMediaHome() {
     }
   }, [token, apiUrl]);
 
-  // Fetch followers
   const fetchFollowers = useCallback(async () => {
     if (!userId || !token) {
       setError('Authentication required to fetch followers.');
@@ -259,7 +238,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch followers error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch followers');
       }
       const data = await response.json();
@@ -267,15 +245,13 @@ export default function SocialMediaHome() {
         setFollowers(data.followers.slice(0, 5).map(user => ({
           ...user,
           image: user.image || '/user-symbol.jpg',
-        })));
+        }));
       }
     } catch (error) {
-      console.error('Error fetching followers:', error);
       setError('Failed to load followers. Please try again.');
     }
   }, [userId, token, apiUrl]);
 
-  // Fetch following
   const fetchFollowing = useCallback(async () => {
     if (!userId || !token) {
       setError('Authentication required to fetch following.');
@@ -288,7 +264,6 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Fetch following error:', errorData, response.status);
         throw new Error(errorData.message || 'Failed to fetch following');
       }
       const data = await response.json();
@@ -296,15 +271,13 @@ export default function SocialMediaHome() {
         setFollowing(data.following.slice(0, 5).map(user => ({
           ...user,
           image: user.image || '/user-symbol.jpg',
-        })));
+        }));
       }
     } catch (error) {
-      console.error('Error fetching following:', error);
       setError('Failed to load following. Please try again.');
     }
   }, [userId, token, apiUrl]);
 
-  // Track post view
   const trackPostView = useCallback(async (postId) => {
     if (!userId || !token || viewedPosts.has(postId)) return;
     try {
@@ -317,23 +290,23 @@ export default function SocialMediaHome() {
         body: JSON.stringify({ postId, userId }),
       });
       if (response.ok) {
-        setViewedPosts((prev) => {
-          const newSet = new Set(prev);
-          newSet.add(postId);
-          return newSet;
-        });
+        setViewedPosts((prev) => new Set(prev).add(postId));
         setPosts((prev) =>
           prev.map((post) =>
             post.id === postId ? { ...post, views: (post.views || 0) + 1 } : post
           )
         );
+      } else {
+        const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+        }
       }
     } catch (error) {
-      console.error('Error tracking post view:', error);
+      setError('Error tracking post view. Please try again.');
     }
   }, [userId, token, viewedPosts, apiUrl]);
 
-  // Handle follow
   const handleFollow = useCallback(async (followId) => {
     if (!userId || !token) {
       setError('Please log in to follow users');
@@ -350,6 +323,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to follow user');
       }
       setSuggestedUsers((prev) =>
@@ -361,12 +338,10 @@ export default function SocialMediaHome() {
       fetchStories();
       fetchPosts(1, true);
     } catch (error) {
-      console.error('Error following user:', error);
       setError('An error occurred while following user');
     }
   }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
-  // Handle unfollow
   const handleUnfollow = useCallback(async (followId) => {
     if (!userId || !token) {
       setError('Please log in to unfollow users');
@@ -383,6 +358,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to unfollow user');
       }
       setSuggestedUsers((prev) =>
@@ -394,12 +373,10 @@ export default function SocialMediaHome() {
       fetchStories();
       fetchPosts(1, true);
     } catch (error) {
-      console.error('Error unfollowing user:', error);
       setError('An error occurred while unfollowing user');
     }
   }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
-  // Handle story like
   const handleStoryLike = useCallback(async (storyId, isLiked) => {
     if (!userId || !token) {
       setError('Please log in to like a story');
@@ -416,6 +393,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to update story like');
       }
       setStories((prev) =>
@@ -430,12 +411,10 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      console.error('Error liking/unliking story:', error);
       setError('An error occurred while updating story like');
     }
   }, [userId, token, apiUrl]);
 
-  // Handle story share
   const handleStoryShare = useCallback((storyId) => {
     if (!navigator.clipboard) {
       setError('Clipboard API not supported in this browser');
@@ -446,12 +425,10 @@ export default function SocialMediaHome() {
       setError('');
       alert('Story URL copied to clipboard!');
     }).catch((err) => {
-      console.error('Failed to copy URL:', err);
       setError('Failed to copy story URL');
     });
   }, []);
 
-  // Handle story comment
   const handleStoryCommentSubmit = useCallback(async (storyId) => {
     if (!userId || !token) {
       setError('Please log in to comment');
@@ -473,6 +450,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to post comment');
       }
       const result = await response.json();
@@ -494,14 +475,12 @@ export default function SocialMediaHome() {
         )
       );
       setStoryCommentInput('');
-      fetchStoryComments(storyId); // Refresh comments
+      fetchStoryComments(storyId);
     } catch (error) {
-      console.error('Error posting comment:', error);
       setError('An error occurred while posting comment');
     }
   }, [userId, token, storyCommentInput, userData, apiUrl, fetchStoryComments]);
 
-  // Handle post like
   const handlePostLike = useCallback(async (postId, isLiked) => {
     if (!userId || !token) {
       setError('Please log in to like a post');
@@ -518,6 +497,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to update post like');
       }
       setPosts((prev) =>
@@ -532,12 +515,10 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      console.error('Error liking/unliking post:', error);
       setError('An error occurred while updating post like');
     }
   }, [userId, token, apiUrl]);
 
-  // Handle post share
   const handlePostShare = useCallback((postId) => {
     if (!navigator.clipboard) {
       setError('Clipboard API not supported in this browser');
@@ -548,12 +529,10 @@ export default function SocialMediaHome() {
       setError('');
       alert('Post URL copied to clipboard!');
     }).catch((err) => {
-      console.error('Failed to copy URL:', err);
       setError('Failed to copy post URL');
     });
   }, []);
 
-  // Handle post comment
   const handlePostCommentSubmit = useCallback(async (postId) => {
     if (!userId || !token) {
       setError('Please log in to comment');
@@ -575,6 +554,10 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.message === 'No token provided' || errorData.message === 'Invalid token') {
+          setError('Your session has expired. Please log in again.');
+          return;
+        }
         throw new Error(errorData.message || 'Failed to post comment');
       }
       const result = await response.json();
@@ -593,12 +576,10 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      console.error('Error posting comment:', error);
       setError('An error occurred while posting comment');
     }
   }, [userId, token, commentInput, userData, apiUrl]);
 
-  // Initial fetch and refresh
   useEffect(() => {
     if (token) {
       fetchStories();
@@ -625,7 +606,6 @@ export default function SocialMediaHome() {
     return () => clearInterval(refreshInterval);
   }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics, token]);
 
-  // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
       if (
@@ -645,7 +625,6 @@ export default function SocialMediaHome() {
     if (page > 1 && token) fetchPosts(page);
   }, [page, fetchPosts, token]);
 
-  // Story progress
   useEffect(() => {
     if (selectedStoryIndex === null || isPaused) return;
     const progressInterval = setInterval(() => {
@@ -665,7 +644,6 @@ export default function SocialMediaHome() {
     return () => clearInterval(progressInterval);
   }, [selectedStoryIndex, isPaused, stories.length]);
 
-  // Track post views on visibility
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -766,8 +744,7 @@ export default function SocialMediaHome() {
                   height={40}
                   className="rounded-full object-cover"
                   onError={(e) => {
-                    const target = e.target;
-                    target.src = '/user-symbol.jpg';
+                    e.target.src = '/user-symbol.jpg';
                   }}
                 />
                 <Link
@@ -800,8 +777,7 @@ export default function SocialMediaHome() {
                           height={60}
                           className="w-full h-full rounded-full object-cover"
                           onError={(e) => {
-                            const target = e.target;
-                            target.src = PLACEHOLDER_IMAGE;
+                            e.target.src = PLACEHOLDER_IMAGE;
                           }}
                         />
                       </div>
@@ -833,8 +809,7 @@ export default function SocialMediaHome() {
                       height={60}
                       className="rounded-xl object-cover"
                       onError={(e) => {
-                        const target = e.target;
-                        target.src = PLACEHOLDER_IMAGE;
+                        e.target.src = PLACEHOLDER_IMAGE;
                       }}
                     />
                     <div>
@@ -873,8 +848,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
-                          const target = e.target;
-                          target.src = '/user-symbol.jpg';
+                          e.target.src = '/user-symbol.jpg';
                         }}
                       />
                       <div>
@@ -910,8 +884,7 @@ export default function SocialMediaHome() {
                           height={400}
                           className="w-full h-64 rounded-xl object-cover mb-3"
                           onError={(e) => {
-                            const target = e.target;
-                            target.src = PLACEHOLDER_IMAGE;
+                            e.target.src = PLACEHOLDER_IMAGE;
                           }}
                         />
                       )}
@@ -976,8 +949,7 @@ export default function SocialMediaHome() {
                                 height={24}
                                 className="rounded-full object-cover"
                                 onError={(e) => {
-                                  const target = e.target;
-                                  target.src = '/user-symbol.jpg';
+                                  e.target.src = '/user-symbol.jpg';
                                 }}
                               />
                               <div className="flex-1">
@@ -1054,8 +1026,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
-                          const target = e.target;
-                          target.src = '/user-symbol.jpg';
+                          e.target.src = '/user-symbol.jpg';
                         }}
                       />
                       <div className="flex-1">
@@ -1111,8 +1082,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
-                          const target = e.target;
-                          target.src = '/user-symbol.jpg';
+                          e.target.src = '/user-symbol.jpg';
                         }}
                       />
                       <div>
@@ -1143,8 +1113,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
-                          const target = e.target;
-                          target.src = '/user-symbol.jpg';
+                          e.target.src = '/user-symbol.jpg';
                         }}
                       />
                       <div>
@@ -1195,8 +1164,7 @@ export default function SocialMediaHome() {
                 fill
                 className="object-cover"
                 onError={(e) => {
-                  const target = e.target;
-                  target.src = PLACEHOLDER_IMAGE;
+                  e.target.src = PLACEHOLDER_IMAGE;
                 }}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
@@ -1253,8 +1221,7 @@ export default function SocialMediaHome() {
                       height={24}
                       className="rounded-full object-cover"
                       onError={(e) => {
-                        const target = e.target;
-                        target.src = '/user-symbol.jpg';
+                        e.target.src = '/user-symbol.jpg';
                       }}
                     />
                     <div className="flex-1">
@@ -1287,12 +1254,6 @@ export default function SocialMediaHome() {
                 </button>
               </div>
             </div>
-            <button
-              onClick={togglePause}
-              className="absolute bottom-4 left-4 text-white hover:text-gray-300 transition-colors duration-350"
-            >
-              {isPaused ? 'Play' : 'Pause'}
-            </button>
           </div>
         </div>
       )}
