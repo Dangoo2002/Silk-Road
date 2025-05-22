@@ -251,7 +251,7 @@ export default function SocialMediaNav() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3 }}
-            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg dark:shadow-xl z-50 p-4"
+            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-2xl dark:shadow-2xl z-50 p-4 border-r border-gray-200/50 dark:border-gray-700/50"
           >
             <div className="flex justify-between items-center mb-6">
               <Link href="/" className="flex items-center space-x-2 group">
@@ -277,7 +277,7 @@ export default function SocialMediaNav() {
               </Link>
               <button
                 onClick={toggleMenu}
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-100/80 dark:hover:bg-gray-700/80 transition-colors"
                 aria-label="Close menu"
               >
                 <XMarkIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
@@ -287,7 +287,7 @@ export default function SocialMediaNav() {
               <li>
                 <Link
                   href="/notifications"
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                   onClick={toggleMenu}
                 >
                   <BellIcon className="h-5 w-5" />
@@ -299,7 +299,7 @@ export default function SocialMediaNav() {
                   <li>
                     <Link
                       href={`/profile/${userData?.id}`}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                       onClick={toggleMenu}
                     >
                       <UserCircleIcon className="h-5 w-5"/>
@@ -312,7 +312,7 @@ export default function SocialMediaNav() {
                         handleAccountRedirect();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors w-full text-left text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-full transition-colors w-full text-left text-gray-900 dark:text-gray-100"
                     >
                       <UserCircleIcon className="h-5 w-5" />
                       Account
@@ -324,7 +324,7 @@ export default function SocialMediaNav() {
                         handleLogout();
                         toggleMenu();
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-red-500 w-full text-left"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-full transition-colors text-red-500 w-full text-left"
                     >
                       <UserCircleIcon className="h-5 w-5" />
                       Logout
@@ -336,7 +336,7 @@ export default function SocialMediaNav() {
                   <li>
                     <Link
                       href="/login"
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-100/80 dark:hover:bg-gray-700/80 rounded-full transition-colors text-gray-900 dark:text-gray-100"
                       onClick={toggleMenu}
                     >
                       Login
