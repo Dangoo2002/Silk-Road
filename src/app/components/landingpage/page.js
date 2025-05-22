@@ -46,16 +46,16 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch posts');
+        throw new Error(errorData.message || `Failed to fetch posts: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
         const newPosts = data.posts
-          .filter(post => post.imageUrls?.length > 0) // Ensure posts have images
+          .filter(post => post.imageUrls?.length > 0)
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
           .map(post => ({
             ...post,
-            imageUrls: post.imageUrls || [DEFAULT_IMAGE],
+            imageUrls: post.imageUrls?.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
             author_image: post.author_image || '/user-symbol.jpg',
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
@@ -80,7 +80,8 @@ export default function SocialMediaHome() {
         setComments((prev) => (isRefresh ? commentsData : { ...prev, ...commentsData }));
       }
     } catch (error) {
-      setError('Failed to load posts. Please try again.');
+      console.error('Posts error:', error.message);
+      setError(`Failed to load posts: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +96,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch stories');
+        throw new Error(errorData.message || `Failed to fetch stories: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -111,7 +112,8 @@ export default function SocialMediaHome() {
         setStories(storiesWithUserLikes);
       }
     } catch (error) {
-      setError('Failed to load stories. Please try again.');
+      console.error('Stories error:', error.message);
+      setError(`Failed to load stories: ${error.message}`);
     }
   }, [userId, token, apiUrl, DEFAULT_IMAGE]);
 
@@ -127,7 +129,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch story comments');
+        throw new Error(errorData.message || `Failed to fetch story comments: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -146,7 +148,8 @@ export default function SocialMediaHome() {
         );
       }
     } catch (error) {
-      setError('Failed to load story comments. Please try again.');
+      console.error('Story comments error:', error.message);
+      setError(`Failed to load story comments: ${error.message}`);
     }
   }, [token, apiUrl]);
 
@@ -158,7 +161,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch suggested posts');
+        throw new Error(errorData.message || `Failed to fetch suggested posts: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -166,7 +169,7 @@ export default function SocialMediaHome() {
           .filter(post => post.imageUrls?.length > 0)
           .map(post => ({
             ...post,
-            imageUrls: post.imageUrls || [DEFAULT_IMAGE],
+            imageUrls: post.imageUrls?.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
             author_image: post.author_image || '/user-symbol.jpg',
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
@@ -174,7 +177,8 @@ export default function SocialMediaHome() {
           })));
       }
     } catch (error) {
-      setError('Failed to load suggested posts. Please try again.');
+      console.error('Suggested posts error:', error.message);
+      setError(`Failed to load suggested posts: ${error.message}`);
     }
   }, [token, apiUrl, userId, DEFAULT_IMAGE]);
 
@@ -190,7 +194,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch suggested users');
+        throw new Error(errorData.message || `Failed to fetch suggested users: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -201,7 +205,8 @@ export default function SocialMediaHome() {
         })));
       }
     } catch (error) {
-      setError('Failed to load suggested users. Please try again.');
+      console.error('Suggested users error:', error.message);
+      setError(`Failed to load suggested users: ${error.message}`);
     }
   }, [userId, token, apiUrl]);
 
@@ -213,7 +218,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch trending topics');
+        throw new Error(errorData.message || `Failed to fetch trending topics: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -226,6 +231,7 @@ export default function SocialMediaHome() {
         ]);
       }
     } catch (error) {
+      console.error('Trending topics error:', error.message);
       setTrendingTopics([
         { id: 1, name: 'AI in Africa', shares: 1500 },
         { id: 2, name: 'Kenya Elections', shares: 1200 },
@@ -246,7 +252,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch followers');
+        throw new Error(errorData.message || `Failed to fetch followers: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -256,7 +262,8 @@ export default function SocialMediaHome() {
         })));
       }
     } catch (error) {
-      setError('Failed to load followers. Please try again.');
+      console.error('Followers error:', error.message);
+      setError(`Failed to load followers: ${error.message}`);
     }
   }, [userId, token, apiUrl]);
 
@@ -272,7 +279,7 @@ export default function SocialMediaHome() {
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch following');
+        throw new Error(errorData.message || `Failed to fetch following: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
@@ -282,7 +289,8 @@ export default function SocialMediaHome() {
         })));
       }
     } catch (error) {
-      setError('Failed to load following. Please try again.');
+      console.error('Following error:', error.message);
+      setError(`Failed to load following: ${error.message}`);
     }
   }, [userId, token, apiUrl]);
 
@@ -311,7 +319,8 @@ export default function SocialMediaHome() {
         }
       }
     } catch (error) {
-      setError('Error tracking post view. Please try again.');
+      console.error('Post view error:', error.message);
+      setError(`Error tracking post view: ${error.message}`);
     }
   }, [userId, token, viewedPosts, apiUrl]);
 
@@ -346,7 +355,8 @@ export default function SocialMediaHome() {
       fetchStories();
       fetchPosts(1, true);
     } catch (error) {
-      setError('An error occurred while following user');
+      console.error('Follow error:', error.message);
+      setError(`An error occurred while following user: ${error.message}`);
     }
   }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
@@ -381,7 +391,8 @@ export default function SocialMediaHome() {
       fetchStories();
       fetchPosts(1, true);
     } catch (error) {
-      setError('An error occurred while unfollowing user');
+      console.error('Unfollow error:', error.message);
+      setError(`An error occurred while unfollowing user: ${error.message}`);
     }
   }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
@@ -419,7 +430,8 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      setError('An error occurred while updating story like');
+      console.error('Story like error:', error.message);
+      setError(`An error occurred while updating story like: ${error.message}`);
     }
   }, [userId, token, apiUrl]);
 
@@ -433,6 +445,7 @@ export default function SocialMediaHome() {
       setError('');
       alert('Story URL copied to clipboard!');
     }).catch((err) => {
+      console.error('Story share error:', err);
       setError('Failed to copy story URL');
     });
   }, []);
@@ -485,7 +498,8 @@ export default function SocialMediaHome() {
       setStoryCommentInput('');
       fetchStoryComments(storyId);
     } catch (error) {
-      setError('An error occurred while posting comment');
+      console.error('Story comment error:', error.message);
+      setError(`An error occurred while posting comment: ${error.message}`);
     }
   }, [userId, token, storyCommentInput, userData, apiUrl, fetchStoryComments]);
 
@@ -523,7 +537,8 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      setError('An error occurred while updating post like');
+      console.error('Post like error:', error.message);
+      setError(`An error occurred while updating post like: ${error.message}`);
     }
   }, [userId, token, apiUrl]);
 
@@ -537,6 +552,7 @@ export default function SocialMediaHome() {
       setError('');
       alert('Post URL copied to clipboard!');
     }).catch((err) => {
+      console.error('Post share error:', err);
       setError('Failed to copy post URL');
     });
   }, []);
@@ -584,7 +600,8 @@ export default function SocialMediaHome() {
         )
       );
     } catch (error) {
-      setError('An error occurred while posting comment');
+      console.error('Post comment error:', error.message);
+      setError(`An error occurred while posting comment: ${error.message}`);
     }
   }, [userId, token, commentInput, userData, apiUrl]);
 
@@ -752,6 +769,7 @@ export default function SocialMediaHome() {
                   height={40}
                   className="rounded-full object-cover"
                   onError={(e) => {
+                    console.error(`Failed to load user image: ${userData?.image}`);
                     e.target.src = '/user-symbol.jpg';
                   }}
                 />
@@ -785,7 +803,8 @@ export default function SocialMediaHome() {
                           height={60}
                           className="w-full h-full rounded-full object-cover"
                           onError={(e) => {
-                            e.target.src = DEFAULT_IMAGE;
+                            console.error(`Failed to load story thumbnail: ${story.imageUrls[0]}`);
+                            e.target.src = '/default.jpg';
                           }}
                         />
                       </div>
@@ -817,7 +836,8 @@ export default function SocialMediaHome() {
                       height={60}
                       className="rounded-xl object-cover"
                       onError={(e) => {
-                        e.target.src = DEFAULT_IMAGE;
+                        console.error(`Failed to load suggested post image: ${post.imageUrls[0]}`);
+                        e.target.src = '/default.jpg';
                       }}
                     />
                     <div>
@@ -856,6 +876,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
+                          console.error(`Failed to load author image: ${post.author_image}`);
                           e.target.src = '/user-symbol.jpg';
                         }}
                       />
@@ -894,7 +915,8 @@ export default function SocialMediaHome() {
                             height={400}
                             className="w-full h-64 rounded-xl object-cover"
                             onError={(e) => {
-                              e.target.src = DEFAULT_IMAGE;
+                              console.error(`Failed to load post image: ${url}`);
+                              e.target.src = '/default.jpg';
                             }}
                           />
                         ))}
@@ -933,7 +955,7 @@ export default function SocialMediaHome() {
                         </button>
                         <button
                           onClick={() => handlePostShare(post.id)}
-                          class Elektronik className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
+                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
                         >
                           <Share className="w-5 h-5" />
                           <span className="text-sm">Share</span>
@@ -984,6 +1006,7 @@ export default function SocialMediaHome() {
                                 height={24}
                                 className="rounded-full object-cover"
                                 onError={(e) => {
+                                  console.error(`Failed to load comment author image: ${comment.author_image}`);
                                   e.target.src = '/user-symbol.jpg';
                                 }}
                               />
@@ -1061,6 +1084,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
+                          console.error(`Failed to load suggested user image: ${user.image}`);
                           e.target.src = '/user-symbol.jpg';
                         }}
                       />
@@ -1117,6 +1141,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
+                          console.error(`Failed to load follower image: ${user.image}`);
                           e.target.src = '/user-symbol.jpg';
                         }}
                       />
@@ -1148,6 +1173,7 @@ export default function SocialMediaHome() {
                         height={40}
                         className="rounded-full object-cover"
                         onError={(e) => {
+                          console.error(`Failed to load following image: ${user.image}`);
                           e.target.src = '/user-symbol.jpg';
                         }}
                       />
@@ -1202,7 +1228,8 @@ export default function SocialMediaHome() {
                     fill
                     className="object-cover snap-center"
                     onError={(e) => {
-                      e.target.src = DEFAULT_IMAGE;
+                      console.error(`Failed to load story image: ${url}`);
+                      e.target.src = '/default.jpg';
                     }}
                   />
                 ))}
@@ -1277,6 +1304,7 @@ export default function SocialMediaHome() {
                       height={24}
                       className="rounded-full object-cover"
                       onError={(e) => {
+                        console.error(`Failed to load comment author image: ${comment.author_image}`);
                         e.target.src = '/user-symbol.jpg';
                       }}
                     />
