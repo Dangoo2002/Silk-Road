@@ -30,8 +30,7 @@ export default function WritePost({ existingStory = null }) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
   const router = useRouter();
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-  const userId = userData?.id || null;
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   useEffect(() => {
     return () => {
@@ -154,6 +153,12 @@ export default function WritePost({ existingStory = null }) {
     setSubmitting(true);
     setError('');
 
+    if (!token) {
+      setError('You must be logged in to create a post.');
+      router.push('/login');
+      return;
+    }
+
     if (!formData.title || formData.title.length < 3) {
       setError('Title is required and must be at least 3 characters.');
       setSubmitting(false);
@@ -174,8 +179,17 @@ export default function WritePost({ existingStory = null }) {
       setSubmitting(false);
       return;
     }
+    const categories = ['General', 'Technology', 'Lifestyle', 'Travel', 'Food', 'News', 'Entertainment'];
     if (!categories.includes(formData.category)) {
       setError('Invalid category selected.');
+      setSubmitting(false);
+      return;
+    }
+
+    // Extract imageId from the first image URL (e.g., /api/images/123 -> 123)
+    const imageId = formData.imageUrls[0]?.match(/\/api\/images\/(\d+)/)?.[1];
+    if (!imageId) {
+      setError('Invalid image ID.');
       setSubmitting(false);
       return;
     }
@@ -191,9 +205,14 @@ export default function WritePost({ existingStory = null }) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...formData,
+          userId: userData?.id,
+          contentType: formData.contentType,
+          title: formData.title,
           description: strippedDescription,
-          userId,
+          imageId, // Send single imageId
+          link: formData.link,
+          category: formData.category,
+          tags: formData.tags,
         }),
       });
 
@@ -229,7 +248,7 @@ export default function WritePost({ existingStory = null }) {
     }
   };
 
-  if (!userId || !token) {
+  if (!userData?.id || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark pt-16 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -268,7 +287,6 @@ export default function WritePost({ existingStory = null }) {
         <h1 className="text-3xl sm:text-4xl font-bold text-text-light dark:text-text-dark text-center font-heading">
           {existingStory ? 'Update Story' : `Create a New ${formData.contentType.charAt(0).toUpperCase() + formData.contentType.slice(1)}`}
         </h1>
-        {/* Rest of the form remains the same as your original code */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">Content Type</label>
@@ -477,6 +495,11 @@ export default function WritePost({ existingStory = null }) {
               className="mt-1 w-full px-3 py-2 bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-light dark:focus:ring-primary-dark transition-colors duration-350 text-sm placeholder-gray-400"
             />
           </div>
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            </div>
+          )}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
