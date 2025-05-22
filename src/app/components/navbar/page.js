@@ -79,10 +79,10 @@ export default function SocialMediaNav() {
             <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </div>
           <div className="flex flex-col relative">
-            <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lowercase">
+            <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
               Silk Road
             </span>
-            <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300 lowercase">
+            <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300">
               Blogs
             </span>
             <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
@@ -251,7 +251,7 @@ export default function SocialMediaNav() {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ duration: 0.3 }}
-            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white dark:bg-gray-800 shadow-lg dark:shadow-xl z-50 p-4"
+            className="md:hidden fixed top-0 left-0 w-3/4 h-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg shadow-lg dark:shadow-xl z-50 p-4"
           >
             <div className="flex justify-between items-center mb-6">
               <Link href="/" className="flex items-center space-x-2 group">
@@ -266,10 +266,10 @@ export default function SocialMediaNav() {
                   <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="flex flex-col relative">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 lowercase">
+                  <span className="text-lg sm:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                     Silk Road
                   </span>
-                  <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300 lowercase">
+                  <span className="text-xs font-light tracking-wider text-gray-700 dark:text-gray-300">
                     Blogs
                   </span>
                   <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
