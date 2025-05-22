@@ -137,19 +137,22 @@ export default function SocialMediaHome() {
     }
     try {
       const response = await fetch(`${apiUrl}/stories/${storyId}?currentUserId=${userId}`, {
-        cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       });
+      
       if (!response.ok) {
-        const errorData = await response.json();
+        if (response.status === 404) {
+          throw new Error('Story not found');
+        }
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `Failed to fetch story: ${response.status}`);
       }
+  
       const data = await response.json();
-      console.log('Fetched story by ID:', data); // Debug log
       if (data.success) {
         return {
           ...data.story,
-          imageUrls: Array.isArray(data.story.imageUrls) && data.story.imageUrls.length > 0 ? data.story.imageUrls : [DEFAULT_IMAGE],
+          imageUrls: Array.isArray(data.story.imageUrls) ? data.story.imageUrls : [DEFAULT_IMAGE],
           is_liked: data.story.is_liked || false,
           likes_count: data.story.likes_count || 0,
           comments: Array.isArray(data.story.comments) ? data.story.comments : [],
@@ -160,7 +163,7 @@ export default function SocialMediaHome() {
       throw new Error('No story found in response');
     } catch (error) {
       console.error(`Story ${storyId} error:`, error.message);
-      setError(`Failed to load story ${storyId}: ${error.message}`);
+      setError(`Failed to load story: ${error.message}`);
       return null;
     }
   }, [userId, token, apiUrl]);
@@ -671,16 +674,28 @@ export default function SocialMediaHome() {
   }, []);
 
   const openStory = useCallback(async (index) => {
+  try {
     const story = stories[index];
-    const updatedStory = await fetchStoryById(story.id);
-    if (updatedStory) {
-      setStories((prev) =>
-        prev.map((s) => (s.id === story.id ? updatedStory : s))
-      );
-      setSelectedStoryIndex(index);
-      setStoryProgress(0);
+    if (!story) {
+      throw new Error('Story not found');
     }
-  }, [stories, fetchStoryById]);
+    
+    const updatedStory = await fetchStoryById(story.id);
+    if (!updatedStory) {
+      throw new Error('Failed to load story');
+    }
+
+    setStories(prev =>
+      prev.map(s => (s.id === story.id ? updatedStory : s))
+    );
+    setSelectedStoryIndex(index);
+    setStoryProgress(0);
+  } catch (error) {
+    console.error('Story open error:', error);
+    setError(error.message);
+    setSelectedStoryIndex(null);
+  }
+}, [stories, fetchStoryById]);
 
   const closeStory = useCallback(() => {
     setSelectedStoryIndex(null);
