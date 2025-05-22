@@ -696,28 +696,31 @@ export default function SocialMediaHome() {
   }, []);
 
   const openStory = useCallback(async (index) => {
-  try {
-    const story = stories[index];
-    if (!story) {
-      throw new Error('Story not found');
+    try {
+      const story = stories[index];
+      if (!story) {
+        throw new Error('Story not found');
+      }
+      
+      // Mark story as viewed
+      setViewedPosts(prev => new Set(prev).add(story.id));
+      
+      const updatedStory = await fetchStoryById(story.id);
+      if (!updatedStory) {
+        throw new Error('Failed to load story');
+      }
+  
+      setStories(prev =>
+        prev.map(s => (s.id === story.id ? updatedStory : s))
+      );
+      setSelectedStoryIndex(index);
+      setStoryProgress(0);
+    } catch (error) {
+      console.error('Story open error:', error);
+      setError(error.message);
+      setSelectedStoryIndex(null);
     }
-    
-    const updatedStory = await fetchStoryById(story.id);
-    if (!updatedStory) {
-      throw new Error('Failed to load story');
-    }
-
-    setStories(prev =>
-      prev.map(s => (s.id === story.id ? updatedStory : s))
-    );
-    setSelectedStoryIndex(index);
-    setStoryProgress(0);
-  } catch (error) {
-    console.error('Story open error:', error);
-    setError(error.message);
-    setSelectedStoryIndex(null);
-  }
-}, [stories, fetchStoryById]);
+  }, [stories, fetchStoryById]);
 
   const closeStory = useCallback(() => {
     setSelectedStoryIndex(null);
