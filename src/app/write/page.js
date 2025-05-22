@@ -19,7 +19,11 @@ export default function WritePost({ existingStory = null }) {
     title: existingStory?.title || '',
     description: existingStory?.description || '',
     imageUrls: existingStory?.imageUrls ? existingStory.imageUrls : [],
-    imageIds: existingStory?.imageIds ? existingStory.imageIds : [],
+    imageIds: existingStory?.imageIds
+      ? existingStory.imageIds
+      : existingStory?.imageUrls
+        ? existingStory.imageUrls.map(url => url.match(/\/api\/images\/(\d+)/)?.[1]).filter(id => id)
+        : [],
     link: existingStory?.link || '',
     tags: existingStory?.tags || [],
     category: existingStory?.category || 'General',
@@ -204,7 +208,7 @@ export default function WritePost({ existingStory = null }) {
       setSubmitting(false);
       return;
     }
-    const categories = ['General', 'Technology', 'Lifestyle', 'Travel', 'Food', 'News', 'Entertainment'];
+    const categories = ['General', 'Technology', 'L 생활', 'Travel', 'Food', 'News', 'Entertainment'];
     if (formData.contentType === 'post' && !categories.includes(formData.category)) {
       setError('Invalid category selected.');
       setSubmitting(false);
