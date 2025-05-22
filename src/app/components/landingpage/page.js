@@ -14,7 +14,6 @@ export default function SocialMediaHome() {
   const [commentInput, setCommentInput] = useState({});
   const [showComments, setShowComments] = useState({});
   const [expandedPost, setExpandedPost] = useState(null);
-  const [storyLikes, setStoryLikes] = useState({});
   const [storyComments, setStoryComments] = useState({});
   const [storyCommentInput, setStoryCommentInput] = useState('');
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(null);
@@ -29,10 +28,12 @@ export default function SocialMediaHome() {
   const [suggestedPosts, setSuggestedPosts] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
   const [error, setError] = useState('');
+  const [viewedPosts, setViewedPosts] = useState(new Set());
 
   const PLACEHOLDER_IMAGE = '/api/placeholder/400/300';
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
+  // Fetch posts
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     setIsLoading(true);
     try {
@@ -52,7 +53,10 @@ export default function SocialMediaHome() {
         setHasMore(data.posts.length === 20);
         const commentsData = {};
         for (const post of newPosts) {
-          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, { cache: 'no-store' });
+          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, {
+            cache: 'no-store',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
           const commentsResult = await commentsResponse.json();
           if (commentsResult.success) {
             commentsData[post.id] = commentsResult.comments;
@@ -66,8 +70,9 @@ export default function SocialMediaHome() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
+  // Fetch stories
   const fetchStories = useCallback(async () => {
     if (!userId || !token) return;
     try {
@@ -87,6 +92,7 @@ export default function SocialMediaHome() {
           is_liked: story.is_liked || false,
           likes_count: story.likes_count || 0,
           comments: storyComments[story.id] || [],
+          author_image: story.author_image || '/user-symbol.jpg',
         }));
         setStories(storiesWithUserLikes);
       }
@@ -94,8 +100,9 @@ export default function SocialMediaHome() {
       console.error('Error fetching stories:', error);
       setError('Failed to load stories. Please try again.');
     }
-  }, [userId, storyComments, token]);
+  }, [userId, storyComments, token, apiUrl, PLACEHOLDER_IMAGE]);
 
+  // Fetch story comments
   const fetchStoryComments = useCallback(async (storyId) => {
     try {
       const response = await fetch(`${apiUrl}/story-comments/${storyId}`, {
@@ -110,15 +117,19 @@ export default function SocialMediaHome() {
       if (data.success) {
         setStoryComments((prev) => ({
           ...prev,
-          [storyId]: data.comments,
+          [storyId]: data.comments.map(comment => ({
+            ...comment,
+            author_image: comment.author_image || '/user-symbol.jpg',
+          })),
         }));
       }
     } catch (error) {
       console.error('Error fetching story comments:', error);
       setError('Failed to load story comments. Please try again.');
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
+  // Fetch suggested posts (high views)
   const fetchSuggestedPosts = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/posts?sort=views&limit=5`, {
@@ -134,14 +145,16 @@ export default function SocialMediaHome() {
         setSuggestedPosts(data.posts.map(post => ({
           ...post,
           image: post.imageUrl || PLACEHOLDER_IMAGE,
+          author_image: post.author_image || '/user-symbol.jpg',
         })));
       }
     } catch (error) {
       console.error('Error fetching suggested posts:', error);
       setError('Failed to load suggested posts. Please try again.');
     }
-  }, [token]);
+  }, [token, apiUrl, PLACEHOLDER_IMAGE]);
 
+  // Fetch suggested users (exclude logged-in user and followed users)
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId || !token) return;
     try {
@@ -164,8 +177,9 @@ export default function SocialMediaHome() {
       console.error('Error fetching suggested users:', error);
       setError('Failed to load suggested users. Please try again.');
     }
-  }, [userId, token]);
+  }, [userId, token, apiUrl]);
 
+  // Fetch trending topics (high shares)
   const fetchTrendingTopics = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/trending-topics?sort=shares&limit=3`, {
@@ -173,33 +187,30 @@ export default function SocialMediaHome() {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) {
-        setTrendingTopics([
-          { name: "AI in Africa", shares: 1500 },
-          { name: "Kenya Elections", shares: 1200 },
-          { name: "Electric Vehicles", shares: 800 },
-        ]);
-        return;
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to fetch trending topics');
       }
       const data = await response.json();
       if (data.success) {
         setTrendingTopics(data.topics);
       } else {
         setTrendingTopics([
-          { name: "AI in Africa", shares: 1500 },
-          { name: "Kenya Elections", shares: 1200 },
-          { name: "Electric Vehicles", shares: 800 },
+          { name: 'AI in Africa', shares: 1500 },
+          { name: 'Kenya Elections', shares: 1200 },
+          { name: 'Electric Vehicles', shares: 800 },
         ]);
       }
     } catch (error) {
       console.error('Error fetching trending topics:', error);
       setTrendingTopics([
-        { name: "AI in Africa", shares: 1500 },
-        { name: "Kenya Elections", shares: 1200 },
-        { name: "Electric Vehicles", shares: 800 },
+        { name: 'AI in Africa', shares: 1500 },
+        { name: 'Kenya Elections', shares: 1200 },
+        { name: 'Electric Vehicles', shares: 800 },
       ]);
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
+  // Fetch followers
   const fetchFollowers = useCallback(async () => {
     if (!userId || !token) return;
     try {
@@ -213,14 +224,18 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setFollowers(data.followers.slice(0, 5));
+        setFollowers(data.followers.slice(0, 5).map(user => ({
+          ...user,
+          image: user.image || '/user-symbol.jpg',
+        })));
       }
     } catch (error) {
       console.error('Error fetching followers:', error);
       setError('Failed to load followers. Please try again.');
     }
-  }, [userId, token]);
+  }, [userId, token, apiUrl]);
 
+  // Fetch following
   const fetchFollowing = useCallback(async () => {
     if (!userId || !token) return;
     try {
@@ -234,15 +249,48 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setFollowing(data.following.slice(0, 5));
+        setFollowing(data.following.slice(0, 5).map(user => ({
+          ...user,
+          image: user.image || '/user-symbol.jpg',
+        })));
       }
     } catch (error) {
       console.error('Error fetching following:', error);
       setError('Failed to load following. Please try again.');
     }
-  }, [userId, token]);
+  }, [userId, token, apiUrl]);
 
-  const handleFollow = async (followId) => {
+  // Track post view
+  const trackPostView = useCallback(async (postId) => {
+    if (!userId || !token || viewedPosts.has(postId)) return;
+    try {
+      const response = await fetch(`${apiUrl}/post-views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId, userId }),
+      });
+      if (response.ok) {
+        setViewedPosts((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(postId);
+          return newSet;
+        });
+        setPosts((prev) =>
+          prev.map((post) =>
+            post.id === postId ? { ...post, views: (post.views || 0) + 1 } : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error tracking post view:', error);
+    }
+  }, [userId, token, viewedPosts, apiUrl]);
+
+  // Handle follow
+  const handleFollow = useCallback(async (followId) => {
     if (!userId || !token) {
       setError('Please log in to follow users');
       return;
@@ -272,9 +320,10 @@ export default function SocialMediaHome() {
       console.error('Error following user:', error);
       setError('An error occurred while following user');
     }
-  };
+  }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
-  const handleUnfollow = async (followId) => {
+  // Handle unfollow
+  const handleUnfollow = useCallback(async (followId) => {
     if (!userId || !token) {
       setError('Please log in to unfollow users');
       return;
@@ -304,9 +353,10 @@ export default function SocialMediaHome() {
       console.error('Error unfollowing user:', error);
       setError('An error occurred while unfollowing user');
     }
-  };
+  }, [userId, token, apiUrl, fetchFollowing, fetchStories, fetchPosts]);
 
-  const handleStoryLike = async (storyId, isLiked) => {
+  // Handle story like
+  const handleStoryLike = useCallback(async (storyId, isLiked) => {
     if (!userId || !token) {
       setError('Please log in to like a story');
       return;
@@ -339,19 +389,26 @@ export default function SocialMediaHome() {
       console.error('Error liking/unliking story:', error);
       setError('An error occurred while updating story like');
     }
-  };
+  }, [userId, token, apiUrl]);
 
-  const handleStoryShare = (storyId) => {
+  // Handle story share
+  const handleStoryShare = useCallback((storyId) => {
+    if (!navigator.clipboard) {
+      setError('Clipboard API not supported in this browser');
+      return;
+    }
     const storyUrl = `${window.location.origin}/story/${storyId}`;
     navigator.clipboard.writeText(storyUrl).then(() => {
+      setError('');
       alert('Story URL copied to clipboard!');
     }).catch((err) => {
       console.error('Failed to copy URL:', err);
       setError('Failed to copy story URL');
     });
-  };
+  }, []);
 
-  const handleStoryCommentSubmit = async (storyId) => {
+  // Handle story comment
+  const handleStoryCommentSubmit = useCallback(async (storyId) => {
     if (!userId || !token) {
       setError('Please log in to comment');
       return;
@@ -377,16 +434,21 @@ export default function SocialMediaHome() {
       const result = await response.json();
       setStoryComments((prev) => ({
         ...prev,
-        [storyId]: [...(prev[storyId] || []), { ...result.comment, fullName: userData?.name || 'User' }],
+        [storyId]: [...(prev[storyId] || []), { 
+          ...result.comment, 
+          fullName: userData?.name || 'User',
+          author_image: userData?.image || '/user-symbol.jpg',
+        }],
       }));
       setStoryCommentInput('');
     } catch (error) {
       console.error('Error posting comment:', error);
       setError('An error occurred while posting comment');
     }
-  };
+  }, [userId, token, storyCommentInput, userData, apiUrl]);
 
-  const handlePostLike = async (postId, isLiked) => {
+  // Handle post like
+  const handlePostLike = useCallback(async (postId, isLiked) => {
     if (!userId || !token) {
       setError('Please log in to like a post');
       return;
@@ -419,19 +481,26 @@ export default function SocialMediaHome() {
       console.error('Error liking/unliking post:', error);
       setError('An error occurred while updating post like');
     }
-  };
+  }, [userId, token, apiUrl]);
 
-  const handlePostShare = (postId) => {
+  // Handle post share
+  const handlePostShare = useCallback((postId) => {
+    if (!navigator.clipboard) {
+      setError('Clipboard API not supported in this browser');
+      return;
+    }
     const postUrl = `${window.location.origin}/post/${postId}`;
     navigator.clipboard.writeText(postUrl).then(() => {
+      setError('');
       alert('Post URL copied to clipboard!');
     }).catch((err) => {
       console.error('Failed to copy URL:', err);
       setError('Failed to copy post URL');
     });
-  };
+  }, []);
 
-  const handlePostCommentSubmit = async (postId) => {
+  // Handle post comment
+  const handlePostCommentSubmit = useCallback(async (postId) => {
     if (!userId || !token) {
       setError('Please log in to comment');
       return;
@@ -457,20 +526,25 @@ export default function SocialMediaHome() {
       const result = await response.json();
       setComments((prev) => ({
         ...prev,
-        [postId]: [...(prev[postId] || []), { ...result.comment, fullName: userData?.name || 'User' }],
+        [postId]: [...(prev[postId] || []), { 
+          ...result.comment, 
+          fullName: userData?.name || 'User',
+          author_image: userData?.image || '/user-symbol.jpg',
+        }],
       }));
       setCommentInput((prev) => ({ ...prev, [postId]: '' }));
       setPosts((prev) =>
         prev.map((post) =>
-          post.id === postId ? { ...post, comments_count: post.comments_count + 1 } : post
+          post.id === postId ? { ...post, comments_count: (post.comments_count || 0) + 1 } : post
         )
       );
     } catch (error) {
       console.error('Error posting comment:', error);
       setError('An error occurred while posting comment');
     }
-  };
+  }, [userId, token, commentInput, userData, apiUrl]);
 
+  // Initial fetch and refresh
   useEffect(() => {
     fetchStories();
     fetchPosts(1);
@@ -493,6 +567,7 @@ export default function SocialMediaHome() {
     return () => clearInterval(refreshInterval);
   }, [fetchStories, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics]);
 
+  // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
       if (
@@ -512,6 +587,7 @@ export default function SocialMediaHome() {
     if (page > 1) fetchPosts(page);
   }, [page, fetchPosts]);
 
+  // Story progress
   useEffect(() => {
     if (selectedStoryIndex === null || isPaused) return;
     const progressInterval = setInterval(() => {
@@ -519,7 +595,7 @@ export default function SocialMediaHome() {
         if (prev >= 100) {
           if (selectedStoryIndex < stories.length - 1) {
             setSelectedStoryIndex(selectedStoryIndex + 1);
-            fetchStoryComments(stories[selectedStoryIndex + 1].id);
+            fetchStoryComments(stories[selectedStoryIndex + 1]?.id);
             return 0;
           } else {
             setSelectedStoryIndex(null);
@@ -530,59 +606,79 @@ export default function SocialMediaHome() {
       });
     }, 100);
     return () => clearInterval(progressInterval);
-  }, [selectedStoryIndex, isPaused, stories.length, fetchStoryComments]);
+  }, [selectedStoryIndex, isPaused, stories, fetchStoryComments]);
 
-  const openStory = (index) => {
+  // Track post views on visibility
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const postId = entry.target.dataset.postId;
+            trackPostView(postId);
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const postElements = document.querySelectorAll('.post-container');
+    postElements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [posts, trackPostView]);
+
+  const openStory = useCallback((index) => {
     setSelectedStoryIndex(index);
     setStoryProgress(0);
     setIsPaused(false);
-    fetchStoryComments(stories[index].id);
-  };
+    fetchStoryComments(stories[index]?.id);
+  }, [stories, fetchStoryComments]);
 
-  const closeStory = () => {
+  const closeStory = useCallback(() => {
     setSelectedStoryIndex(null);
     setStoryProgress(0);
     setIsPaused(false);
     setStoryCommentInput('');
-  };
+  }, []);
 
-  const goToNextStory = () => {
+  const goToNextStory = useCallback(() => {
     if (selectedStoryIndex < stories.length - 1) {
       setSelectedStoryIndex(selectedStoryIndex + 1);
       setStoryProgress(0);
       setStoryCommentInput('');
-      fetchStoryComments(stories[selectedStoryIndex + 1].id);
+      fetchStoryComments(stories[selectedStoryIndex + 1]?.id);
     } else {
       closeStory();
     }
-  };
+  }, [selectedStoryIndex, stories, fetchStoryComments, closeStory]);
 
-  const goToPrevStory = () => {
+  const goToPrevStory = useCallback(() => {
     if (selectedStoryIndex > 0) {
       setSelectedStoryIndex(selectedStoryIndex - 1);
       setStoryProgress(0);
       setStoryCommentInput('');
-      fetchStoryComments(stories[selectedStoryIndex - 1].id);
+      fetchStoryComments(stories[selectedStoryIndex - 1]?.id);
     }
-  };
+  }, [selectedStoryIndex, stories, fetchStoryComments]);
 
-  const togglePause = () => {
-    setIsPaused(!isPaused);
-  };
+  const togglePause = useCallback(() => {
+    setIsPaused((prev) => !prev);
+  }, []);
 
-  const togglePostExpand = (postId) => {
-    setExpandedPost(expandedPost === postId ? null : postId);
-    if (!showComments[postId]) {
-      setShowComments((prev) => ({ ...prev, [postId]: true }));
-    }
-  };
+  const togglePostExpand = useCallback((postId) => {
+    setExpandedPost((prev) => (prev === postId ? null : postId));
+    setShowComments((prev) => ({ ...prev, [postId]: true }));
+  }, []);
 
-  const toggleComments = (postId) => {
+  const toggleComments = useCallback((postId) => {
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
-  };
+  }, []);
 
-  const formatDateTime = (dateString) => {
+  const formatDateTime = useCallback((dateString) => {
+    if (!dateString) return 'Unknown time';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
@@ -590,7 +686,7 @@ export default function SocialMediaHome() {
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark pt-16">
@@ -639,7 +735,7 @@ export default function SocialMediaHome() {
                       <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-transparent bg-gradient-to-r from-primary-light to-secondary-light dark:from-primary-dark dark:to-secondary-dark p-[2px] group-hover:scale-105 transition-transform duration-350">
                         <Image
                           src={story.image}
-                          alt={story.title}
+                          alt={story.title || 'Story'}
                           width={60}
                           height={60}
                           className="w-full h-full rounded-full object-cover"
@@ -647,7 +743,7 @@ export default function SocialMediaHome() {
                       </div>
                     </div>
                     <p className="mt-2 text-center text-xs font-medium truncate">
-                      {story.author.split(' ')[0]}
+                      {story.author?.split(' ')[0] || 'User'}
                     </p>
                   </div>
                 ))}
@@ -668,19 +764,19 @@ export default function SocialMediaHome() {
                   >
                     <Image
                       src={post.image}
-                      alt={post.title}
+                      alt={post.title || 'Post'}
                       width={80}
                       height={60}
                       className="rounded-xl object-cover"
                     />
                     <div>
-                      <h3 className="text-sm font-semibold line-clamp-2">{post.title}</h3>
+                      <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {post.category} • {post.author}
+                        {post.category || 'General'} • {post.author || 'Anonymous'}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         <Eye className="inline w-3 h-3 mr-1" />
-                        {post.views} views
+                        {post.views || 0} views
                       </p>
                     </div>
                   </Link>
@@ -697,7 +793,8 @@ export default function SocialMediaHome() {
               posts.map((post) => (
                 <div
                   key={post.id}
-                  className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark hover:shadow-card dark:hover:shadow-card-dark transition-all duration-350"
+                  className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-card dark:shadow-card-dark hover:shadow-card dark:hover:shadow-card-dark transition-all duration-350 post-container"
+                  data-post-id={post.id}
                 >
                   <div className="p-4">
                     <div className="flex items-center gap-3 mb-3">
@@ -713,7 +810,7 @@ export default function SocialMediaHome() {
                           href={`/profile/${post.userId}`}
                           className="text-sm font-semibold hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
                         >
-                          {post.author}
+                          {post.author || 'Anonymous'}
                         </Link>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {formatDateTime(post.created_at)}
@@ -725,18 +822,18 @@ export default function SocialMediaHome() {
                       onClick={() => togglePostExpand(post.id)}
                     >
                       <h2 className="text-lg font-semibold mb-2 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350 font-heading">
-                        {post.title}
+                        {post.title || 'Untitled'}
                       </h2>
                       <p
                         className={`text-sm text-gray-600 dark:text-gray-300 mb-3 transition-all duration-350 ${
                           expandedPost === post.id ? '' : 'line-clamp-3'
                         }`}
-                        dangerouslySetInnerHTML={{ __html: post.description }}
+                        dangerouslySetInnerHTML={{ __html: post.description || '' }}
                       />
                       {post.image && (
                         <Image
                           src={post.image}
-                          alt={post.title}
+                          alt={post.title || 'Post'}
                           width={600}
                           height={400}
                           className="w-full h-64 rounded-xl object-cover mb-3"
@@ -752,14 +849,14 @@ export default function SocialMediaHome() {
                           <ThumbsUp
                             className={`w-5 h-5 ${post.is_liked ? 'fill-accent-light dark:fill-accent-dark text-accent-light dark:text-accent-dark' : ''}`}
                           />
-                          <span className="text-sm">{post.likes_count}</span>
+                          <span className="text-sm">{post.likes_count || 0}</span>
                         </button>
                         <button
                           onClick={() => toggleComments(post.id)}
                           className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
                         >
                           <MessageCircle className="w-5 h-5" />
-                          <span className="text-sm">{post.comments_count}</span>
+                          <span className="text-sm">{post.comments_count || 0}</span>
                         </button>
                         <button
                           onClick={() => handlePostShare(post.id)}
@@ -769,17 +866,10 @@ export default function SocialMediaHome() {
                           <span className="text-sm">Share</span>
                         </button>
                       </div>
-                      {post.link && (
-                        <a
-                          href={post.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-primary-light dark:hover:text-primary-dark transition-colors duration-350"
-                        >
-                          <ExternalLink className="w-5 h-5" />
-                          <span className="text-sm">Visit</span>
-                        </a>
-                      )}
+                      <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                        <Eye className="w-5 h-5" />
+                        <span className="text-sm">{post.views || 0}</span>
+                      </div>
                     </div>
                     {showComments[post.id] && (
                       <div className="mt-3">
@@ -801,7 +891,7 @@ export default function SocialMediaHome() {
                           </button>
                         </div>
                         <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                          {comments[post.id]?.map((comment) => (
+                          {(comments[post.id] || []).map((comment) => (
                             <div key={comment.id} className="flex gap-2">
                               <Image
                                 src={comment.author_image || '/user-symbol.jpg'}
@@ -812,7 +902,7 @@ export default function SocialMediaHome() {
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{comment.fullName}</span>
+                                  <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {formatDateTime(comment.created_at)}
                                   </span>
@@ -882,15 +972,15 @@ export default function SocialMediaHome() {
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <Image
-                        src={user.image || '/user-symbol.jpg'}
-                        alt={user.name}
+                        src={user.image}
+                        alt={user.name || 'User'}
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + user.name.toLowerCase().replace(/\s/g, '')}</p>
+                        <p className="text-sm font-medium">{user.name || 'User'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + (user.name || 'user').toLowerCase().replace(/\s/g, '')}</p>
                       </div>
                     </Link>
                   ))
@@ -913,15 +1003,15 @@ export default function SocialMediaHome() {
                       className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-light dark:hover:bg-surface-dark transition-colors duration-350"
                     >
                       <Image
-                        src={user.image || '/user-symbol.jpg'}
-                        alt={user.name}
+                        src={user.image}
+                        alt={user.name || 'User'}
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-sm font-medium">{user.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + user.name.toLowerCase().replace(/\s/g, '')}</p>
+                        <p className="text-sm font-medium">{user.name || 'User'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + (user.name || 'user').toLowerCase().replace(/\s/g, '')}</p>
                       </div>
                     </Link>
                   ))
@@ -948,14 +1038,14 @@ export default function SocialMediaHome() {
                       >
                         <Image
                           src={user.image}
-                          alt={user.name}
+                          alt={user.name || 'User'}
                           width={40}
                           height={40}
                           className="rounded-full object-cover"
                         />
                         <div>
-                          <p className="text-sm font-medium">{user.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + user.name.toLowerCase().replace(/\s/g, '')}</p>
+                          <p className="text-sm font-medium">{user.name || 'User'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{user.handle || '@' + (user.name || 'user').toLowerCase().replace(/\s/g, '')}</p>
                         </div>
                       </Link>
                       <button
@@ -986,7 +1076,7 @@ export default function SocialMediaHome() {
           </div>
         </div>
       </div>
-      {selectedStoryIndex !== null && (
+      {selectedStoryIndex !== null && stories[selectedStoryIndex] && (
         <div className="fixed inset-0 bg-black z-50 flex items-center justify-center" onClick={togglePause}>
           <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
             {stories.map((_, index) => (
@@ -1035,7 +1125,7 @@ export default function SocialMediaHome() {
           <div className="relative w-full h-full max-w-md">
             <Image
               src={stories[selectedStoryIndex].image}
-              alt={stories[selectedStoryIndex].title}
+              alt={stories[selectedStoryIndex].title || 'Story'}
               width={400}
               height={600}
               className="w-full h-full object-cover"
@@ -1043,7 +1133,7 @@ export default function SocialMediaHome() {
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
               <div className="flex items-center gap-2 mb-2">
                 <Image
-                  src={stories[selectedStoryIndex].author_image || '/user-symbol.jpg'}
+                  src={stories[selectedStoryIndex].author_image}
                   alt="User"
                   width={32}
                   height={32}
@@ -1051,7 +1141,7 @@ export default function SocialMediaHome() {
                 />
                 <div>
                   <p className="text-white text-sm font-semibold">
-                    {stories[selectedStoryIndex].author}
+                    {stories[selectedStoryIndex].author || 'User'}
                   </p>
                   <p className="text-white/70 text-xs">
                     {formatDateTime(stories[selectedStoryIndex].created_at)}
@@ -1059,7 +1149,7 @@ export default function SocialMediaHome() {
                 </div>
               </div>
               <h3 className="text-white text-lg font-semibold mb-2">
-                {stories[selectedStoryIndex].title}
+                {stories[selectedStoryIndex].title || 'Untitled'}
               </h3>
               {stories[selectedStoryIndex].description && (
                 <p className="text-white/90 text-sm mb-4">
@@ -1080,7 +1170,7 @@ export default function SocialMediaHome() {
                   <ThumbsUp
                     className={`w-5 h-5 ${stories[selectedStoryIndex].is_liked ? 'fill-white' : ''}`}
                   />
-                  <span className="text-sm">{stories[selectedStoryIndex].likes_count}</span>
+                  <span className="text-sm">{stories[selectedStoryIndex].likes_count || 0}</span>
                 </button>
                 <button
                   onClick={(e) => e.stopPropagation()}
@@ -1101,10 +1191,10 @@ export default function SocialMediaHome() {
                 </button>
               </div>
               <div className="space-y-2 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 mb-4">
-                {storyComments[stories[selectedStoryIndex].id]?.map((comment) => (
+                {(storyComments[stories[selectedStoryIndex].id] || []).map((comment) => (
                   <div key={comment.id} className="flex gap-2">
                     <Image
-                      src={comment.author_image || '/user-symbol.jpg'}
+                      src={comment.author_image}
                       alt="User"
                       width={24}
                       height={24}
@@ -1112,7 +1202,7 @@ export default function SocialMediaHome() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-white text-sm font-medium">{comment.fullName}</span>
+                        <span className="text-white text-sm font-medium">{comment.fullName || 'User'}</span>
                         <span className="text-white/70 text-xs">
                           {formatDateTime(comment.created_at)}
                         </span>
