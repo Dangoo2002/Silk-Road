@@ -5,15 +5,15 @@ import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PencilIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { UserCheck, UserX, ThumbsUp, MessageCircle, Settings, User, Bookmark, Lock, Trash2 } from 'lucide-react';
+import { PencilIcon, CameraIcon, HeartIcon, ChatBubbleLeftIcon, EyeIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { UserIcon, BookmarkIcon, UsersIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
   const {
     userData,
     token,
-    loading: authLoading, // Add authLoading from AuthContext
+    loading: authLoading,
     updateUserProfile,
     uploadProfilePicture,
     error,
@@ -142,6 +142,7 @@ export default function AccountDetails() {
     try {
       const response = await axios.delete(`${baseUrl}/user/delete`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: { id: profileId },
         withCredentials: true,
       });
       console.log('Delete account response:', response.data);
@@ -165,7 +166,6 @@ export default function AccountDetails() {
   const handleDeletePost = async (postId) => {
     try {
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
-        params: { userId: profileId },
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
@@ -220,7 +220,7 @@ export default function AccountDetails() {
       const success = await uploadProfilePicture(file);
       console.log('Profile picture upload result:', success);
       if (success) {
-        await fetchUserDetails();
+        await fetchUserDetails(); // Refresh user details to get new image URL
         showNotification('Profile picture updated successfully');
       }
     } catch (error) {
@@ -302,7 +302,7 @@ export default function AccountDetails() {
     if (authLoading) {
       return (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
       );
     }
@@ -314,97 +314,95 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className="max-w-4xl mx-auto"
           >
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <>
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
-                  <div className="relative group">
-                    <Image
-                      src={userDetails.image || '/default-avatar.png'}
-                      alt={userDetails.name}
-                      width={120}
-                      height={120}
-                      className="rounded-full border-4 border-blue-100 object-cover"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current.click()}
-                      className="absolute inset-0 rounded-full bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    >
-                      <CameraIcon className="w-8 h-8 text-white" />
-                    </button>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleProfilePictureChange}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </div>
-                  <div className="text-center sm:text-left">
-                    <div className="flex items-center justify-center sm:justify-start gap-2">
-                      <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                {/* Cover Image (Placeholder, can be extended with backend support) */}
+                <div className="h-48 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <div className="relative -mb-20 mx-auto w-32 h-32">
+                      <Image
+                        src={userDetails.image || '/default-avatar.png'}
+                        alt={userDetails.name}
+                        fill
+                        className="rounded-full border-4 border-white object-cover shadow-lg"
+                      />
                       <button
-                        onClick={() => setIsEditingBio(!isEditingBio)}
-                        className="text-gray-500 hover:text-blue-600 transition-colors"
+                        onClick={() => fileInputRef.current.click()}
+                        className="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
+                      >
+                        <CameraIcon className="w-8 h-8 text-white" />
+                      </button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleProfilePictureChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-24 pb-8 px-6 text-center">
+                  <h2 className="text-3xl font-bold text-gray-900">{userDetails.name}</h2>
+                  <p className="text-gray-500 text-sm mt-1">@{userDetails.handle}</p>
+                  {isEditingBio ? (
+                    <div className="mt-4 max-w-md mx-auto">
+                      <textarea
+                        value={bioText}
+                        onChange={(e) => setBioText(e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                        rows={3}
+                        maxLength={200}
+                        placeholder="Tell us about yourself..."
+                      />
+                      <div className="flex gap-2 mt-2 justify-center">
+                        <button
+                          onClick={handleBioUpdate}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setIsEditingBio(false)}
+                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex justify-center items-center gap-2">
+                      <p className="text-gray-700 max-w-md">{userDetails.bio || 'Add a bio to tell people about yourself'}</p>
+                      <button
+                        onClick={() => setIsEditingBio(true)}
+                        className="text-gray-500 hover:text-indigo-600 transition-colors"
                       >
                         <PencilIcon className="w-5 h-5" />
                       </button>
                     </div>
-                    <p className="text-gray-500 text-sm">@{userDetails.handle}</p>
-
-                    {isEditingBio ? (
-                      <div className="mt-4">
-                        <textarea
-                          value={bioText}
-                          onChange={(e) => setBioText(e.target.value)}
-                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          rows={3}
-                          maxLength={200}
-                          placeholder="Tell us about yourself..."
-                        />
-                        <div className="flex gap-2 mt-2">
-                          <button
-                            onClick={handleBioUpdate}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={() => setIsEditingBio(false)}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-gray-700 mt-4">
-                        {userDetails.bio || 'Add a bio to tell people about yourself'}
-                      </p>
-                    )}
-
-                    <div className="flex gap-6 mt-6">
-                      <div className="text-center">
-                        <p className="text-gray-900 font-semibold text-lg">{userDetails.posts_count || 0}</p>
-                        <p className="text-gray-500 text-sm">Posts</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-gray-900 font-semibold text-lg">{userDetails.followers_count || 0}</p>
-                        <p className="text-gray-500 text-sm">Followers</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-gray-900 font-semibold text-lg">{userDetails.following_count || 0}</p>
-                        <p className="text-gray-500 text-sm">Following</p>
-                      </div>
+                  )}
+                  <div className="flex justify-center gap-8 mt-6">
+                    <div className="text-center">
+                      <p className="text-gray-900 font-semibold text-lg">{userDetails.posts_count || 0}</p>
+                      <p className="text-gray-500 text-sm">Posts</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-gray-900 font-semibold text-lg">{userDetails.followers_count || 0}</p>
+                      <p className="text-gray-500 text-sm">Followers</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-gray-900 font-semibold text-lg">{userDetails.following_count || 0}</p>
+                      <p className="text-gray-500 text-sm">Following</p>
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-10">No user details found.</p>
             )}
@@ -416,25 +414,25 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className="max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Posts</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Posts</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userPosts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-6">
                 {userPosts.map((post) => (
                   <motion.div
                     key={post.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300"
                   >
                     {post.imageUrls && post.imageUrls.length > 0 && (
-                      <div className="relative h-48 w-full">
+                      <div className="relative h-64 w-full">
                         <Image
                           src={post.imageUrls[0]}
                           alt={post.title}
@@ -443,45 +441,55 @@ export default function AccountDetails() {
                         />
                       </div>
                     )}
-                    <div className="p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{post.title}</h3>
-                      <p className="text-gray-600 text-sm mt-2 line-clamp-3">{post.description}</p>
-                      <p className="text-gray-400 text-xs mt-3">{formatDateTime(post.created_at)}</p>
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <ThumbsUp className={`w-4 h-4 ${post.is_liked ? 'fill-blue-500 text-blue-500' : ''}`} />
-                            <span className="text-sm">{post.likes_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-gray-500">
-                            <MessageCircle className="w-4 h-4" />
-                            <span className="text-sm">{post.comments_count}</span>
-                          </div>
+                    <div className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <Link href={`/posts/${post.id}`}>
+                            <h3 className="text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">{post.title}</h3>
+                          </Link>
+                          <p className="text-gray-600 text-sm mt-2">{post.description}</p>
                         </div>
                         <div className="flex gap-2">
                           <Link href={`/edit/${post.id}`}>
-                            <button className="p-1 text-blue-600 hover:text-blue-800 transition-colors">
-                              <PencilIcon className="w-4 h-4" />
+                            <button className="p-2 text-indigo-600 hover:text-indigo-800 transition-colors">
+                              <PencilIcon className="w-5 h-5" />
                             </button>
                           </Link>
                           <button
                             onClick={() => openDeleteModal(post.id)}
-                            className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                            className="p-2 text-red-600 hover:text-red-800 transition-colors"
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <TrashIcon className="w-5 h-5" />
                           </button>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-4 text-gray-500 text-sm">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1">
+                            <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500' : ''}`} />
+                            <span>{post.likes_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <ChatBubbleLeftIcon className="w-5 h-5" />
+                            <span>{post.comments_count}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <EyeIcon className="w-5 h-5" />
+                            <span>{post.views}</span>
+                          </div>
+                        </div>
+                        <p>{formatDateTime(post.created_at)}</p>
                       </div>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10">
+              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
                 <p className="text-gray-500">No posts found.</p>
                 <Link
                   href="/write"
-                  className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   Create your first post
                 </Link>
@@ -495,12 +503,12 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className="max-w-4xl mx-auto"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Followers</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : followers.length > 0 ? (
               <div className="space-y-4">
@@ -510,7 +518,7 @@ export default function AccountDetails() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-300"
+                    className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <div className="relative h-12 w-12">
                       <Image
@@ -523,7 +531,7 @@ export default function AccountDetails() {
                     <div className="flex-1">
                       <Link
                         href={`/profile/${user.id}`}
-                        className="text-gray-900 font-medium hover:text-blue-600 transition-colors"
+                        className="text-gray-900 font-medium hover:text-indigo-600 transition-colors"
                       >
                         {user.name}
                       </Link>
@@ -534,14 +542,14 @@ export default function AccountDetails() {
                 {followers.length >= 5 && (
                   <Link
                     href={`/profile/${profileId}/followers`}
-                    className="block text-center text-blue-600 hover:text-blue-800 mt-4"
+                    className="block text-center text-indigo-600 hover:text-indigo-800 mt-4"
                   >
                     View all followers
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="text-center py-10">
+              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
                 <p className="text-gray-500">No followers yet.</p>
               </div>
             )}
@@ -553,12 +561,12 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className="max-w-4xl mx-auto"
           >
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Following</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : following.length > 0 ? (
               <div className="space-y-4">
@@ -568,7 +576,7 @@ export default function AccountDetails() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-300"
+                    className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <div className="relative h-12 w-12">
                       <Image
@@ -581,7 +589,7 @@ export default function AccountDetails() {
                     <div className="flex-1">
                       <Link
                         href={`/profile/${user.id}`}
-                        className="text-gray-900 font-medium hover:text-blue-600 transition-colors"
+                        className="text-gray-900 font-medium hover:text-indigo-600 transition-colors"
                       >
                         {user.name}
                       </Link>
@@ -592,18 +600,18 @@ export default function AccountDetails() {
                 {following.length >= 5 && (
                   <Link
                     href={`/profile/${profileId}/following`}
-                    className="block text-center text-blue-600 hover:text-blue-800 mt-4"
+                    className="block text-center text-indigo-600 hover:text-indigo-800 mt-4"
                   >
                     View all following
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="text-center py-10">
+              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
                 <p className="text-gray-500">Not following anyone yet.</p>
                 <Link
                   href="/explore"
-                  className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   Find people to follow
                 </Link>
@@ -617,19 +625,19 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-6 bg-white rounded-xl shadow-sm border border-gray-100"
+            className="max-w-4xl mx-auto"
           >
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-                <div className="space-y-6">
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="space-y-8">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <User className="w-5 h-5" />
+                      <UserIcon className="w-5 h-5 text-indigo-600" />
                       Personal Information
                     </h3>
                     <div className="space-y-3 pl-7">
@@ -644,22 +652,20 @@ export default function AccountDetails() {
                       </p>
                     </div>
                   </div>
-
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Lock className="w-5 h-5" />
+                      <Cog6ToothIcon className="w-5 h-5 text-indigo-600" />
                       Security
                     </h3>
                     <div className="pl-7">
-                      <Link href="/account/change-password" className="text-blue-600 hover:text-blue-800">
+                      <Link href="/account/change-password" className="text-indigo-600 hover:text-indigo-800">
                         Change Password
                       </Link>
                     </div>
                   </div>
-
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Trash2 className="w-5 h-5" />
+                      <TrashIcon className="w-5 h-5 text-red-600" />
                       Danger Zone
                     </h3>
                     <div className="pl-7">
@@ -675,7 +681,7 @@ export default function AccountDetails() {
                     </div>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <p className="text-gray-500 text-center py-10">No user details found.</p>
             )}
@@ -687,7 +693,7 @@ export default function AccountDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -742,32 +748,35 @@ export default function AccountDetails() {
         </motion.div>
       )}
 
-      <div className="flex flex-1 flex-col sm:flex-row">
+      <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Sidebar */}
         <motion.aside
           initial={{ x: -250 }}
           animate={{ x: isSidebarOpen ? 0 : -250 }}
           transition={{ duration: 0.3 }}
-          className={`${
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:flex-col ${
             isSidebarOpen ? 'block' : 'hidden'
-          } sm:block w-full sm:w-64 bg-white shadow-md absolute sm:static z-20 sm:z-auto h-full sm:h-auto`}
+          }`}
         >
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 hidden sm:block">Account Settings</h2>
+          <div className="p-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Account</h2>
+            <button onClick={toggleSidebar} className="lg:hidden text-gray-600 hover:text-indigo-600">
+              <Bars3Icon className="w-6 h-6" />
+            </button>
           </div>
-          <ul className="mt-4">
+          <ul className="flex-1 mt-4">
             {[
-              { id: 'profile', label: 'Profile', icon: <User className="w-5 h-5" /> },
-              { id: 'posts', label: 'Posts', icon: <Bookmark className="w-5 h-5" /> },
-              { id: 'followers', label: 'Followers', icon: <UserCheck className="w-5 h-5" /> },
-              { id: 'following', label: 'Following', icon: <UserX className="w-5 h-5" /> },
-              { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
+              { id: 'profile', label: 'Profile', icon: <UserIcon className="w-5 h-5" /> },
+              { id: 'posts', label: 'Posts', icon: <BookmarkIcon className="w-5 h-5" /> },
+              { id: 'followers', label: 'Followers', icon: <UsersIcon className="w-5 h-5" /> },
+              { id: 'following', label: 'Following', icon: <UsersIcon className="w-5 h-5" /> },
+              { id: 'settings', label: 'Settings', icon: <Cog6ToothIcon className="w-5 h-5" /> },
             ].map((tab) => (
               <motion.li
                 key={tab.id}
                 whileHover={{ x: 5 }}
-                className={`px-6 py-3 cursor-pointer text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-all duration-300 text-sm sm:text-base flex items-center gap-3 ${
-                  activeTab === tab.id ? 'bg-blue-50 text-blue-600 font-semibold' : ''
+                className={`px-6 py-3 cursor-pointer text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-300 flex items-center gap-3 ${
+                  activeTab === tab.id ? 'bg-indigo-50 text-indigo-600 font-semibold' : ''
                 }`}
                 onClick={() => {
                   setActiveTab(tab.id);
@@ -781,8 +790,16 @@ export default function AccountDetails() {
           </ul>
         </motion.aside>
 
+        {/* Mobile Menu Button */}
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-indigo-600 text-white rounded-full shadow-lg"
+        >
+          <Bars3Icon className="w-6 h-6" />
+        </button>
+
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-8 bg-gray-50">{renderContent()}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">{renderContent()}</main>
       </div>
     </div>
   );
