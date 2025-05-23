@@ -528,7 +528,7 @@ export default function AccountDetails() {
                   >
                     <div className="relative h-12 w-12">
                       <Image
-                        src={user.image || '/default-avatar.png'}
+                        src={user.image || '/default.jpg'}
                         alt={user.name}
                         fill
                         className="rounded-full object-cover"
