@@ -5,15 +5,23 @@ import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
-import { UserCheck, UserX, ThumbsUp, MessageCircle, Share, PencilIcon, TrashIcon } from 'lucide-react';
+import {
+  XMarkIcon,
+  Bars3Icon,
+  PencilIcon,
+  TrashIcon,
+  UserIcon,
+  HandThumbUpIcon,
+  ChatBubbleLeftIcon,
+  ShareIcon,
+} from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
   const { userData, isLoggedIn, token } = useContext(AuthContext);
   const params = useParams();
   const router = useRouter();
-  
+
   // Safe access to params with fallback
   const profileId = params?.userId || null;
   const currentUserId = userData?.id || null;
@@ -31,111 +39,164 @@ export default function AccountDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePostId, setDeletePostId] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [error, setError] = useState(null);
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
   const DEFAULT_IMAGE = '/user-symbol.jpg';
+
+  // Log initial context and params
+  console.log('AccountDetails Initial State:', {
+    userData,
+    isLoggedIn,
+    token,
+    profileId,
+    currentUserId,
+    isOwnProfile,
+  });
 
   // Handle mounting to prevent hydration issues
   useEffect(() => {
     setMounted(true);
+    console.log('AccountDetails mounted');
   }, []);
 
   const showNotification = (message, type = 'success') => {
+    console.log('Notification:', { message, type });
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
   // Fetch user details
   const fetchUserDetails = async () => {
-    if (!profileId || !token) return;
+    if (!profileId || !token) {
+      console.warn('Skipping fetchUserDetails: Missing profileId or token', { profileId, token });
+      setError('Missing authentication details. Please log in.');
+      return;
+    }
     try {
+      console.log('Fetching user details for profileId:', profileId);
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('fetchUserDetails Response:', response.data);
       if (response.data.success) {
         setUserDetails(response.data.user);
         setBio(response.data.user.bio || '');
       } else {
-        showNotification('Failed to fetch user details', 'error');
+        console.warn('fetchUserDetails failed:', response.data.message);
+        setError(response.data.message || 'Failed to fetch user details');
+        showNotification(`Failed to fetch user details: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error fetching user details:', error);
+      console.error('Error in fetchUserDetails:', error.message, error.response?.data);
+      setError(error.response?.data?.message || error.message || 'Failed to fetch user details');
       showNotification('Failed to fetch user details', 'error');
     }
   };
 
   // Fetch user posts
   const fetchUserPosts = async () => {
-    if (!profileId || !token) return;
+    if (!profileId || !token) {
+      console.warn('Skipping fetchUserPosts: Missing profileId or token', { profileId, token });
+      setError('Missing authentication details. Please log in.');
+      return;
+    }
     try {
+      console.log('Fetching user posts for profileId:', profileId);
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('fetchUserPosts Response:', response.data);
       if (response.data.success) {
         setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } else {
-        showNotification('Failed to fetch user posts', 'error');
+        console.warn('fetchUserPosts failed:', response.data.message);
+        setError(response.data.message || 'Failed to fetch user posts');
+        showNotification(`Failed to fetch user posts: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error fetching user posts:', error);
-      showNotification('Error fetching user posts', 'error');
+      console.error('Error in fetchUserPosts:', error.message, error.response?.data);
+      setError(error.response?.data?.message || error.message || 'Failed to fetch user posts');
+      showNotification('Failed to fetch user posts', 'error');
     }
   };
 
   // Fetch followers
   const fetchFollowers = async () => {
-    if (!profileId || !token) return;
+    if (!profileId || !token) {
+      console.warn('Skipping fetchFollowers: Missing profileId or token', { profileId, token });
+      setError('Missing authentication details. Please log in.');
+      return;
+    }
     try {
+      console.log('Fetching followers for profileId:', profileId);
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('fetchFollowers Response:', response.data);
       if (response.data.success) {
         setFollowers(response.data.followers.slice(0, 5));
       } else {
-        showNotification('Failed to fetch followers', 'error');
+        console.warn('fetchFollowers failed:', response.data.message);
+        setError(response.data.message || 'Failed to fetch followers');
+        showNotification(`Failed to fetch followers: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error fetching followers:', error);
-      showNotification('Error fetching followers', 'error');
+      console.error('Error in fetchFollowers:', error.message, error.response?.data);
+      setError(error.response?.data?.message || error.message || 'Failed to fetch followers');
+      showNotification('Failed to fetch followers', 'error');
     }
   };
 
   // Fetch following
   const fetchFollowing = async () => {
-    if (!profileId || !token) return;
+    if (!profileId || !token) {
+      console.warn('Skipping fetchFollowing: Missing profileId or token', { profileId, token });
+      setError('Missing authentication details. Please log in.');
+      return;
+    }
     try {
+      console.log('Fetching following for profileId:', profileId);
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('fetchFollowing Response:', response.data);
       if (response.data.success) {
         setFollowing(response.data.following.slice(0, 5));
       } else {
-        showNotification('Failed to fetch following', 'error');
+        console.warn('fetchFollowing failed:', response.data.message);
+        setError(response.data.message || 'Failed to fetch following');
+        showNotification(`Failed to fetch following: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error fetching following:', error);
-      showNotification('Error fetching following', 'error');
+      console.error('Error in fetchFollowing:', error.message, error.response?.data);
+      setError(error.response?.data?.message || error.message || 'Failed to fetch following');
+      showNotification('Failed to fetch following', 'error');
     }
   };
 
   // Handle follow
   const handleFollow = async () => {
-    if (!currentUserId) {
+    if (!isLoggedIn || !currentUserId) {
+      console.warn('Cannot follow: User not logged in or no currentUserId', { isLoggedIn, currentUserId });
       showNotification('Please log in to follow users', 'error');
+      router.push('/login');
       return;
     }
     try {
+      console.log('Following user:', { userId: currentUserId, followId: profileId });
       const response = await axios.post(
         `${baseUrl}/follow`,
         { userId: currentUserId, followId: profileId },
         { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
+      console.log('handleFollow Response:', response.data);
       if (response.data.success) {
         setUserDetails((prev) => ({
           ...prev,
@@ -145,26 +206,31 @@ export default function AccountDetails() {
         fetchFollowers();
         showNotification('Followed successfully');
       } else {
-        showNotification('Failed to follow user', 'error');
+        console.warn('handleFollow failed:', response.data.message);
+        showNotification(`Failed to follow user: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error following user:', error);
+      console.error('Error in handleFollow:', error.message, error.response?.data);
       showNotification('Failed to follow user', 'error');
     }
   };
 
   // Handle unfollow
   const handleUnfollow = async () => {
-    if (!currentUserId) {
+    if (!isLoggedIn || !currentUserId) {
+      console.warn('Cannot unfollow: User not logged in or no currentUserId', { isLoggedIn, currentUserId });
       showNotification('Please log in to unfollow users', 'error');
+      router.push('/login');
       return;
     }
     try {
+      console.log('Unfollowing user:', { userId: currentUserId, followId: profileId });
       const response = await axios.delete(`${baseUrl}/unfollow`, {
         data: { userId: currentUserId, followId: profileId },
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('handleUnfollow Response:', response.data);
       if (response.data.success) {
         setUserDetails((prev) => ({
           ...prev,
@@ -174,10 +240,11 @@ export default function AccountDetails() {
         fetchFollowers();
         showNotification('Unfollowed successfully');
       } else {
-        showNotification('Failed to unfollow user', 'error');
+        console.warn('handleUnfollow failed:', response.data.message);
+        showNotification(`Failed to unfollow user: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error unfollowing user:', error);
+      console.error('Error in handleUnfollow:', error.message, error.response?.data);
       showNotification('Failed to unfollow user', 'error');
     }
   };
@@ -185,12 +252,17 @@ export default function AccountDetails() {
   // Handle profile picture upload
   const handleProfilePictureChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.warn('No file selected for profile picture');
+      return;
+    }
     if (!file.type.startsWith('image/')) {
+      console.warn('Invalid file type for profile picture:', file.type);
       showNotification('Only image files are allowed', 'error');
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
+      console.warn('Image size too large:', file.size);
       showNotification('Image size must be less than 5MB', 'error');
       return;
     }
@@ -198,6 +270,7 @@ export default function AccountDetails() {
     const formData = new FormData();
     formData.append('profilePicture', file);
     try {
+      console.log('Uploading profile picture');
       const response = await axios.post(`${baseUrl}/api/upload-profile-picture`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -205,58 +278,85 @@ export default function AccountDetails() {
         },
         withCredentials: true,
       });
+      console.log('handleProfilePictureChange Response:', response.data);
       if (response.data.success) {
         setUserDetails((prev) => ({ ...prev, image: response.data.imageUrl }));
         showNotification('Profile picture updated successfully');
       } else {
-        showNotification('Failed to upload profile picture', 'error');
+        console.warn('handleProfilePictureChange failed:', response.data.message);
+        showNotification(`Failed to upload profile picture: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      console.error('Error in handleProfilePictureChange:', error.message, error.response?.data);
       showNotification('Failed to upload profile picture', 'error');
+    } finally {
+      setProfilePicture(null);
     }
-    setProfilePicture(null);
   };
 
   // Handle bio update
   const handleBioUpdate = async () => {
-    if (!isOwnProfile) return;
+    if (!isOwnProfile) {
+      console.warn('Cannot update bio: Not own profile');
+      return;
+    }
+    if (!token) {
+      console.warn('Cannot update bio: No token');
+      showNotification('Please log in to update your bio', 'error');
+      router.push('/login');
+      return;
+    }
     try {
+      console.log('Updating bio:', bio);
       const response = await axios.put(
         `${baseUrl}/user/${currentUserId}`,
         { bio },
         { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
       );
+      console.log('handleBioUpdate Response:', response.data);
       if (response.data.success) {
         setUserDetails(response.data.user);
         showNotification('Bio updated successfully');
       } else {
-        showNotification('Failed to update bio', 'error');
+        console.warn('handleBioUpdate failed:', response.data.message);
+        showNotification(`Failed to update bio: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error updating bio:', error);
+      console.error('Error in handleBioUpdate:', error.message, error.response?.data);
       showNotification('Failed to update bio', 'error');
     }
   };
 
   // Handle delete account
   const handleDeleteAccount = async () => {
-    if (!isOwnProfile) return;
+    if (!isOwnProfile) {
+      console.warn('Cannot delete account: Not own profile');
+      return;
+    }
+    if (!token) {
+      console.warn('Cannot delete account: No token');
+      showNotification('Please log in to delete your account', 'error');
+      router.push('/login');
+      return;
+    }
     try {
+      console.log('Deleting account for userId:', currentUserId);
       const response = await axios.delete(`${baseUrl}/user/delete`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('handleDeleteAccount Response:', response.data);
       if (response.data.success) {
         showNotification('Account deleted successfully');
         setTimeout(() => {
           router.push('/');
         }, 1000);
       } else {
-        showNotification('Failed to delete account', 'error');
+        console.warn('handleDeleteAccount failed:', response.data.message);
+        showNotification(`Failed to delete account: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error('Error in handleDeleteAccount:', error.message, error.response?.data);
       showNotification('Failed to delete account', 'error');
     }
     setShowDeleteModal(false);
@@ -264,20 +364,32 @@ export default function AccountDetails() {
 
   // Handle delete post
   const handleDeletePost = async (postId) => {
-    if (!isOwnProfile) return;
+    if (!isOwnProfile) {
+      console.warn('Cannot delete post: Not own profile');
+      return;
+    }
+    if (!token) {
+      console.warn('Cannot delete post: No token');
+      showNotification('Please log in to delete posts', 'error');
+      router.push('/login');
+      return;
+    }
     try {
+      console.log('Deleting post:', postId);
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
+      console.log('handleDeletePost Response:', response.data);
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
         showNotification('Post deleted successfully');
       } else {
-        showNotification('Failed to delete post', 'error');
+        console.warn('handleDeletePost failed:', response.data.message);
+        showNotification(`Failed to delete post: ${response.data.message}`, 'error');
       }
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error in handleDeletePost:', error.message, error.response?.data);
       showNotification('Failed to delete post', 'error');
     }
     setShowDeleteModal(false);
@@ -286,23 +398,55 @@ export default function AccountDetails() {
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+    console.log('Sidebar toggled:', !isSidebarOpen);
   };
 
   const openDeleteModal = (postId = null) => {
     setDeletePostId(postId);
     setShowDeleteModal(true);
+    console.log('Opening delete modal for:', postId ? `post ${postId}` : 'account');
+  };
+
+  // Retry fetching data
+  const handleRetry = () => {
+    console.log('Retrying data fetch');
+    setError(null);
+    setLoading(true);
+    Promise.all([fetchUserDetails(), fetchUserPosts(), fetchFollowers(), fetchFollowing()])
+      .catch((err) => {
+        console.error('Retry fetch error:', err);
+        setError('Failed to fetch data');
+      })
+      .finally(() => {
+        setLoading(false);
+        console.log('Retry fetch complete, loading:', false);
+      });
   };
 
   // Initial fetch - only run after component mounts and required data is available
   useEffect(() => {
     if (mounted && profileId && token) {
+      console.log('Running initial fetch for profileId:', profileId);
       setLoading(true);
-      Promise.all([
-        fetchUserDetails(),
-        fetchUserPosts(),
-        fetchFollowers(),
-        fetchFollowing(),
-      ]).finally(() => setLoading(false));
+      setError(null);
+      Promise.all([fetchUserDetails(), fetchUserPosts(), fetchFollowers(), fetchFollowing()])
+        .then(() => {
+          console.log('Initial fetch completed');
+        })
+        .catch((err) => {
+          console.error('Initial fetch error:', err);
+          setError('Failed to fetch data. Please try again.');
+        })
+        .finally(() => {
+          setLoading(false);
+          console.log('Fetch complete, loading:', false);
+        });
+    } else {
+      console.log('Skipping initial fetch:', { mounted, profileId, token });
+      setLoading(false);
+      if (!token && mounted) {
+        setError('Please log in to view this profile.');
+      }
     }
   }, [mounted, profileId, token]);
 
@@ -318,8 +462,47 @@ export default function AccountDetails() {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  // Fallback UI if not mounted or no profileId
+  if (!mounted || !profileId) {
+    console.log('Rendering fallback UI:', { mounted, profileId });
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
+    // Log state before rendering
+    console.log('renderContent State:', { activeTab, userDetails, userPosts, followers, following, loading, error });
+
+    if (error) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg text-center"
+        >
+          <p className="text-red-600">{error}</p>
+          <div className="mt-4 flex gap-4 justify-center">
+            <button
+              onClick={handleRetry}
+              className="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all duration-300"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.push('/login')}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-all duration-300"
+            >
+              Go to Login
+            </button>
+          </div>
+        </motion.div>
+      );
+    }
+
     switch (activeTab) {
       case 'profile':
         return (
@@ -339,7 +522,7 @@ export default function AccountDetails() {
                   <div className="relative">
                     <Image
                       src={userDetails.image || DEFAULT_IMAGE}
-                      alt={userDetails.name}
+                      alt={userDetails.name || 'User'}
                       width={120}
                       height={120}
                       className="rounded-full border-4 border-blue-100 object-cover"
@@ -362,8 +545,8 @@ export default function AccountDetails() {
                     />
                   </div>
                   <div className="text-center sm:text-left flex-1">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
-                    <p className="text-gray-600 text-sm">@{userDetails.handle}</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name || 'User'}</h2>
+                    <p className="text-gray-600 text-sm">@{userDetails.handle || 'user'}</p>
                     {isOwnProfile ? (
                       <div className="mt-4">
                         <textarea
@@ -377,6 +560,7 @@ export default function AccountDetails() {
                         <button
                           onClick={handleBioUpdate}
                           className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all duration-300"
+                          disabled={!isLoggedIn}
                         >
                           Save Bio
                         </button>
@@ -386,10 +570,10 @@ export default function AccountDetails() {
                     )}
                     <div className="flex gap-6 mt-6">
                       <p className="text-gray-700">
-                        <span className="font-semibold text-gray-900">{userDetails.followers_count}</span> Followers
+                        <span className="font-semibold text-gray-900">{userDetails.followers_count || 0}</span> Followers
                       </p>
                       <p className="text-gray-700">
-                        <span className="font-semibold text-gray-900">{userDetails.following_count}</span> Following
+                        <span className="font-semibold text-gray-900">{userDetails.following_count || 0}</span> Following
                       </p>
                     </div>
                     {!isOwnProfile && (
@@ -400,15 +584,16 @@ export default function AccountDetails() {
                             ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             : 'bg-blue-500 text-white hover:bg-blue-600'
                         }`}
+                        disabled={!isLoggedIn}
                       >
                         {userDetails.is_followed ? (
                           <>
-                            <UserX className="w-5 h-5" />
+                            <UserIcon className="w-5 h-5" />
                             Unfollow
                           </>
                         ) : (
                           <>
-                            <UserCheck className="w-5 h-5" />
+                            <UserIcon className="w-5 h-5" />
                             Follow
                           </>
                         )}
@@ -420,6 +605,7 @@ export default function AccountDetails() {
                   <button
                     onClick={() => openDeleteModal()}
                     className="px-6 py-2 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 transition-all duration-300 w-full sm:w-auto"
+                    disabled={!isLoggedIn}
                   >
                     Delete Account
                   </button>
@@ -457,7 +643,7 @@ export default function AccountDetails() {
                       <Link href={`/post/${post.id}`}>
                         <Image
                           src={post.imageUrls[0] || DEFAULT_IMAGE}
-                          alt={post.title}
+                          alt={post.title || 'Post'}
                           width={400}
                           height={200}
                           className="w-full h-48 object-cover"
@@ -468,19 +654,25 @@ export default function AccountDetails() {
                     <div className="p-4">
                       <Link href={`/post/${post.id}`}>
                         <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 hover:text-blue-500 transition-colors">
-                          {post.title}
+                          {post.title || 'Untitled'}
                         </h3>
                       </Link>
-                      <p className="text-gray-600 text-sm mt-2 line-clamp-3">{post.description.replace(/<[^>]+>/g, '')}</p>
+                      <p className="text-gray-600 text-sm mt-2 line-clamp-3">
+                        {post.description?.replace(/<[^>]+>/g, '') || ''}
+                      </p>
                       <p className="text-gray-500 text-xs mt-2">{formatDateTime(post.created_at)}</p>
                       <div className="flex items-center gap-4 mt-4">
                         <div className="flex items-center gap-1 text-gray-600">
-                          <ThumbsUp className={`w-4 h-4 ${post.is_liked ? 'fill-blue-500 text-blue-500' : ''}`} />
-                          <span className="text-sm">{post.likes_count}</span>
+                          <HandThumbUpIcon className={`w-4 h-4 ${post.is_liked ? 'fill-blue-500 text-blue-500' : ''}`} />
+                          <span className="text-sm">{post.likes_count || 0}</span>
                         </div>
                         <div className="flex items-center gap-1 text-gray-600">
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="text-sm">{post.comments_count}</span>
+                          <ChatBubbleLeftIcon className="w-4 h-4" />
+                          <span className="text-sm">{post.comments_count || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <ShareIcon className="w-4 h-4" />
+                          <span className="text-sm">{post.shares_count || 0}</span>
                         </div>
                       </div>
                       {isOwnProfile && (
@@ -493,6 +685,7 @@ export default function AccountDetails() {
                           <button
                             onClick={() => openDeleteModal(post.id)}
                             className="px-3 py-1 bg-red-500 text-white text-sm rounded-full hover:bg-red-600 transition-all duration-300"
+                            disabled={!isLoggedIn}
                           >
                             Delete
                           </button>
@@ -532,7 +725,7 @@ export default function AccountDetails() {
                   >
                     <Image
                       src={user.image || DEFAULT_IMAGE}
-                      alt={user.name}
+                      alt={user.name || 'User'}
                       width={40}
                       height={40}
                       className="rounded-full object-cover"
@@ -540,9 +733,9 @@ export default function AccountDetails() {
                     />
                     <div className="flex-1">
                       <Link href={`/profile/${user.id}`} className="text-gray-900 font-semibold hover:text-blue-500 transition-colors">
-                        {user.name}
+                        {user.name || 'User'}
                       </Link>
-                      <p className="text-gray-600 text-sm">@{user.handle}</p>
+                      <p className="text-gray-600 text-sm">@{user.handle || 'user'}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -577,7 +770,7 @@ export default function AccountDetails() {
                   >
                     <Image
                       src={user.image || DEFAULT_IMAGE}
-                      alt={user.name}
+                      alt={user.name || 'User'}
                       width={40}
                       height={40}
                       className="rounded-full object-cover"
@@ -585,9 +778,9 @@ export default function AccountDetails() {
                     />
                     <div className="flex-1">
                       <Link href={`/profile/${user.id}`} className="text-gray-900 font-semibold hover:text-blue-500 transition-colors">
-                        {user.name}
+                        {user.name || 'User'}
                       </Link>
-                      <p className="text-gray-600 text-sm">@{user.handle}</p>
+                      <p className="text-gray-600 text-sm">@{user.handle || 'user'}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -615,10 +808,10 @@ export default function AccountDetails() {
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Personal Details</h2>
                 <div className="space-y-4">
                   <p className="text-lg text-gray-700">
-                    <span className="font-semibold text-gray-900">Name:</span> {userDetails.name}
+                    <span className="font-semibold text-gray-900">Name:</span> {userDetails.name || 'User'}
                   </p>
                   <p className="text-lg text-gray-700">
-                    <span className="font-semibold text-gray-900">Email:</span> {userDetails.email}
+                    <span className="font-semibold text-gray-900">Email:</span> {userDetails.email || 'N/A'}
                   </p>
                   <p className="text-lg text-gray-700">
                     <span className="font-semibold text-gray-900">Bio:</span> {userDetails.bio || 'No bio provided'}
@@ -627,6 +820,7 @@ export default function AccountDetails() {
                 <button
                   onClick={() => openDeleteModal()}
                   className="mt-6 px-6 py-2 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 transition-all duration-300 w-full sm:w-auto"
+                  disabled={!isLoggedIn}
                 >
                   Delete Account
                 </button>
@@ -705,6 +899,7 @@ export default function AccountDetails() {
               <button
                 onClick={() => (deletePostId ? handleDeletePost(deletePostId) : handleDeleteAccount())}
                 className="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+                disabled={!isLoggedIn}
               >
                 Delete
               </button>
