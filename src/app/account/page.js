@@ -1,18 +1,17 @@
 'use client';
 import { useState, useEffect, useContext, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Bars3Icon, XMarkIcon, PencilIcon, CameraIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, CameraIcon } from '@heroicons/react/24/outline';
 import { UserCheck, UserX, ThumbsUp, MessageCircle, Share, Settings, User, Bookmark, Lock, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
   const {
     userData,
-    isLoggedIn,
     updateUserProfile,
     uploadProfilePicture,
     error,
@@ -20,10 +19,9 @@ export default function AccountDetails() {
     setError,
     setSuccess,
   } = useContext(AuthContext);
-  const { userId: profileId } = useParams();
-  const currentUserId = userData?.id || null;
-  const isOwnProfile = profileId === currentUserId;
-
+  const router = useRouter();
+  const profileId = userData?.id; // Use userData.id instead of useParams
+  const isOwnProfile = true; // Always true since we're showing the logged-in user's profile
   const [activeTab, setActiveTab] = useState('profile');
   const [userDetails, setUserDetails] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
@@ -40,203 +38,123 @@ export default function AccountDetails() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
+  // Redirect to login if userData is not available
+  useEffect(() => {
+    if (!userData?.id || !userData?.token) {
+      console.log('No userData or token, redirecting to login');
+      router.push('/login');
+    }
+  }, [userData, router]);
+
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
   // Fetch user details
-const fetchUserDetails = async () => {
-  console.log('Fetching user details for profileId:', profileId);
-  console.log('Using token:', userData?.token);
-  try {
-    const response = await axios.get(`${baseUrl}/user/${profileId}`, {
-      headers: { Authorization: `Bearer ${userData?.token}` },
-      withCredentials: true,
-    });
-    console.log('User details response:', response.data);
-    if (response.data.success) {
-      setUserDetails(response.data.user);
-      setBioText(response.data.user.bio || '');
-    } else {
-      console.error('Failed to fetch user details:', response.data.message);
-      showNotification('Failed to fetch user details', 'error');
-    }
-  } catch (error) {
-    console.error('Error fetching user details:', error.message, error.response?.data);
-    showNotification('Failed to fetch user details', 'error');
-  }
-};
-
-// Fetch user posts
-const fetchUserPosts = async () => {
-  console.log('Fetching user posts for profileId:', profileId);
-  try {
-    const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
-      headers: { Authorization: `Bearer ${userData?.token}` },
-      withCredentials: true,
-    });
-    console.log('User posts response:', response.data);
-    if (response.data.success) {
-      setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-    } else {
-      console.error('Failed to fetch user posts:', response.data.message);
-      showNotification('Failed to fetch user posts', 'error');
-    }
-  } catch (error) {
-    console.error('Error fetching user posts:', error.message, error.response?.data);
-    showNotification('Error fetching user posts', 'error');
-  }
-};
-
-// Fetch followers
-const fetchFollowers = async () => {
-  console.log('Fetching followers for profileId:', profileId);
-  try {
-    const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
-      headers: { Authorization: `Bearer ${userData?.token}` },
-      withCredentials: true,
-    });
-    console.log('Followers response:', response.data);
-    if (response.data.success) {
-      setFollowers(response.data.followers.slice(0, 5));
-    } else {
-      console.error('Failed to fetch followers:', response.data.message);
-      showNotification('Failed to fetch followers', 'error');
-    }
-  } catch (error) {
-    console.error('Error fetching followers:', error.message, error.response?.data);
-    showNotification('Error fetching followers', 'error');
-  }
-};
-
-// Fetch following
-const fetchFollowing = async () => {
-  console.log('Fetching following for profileId:', profileId);
-  try {
-    const response = await axios.get(`${baseUrl}/following/${profileId}`, {
-      headers: { Authorization: `Bearer ${userData?.token}` },
-      withCredentials: true,
-    });
-    console.log('Following response:', response.data);
-    if (response.data.success) {
-      setFollowing(response.data.following.slice(0, 5));
-    } else {
-      console.error('Failed to fetch following:', response.data.message);
-      showNotification('Failed to fetch following', 'error');
-    }
-  } catch (error) {
-    console.error('Error fetching following:', error.message, error.response?.data);
-    showNotification('Error fetching following', 'error');
-  }
-};
-
-// Initial fetch with logging
-useEffect(() => {
-  console.log('useEffect triggered with profileId:', profileId, 'and userData:', userData);
-  if (profileId && userData?.token) {
-    console.log('Starting data fetch for profileId:', profileId);
-    setLoading(true);
-    Promise.all([
-      fetchUserDetails(),
-      fetchUserPosts(),
-      fetchFollowers(),
-      fetchFollowing(),
-    ])
-      .then((results) => {
-        console.log('Promise.all resolved:', results);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('Promise.all failed:', error);
-        setLoading(false);
-        showNotification('Failed to load profile data', 'error');
-      });
-  } else {
-    console.warn('Missing profileId or token:', { profileId, token: userData?.token });
-    setLoading(false);
-  }
-}, [profileId, userData?.token]);
-
-  // Handle follow
-  const handleFollow = async () => {
-    if (!currentUserId) {
-      showNotification('Please log in to follow users', 'error');
-      return;
-    }
+  const fetchUserDetails = async () => {
+    console.log('Fetching user details for profileId:', profileId);
     try {
-      const response = await axios.post(
-        `${baseUrl}/follow`,
-        { userId: currentUserId, followId: profileId },
-        { headers: { Authorization: `Bearer ${userData?.token}` }, withCredentials: true }
-      );
+      const response = await axios.get(`${baseUrl}/user/${profileId}`, {
+        headers: { Authorization: `Bearer ${userData.token}` },
+        withCredentials: true,
+      });
+      console.log('User details response:', response.data);
       if (response.data.success) {
-        setUserDetails((prev) => ({
-          ...prev,
-          is_followed: true,
-          followers_count: prev.followers_count + 1,
-        }));
-        fetchFollowers();
-        showNotification('Followed successfully');
+        setUserDetails(response.data.user);
+        setBioText(response.data.user.bio || '');
       } else {
-        showNotification('Failed to follow user', 'error');
+        console.error('Failed to fetch user details:', response.data.message);
+        showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
-      console.error('Error following user:', error);
-      showNotification('Failed to follow user', 'error');
+      console.error('Error fetching user details:', error.message, error.response?.data);
+      showNotification('Failed to fetch user details', 'error');
     }
   };
 
-  // Handle unfollow
-  const handleUnfollow = async () => {
-    if (!currentUserId) {
-      showNotification('Please log in to unfollow users', 'error');
-      return;
-    }
+  // Fetch user posts
+  const fetchUserPosts = async () => {
+    console.log('Fetching user posts for profileId:', profileId);
     try {
-      const response = await axios.delete(
-        `${baseUrl}/unfollow`,
-        {
-          data: { userId: currentUserId, followId: profileId },
-          headers: { Authorization: `Bearer ${userData?.token}` },
-          withCredentials: true,
-        }
-      );
+      const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
+        headers: { Authorization: `Bearer ${userData.token}` },
+        withCredentials: true,
+      });
+      console.log('User posts response:', response.data);
       if (response.data.success) {
-        setUserDetails((prev) => ({
-          ...prev,
-          is_followed: false,
-          followers_count: prev.followers_count - 1,
-        }));
-        fetchFollowers();
-        showNotification('Unfollowed successfully');
+        setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } else {
-        showNotification('Failed to unfollow user', 'error');
+        console.error('Failed to fetch user posts:', response.data.message);
+        showNotification('Failed to fetch user posts', 'error');
       }
     } catch (error) {
-      console.error('Error unfollowing user:', error);
-      showNotification('Failed to unfollow user', 'error');
+      console.error('Error fetching user posts:', error.message, error.response?.data);
+      showNotification('Error fetching user posts', 'error');
+    }
+  };
+
+  // Fetch followers
+  const fetchFollowers = async () => {
+    console.log('Fetching followers for profileId:', profileId);
+    try {
+      const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
+        headers: { Authorization: `Bearer ${userData.token}` },
+        withCredentials: true,
+      });
+      console.log('Followers response:', response.data);
+      if (response.data.success) {
+        setFollowers(response.data.followers.slice(0, 5));
+      } else {
+        console.error('Failed to fetch followers:', response.data.message);
+        showNotification('Failed to fetch followers', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching followers:', error.message, error.response?.data);
+      showNotification('Error fetching followers', 'error');
+    }
+  };
+
+  // Fetch following
+  const fetchFollowing = async () => {
+    console.log('Fetching following for profileId:', profileId);
+    try {
+      const response = await axios.get(`${baseUrl}/following/${profileId}`, {
+        headers: { Authorization: `Bearer ${userData.token}` },
+        withCredentials: true,
+      });
+      console.log('Following response:', response.data);
+      if (response.data.success) {
+        setFollowing(response.data.following.slice(0, 5));
+      } else {
+        console.error('Failed to fetch following:', response.data.message);
+        showNotification('Failed to fetch following', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching following:', error.message, error.response?.data);
+      showNotification('Error fetching following', 'error');
     }
   };
 
   // Handle delete account
   const handleDeleteAccount = async () => {
-    if (!isOwnProfile) return;
     try {
       const response = await axios.delete(`${baseUrl}/user/delete`, {
-        headers: { Authorization: `Bearer ${userData?.token}` },
+        headers: { Authorization: `Bearer ${userData.token}` },
         withCredentials: true,
       });
+      console.log('Delete account response:', response.data);
       if (response.data.success) {
         showNotification('Account deleted successfully');
         setTimeout(() => {
-          window.location.href = '/';
+          router.push('/');
         }, 1000);
       } else {
+        console.error('Failed to delete account:', response.data.message);
         showNotification('Failed to delete account', 'error');
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
+      console.error('Error deleting account:', error.message, error.response?.data);
       showNotification('Failed to delete account', 'error');
     }
     setShowDeleteModal(false);
@@ -244,21 +162,22 @@ useEffect(() => {
 
   // Handle delete post
   const handleDeletePost = async (postId) => {
-    if (!isOwnProfile) return;
     try {
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
-        params: { userId: currentUserId },
-        headers: { Authorization: `Bearer ${userData?.token}` },
+        params: { userId: profileId },
+        headers: { Authorization: `Bearer ${userData.token}` },
         withCredentials: true,
       });
+      console.log('Delete post response:', response.data);
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
         showNotification('Post deleted successfully');
       } else {
+        console.error('Failed to delete post:', response.data.message);
         showNotification('Failed to delete post', 'error');
       }
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error deleting post:', error.message, error.response?.data);
       showNotification('Failed to delete post', 'error');
     }
     setShowDeleteModal(false);
@@ -267,23 +186,22 @@ useEffect(() => {
 
   // Handle bio update
   const handleBioUpdate = async () => {
-    if (!isOwnProfile) return;
     try {
       const success = await updateUserProfile({ bio: bioText });
+      console.log('Bio update result:', success);
       if (success) {
         setUserDetails((prev) => ({ ...prev, bio: bioText }));
         setIsEditingBio(false);
         showNotification('Bio updated successfully');
       }
     } catch (error) {
-      console.error('Error updating bio:', error);
+      console.error('Error updating bio:', error.message);
       showNotification('Failed to update bio', 'error');
     }
   };
 
   // Handle profile picture upload
   const handleProfilePictureChange = async (e) => {
-    if (!isOwnProfile) return;
     const file = e.target.files[0];
     if (!file) return;
 
@@ -299,12 +217,13 @@ useEffect(() => {
 
     try {
       const success = await uploadProfilePicture(file);
+      console.log('Profile picture upload result:', success);
       if (success) {
-        await fetchUserDetails(); // Refresh user details to get updated image
+        await fetchUserDetails(); // Refresh user details
         showNotification('Profile picture updated successfully');
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error);
+      console.error('Error uploading profile picture:', error.message);
       showNotification('Failed to upload profile picture', 'error');
     }
   };
@@ -317,6 +236,31 @@ useEffect(() => {
     setDeletePostId(postId);
     setShowDeleteModal(true);
   };
+
+  // Initial fetch
+  useEffect(() => {
+    if (profileId && userData?.token) {
+      console.log('Starting data fetch for profileId:', profileId);
+      setLoading(true);
+      Promise.all([
+        fetchUserDetails(),
+        fetchUserPosts(),
+        fetchFollowers(),
+        fetchFollowing(),
+      ])
+        .then((results) => {
+          console.log('Promise.all resolved:', results);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Promise.all failed:', error);
+          setLoading(false);
+          showNotification('Failed to load profile data', 'error');
+        });
+    } else {
+      console.warn('Missing profileId or token:', { profileId, token: userData?.token });
+    }
+  }, [profileId, userData?.token]);
 
   // Update bio text when user details change
   useEffect(() => {
@@ -374,35 +318,29 @@ useEffect(() => {
                       height={120}
                       className="rounded-full border-4 border-blue-100 object-cover"
                     />
-                    {isOwnProfile && (
-                      <>
-                        <button
-                          onClick={() => fileInputRef.current.click()}
-                          className="absolute inset-0 rounded-full bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                        >
-                          <CameraIcon className="w-8 h-8 text-white" />
-                        </button>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleProfilePictureChange}
-                          accept="image/*"
-                          className="hidden"
-                        />
-                      </>
-                    )}
+                    <button
+                      onClick={() => fileInputRef.current.click()}
+                      className="absolute inset-0 rounded-full bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    >
+                      <CameraIcon className="w-8 h-8 text-white" />
+                    </button>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleProfilePictureChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
                   </div>
                   <div className="text-center sm:text-left">
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
-                      {isOwnProfile && (
-                        <button
-                          onClick={() => setIsEditingBio(!isEditingBio)}
-                          className="text-gray-500 hover:text-blue-600 transition-colors"
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setIsEditingBio(!isEditingBio)}
+                        className="text-gray-500 hover:text-blue-600 transition-colors"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
                     </div>
                     <p className="text-gray-500 text-sm">@{userDetails.handle}</p>
 
@@ -433,7 +371,7 @@ useEffect(() => {
                       </div>
                     ) : (
                       <p className="text-gray-700 mt-4">
-                        {userDetails.bio || (isOwnProfile ? 'Add a bio to tell people about yourself' : 'No bio provided')}
+                        {userDetails.bio || 'Add a bio to tell people about yourself'}
                       </p>
                     )}
 
@@ -451,29 +389,6 @@ useEffect(() => {
                         <p className="text-gray-500 text-sm">Following</p>
                       </div>
                     </div>
-
-                    {!isOwnProfile && (
-                      <button
-                        onClick={userDetails.is_followed ? handleUnfollow : handleFollow}
-                        className={`mt-6 px-6 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all duration-300 ${
-                          userDetails.is_followed
-                            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        }`}
-                      >
-                        {userDetails.is_followed ? (
-                          <>
-                            <UserX className="w-4 h-4" />
-                            Unfollow
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4" />
-                            Follow
-                          </>
-                        )}
-                      </button>
-                    )}
                   </div>
                 </div>
               </>
@@ -493,7 +408,7 @@ useEffect(() => {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Posts</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-1212 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             ) : userPosts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -530,21 +445,19 @@ useEffect(() => {
                             <span className="text-sm">{post.comments_count}</span>
                           </div>
                         </div>
-                        {isOwnProfile && (
-                          <div className="flex gap-2">
-                            <Link href={`/edit/${post.id}`}>
-                              <button className="p-1 text-blue-600 hover:text-blue-800 transition-colors">
-                                <PencilIcon className="w-4 h-4" />
-                              </button>
-                            </Link>
-                            <button
-                              onClick={() => openDeleteModal(post.id)}
-                              className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
+                        <div className="flex gap-2">
+                          <Link href={`/edit/${post.id}`}>
+                            <button className="p-1 text-blue-600 hover:text-blue-800 transition-colors">
+                              <PencilIcon className="w-4 h-4" />
                             </button>
-                          </div>
-                        )}
+                          </Link>
+                          <button
+                            onClick={() => openDeleteModal(post.id)}
+                            className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -553,14 +466,12 @@ useEffect(() => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-gray-500">No posts found.</p>
-                {isOwnProfile && (
-                  <Link
-                    href="/write"
-                    className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Create your first post
-                  </Link>
-                )}
+                <Link
+                  href="/write"
+                  className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create your first post
+                </Link>
               </div>
             )}
           </motion.div>
@@ -677,20 +588,17 @@ useEffect(() => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-gray-500">Not following anyone yet.</p>
-                {isOwnProfile && (
-                  <Link
-                    href="/explore"
-                    className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Find people to follow
-                  </Link>
-                )}
+                <Link
+                  href="/explore"
+                  className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Find people to follow
+                </Link>
               </div>
             )}
           </motion.div>
         );
       case 'settings':
-        if (!isOwnProfile) return null;
         return (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -821,17 +729,6 @@ useEffect(() => {
         </motion.div>
       )}
 
-      {/* Mobile Header with Toggle Button */}
-      <header className="flex items-center justify-between p-4 bg-white shadow-md sm:hidden">
-        <h2 className="text-lg font-bold text-gray-900">{isOwnProfile ? 'Account Settings' : 'User Profile'}</h2>
-        <button
-          onClick={toggleSidebar}
-          className="text-gray-600 hover:text-gray-900 focus:outline-none"
-        >
-          {isSidebarOpen ? <XMarkIcon className="w-6 h-6" /> : <Bars3Icon className="w-6 h-6" />}
-        </button>
-      </header>
-
       <div className="flex flex-1 flex-col sm:flex-row">
         {/* Sidebar */}
         <motion.aside
@@ -843,9 +740,7 @@ useEffect(() => {
           } sm:block w-full sm:w-64 bg-white shadow-md absolute sm:static z-20 sm:z-auto h-full sm:h-auto`}
         >
           <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 hidden sm:block">
-              {isOwnProfile ? 'Account Settings' : 'User Profile'}
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900 hidden sm:block">Account Settings</h2>
           </div>
           <ul className="mt-4">
             {[
@@ -853,7 +748,7 @@ useEffect(() => {
               { id: 'posts', label: 'Posts', icon: <Bookmark className="w-5 h-5" /> },
               { id: 'followers', label: 'Followers', icon: <UserCheck className="w-5 h-5" /> },
               { id: 'following', label: 'Following', icon: <UserX className="w-5 h-5" /> },
-              ...(isOwnProfile ? [{ id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> }] : []),
+              { id: 'settings', label: 'Settings', icon: <Settings className="w-5 h-5" /> },
             ].map((tab) => (
               <motion.li
                 key={tab.id}
