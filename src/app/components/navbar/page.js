@@ -3,7 +3,7 @@ import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserCircleIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, BellIcon, MoonIcon, SunIcon, PencilSquareIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, MoonIcon, SunIcon, PencilSquareIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SocialMediaNav() {
@@ -57,12 +57,6 @@ export default function SocialMediaNav() {
 
   const menuItems = [
     {
-      icon: BellIcon,
-      label: 'Notifications',
-      href: '/notifications',
-      color: 'from-blue-500 to-cyan-500'
-    },
-    {
       icon: PencilSquareIcon,
       label: 'Write Post',
       href: '/write',
@@ -72,14 +66,8 @@ export default function SocialMediaNav() {
 
   const userMenuItems = isLoggedIn ? [
     {
-      icon: UserCircleIcon,
-      label: 'Profile',
-      href: `/profile/${userData?.id}`,
-      color: 'from-green-500 to-emerald-500'
-    },
-    {
       icon: Cog6ToothIcon,
-      label: 'Account Settings',
+      label: 'Account',
       action: handleAccountRedirect,
       color: 'from-gray-500 to-slate-500'
     },
@@ -106,7 +94,7 @@ export default function SocialMediaNav() {
   ];
 
   return (
-    <div className="fixed top-0 left-0 w-full z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
+    <div className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between h-full">
         {/* Logo and Title */}
         <Link href="/" className="flex items-center space-x-2 group max-h-14">
@@ -191,10 +179,10 @@ export default function SocialMediaNav() {
             )}
           </button>
           <Link
-            href="/notifications"
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            href="/write"
+            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-colors"
           >
-            <BellIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
+            Write Post
           </Link>
           {isLoggedIn ? (
             <div className="relative">
@@ -215,14 +203,8 @@ export default function SocialMediaNav() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full right-0 mt-2 w-48 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-2 z-50"
+                    className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-2 z-50"
                   >
-                    <Link
-                      href={`/profile/${userData?.id}`}
-                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm"
-                    >
-                      Profile
-                    </Link>
                     <button
                       onClick={handleAccountRedirect}
                       className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm"
@@ -255,12 +237,6 @@ export default function SocialMediaNav() {
               </Link>
             </>
           )}
-          <Link
-            href="/write"
-            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-colors"
-          >
-            Post
-          </Link>
         </nav>
       </div>
 
@@ -290,23 +266,13 @@ export default function SocialMediaNav() {
       <AnimatePresence>
         {menuOpen && (
           <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
-              onClick={closeMenu}
-            />
-            
             {/* Slide-in Menu */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-l border-gray-200 dark:border-gray-700 z-50 shadow-2xl"
+              className="md:hidden fixed top-0 right-0 h-full w-80 max-w-[85vw] bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 z-50 shadow-2xl"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
@@ -373,7 +339,7 @@ export default function SocialMediaNav() {
                       <Link
                         href={item.href}
                         onClick={closeMenu}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                       >
                         <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                           <item.icon className="h-6 w-6" />
@@ -402,7 +368,7 @@ export default function SocialMediaNav() {
                           <Link
                             href={item.href}
                             onClick={closeMenu}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                           >
                             <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                               <item.icon className="h-6 w-6" />
@@ -420,7 +386,7 @@ export default function SocialMediaNav() {
                               item.action();
                               closeMenu();
                             }}
-                            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                           >
                             <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                               <item.icon className="h-6 w-6" />
