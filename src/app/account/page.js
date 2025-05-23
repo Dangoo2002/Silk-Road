@@ -5,7 +5,7 @@ import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PencilIcon, CameraIcon, HeartIcon, ChatBubbleLeftIcon, EyeIcon, TrashIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { PencilIcon, CameraIcon, HeartIcon, ChatBubbleLeftIcon, EyeIcon, TrashIcon, Bars3Icon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { UserIcon, BookmarkIcon, UsersIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -15,7 +15,6 @@ export default function AccountDetails() {
     token,
     loading: authLoading,
     updateUserProfile,
-    uploadProfilePicture,
     error,
     success,
     setError,
@@ -35,6 +34,8 @@ export default function AccountDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePostId, setDeletePostId] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
@@ -42,7 +43,6 @@ export default function AccountDetails() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && (!userData?.id || !token)) {
-      console.log('No userData or token, redirecting to login');
       router.push('/login');
     }
   }, [authLoading, userData, token, router]);
@@ -54,85 +54,69 @@ export default function AccountDetails() {
 
   // Fetch user details
   const fetchUserDetails = async () => {
-    console.log('Fetching user details for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      console.log('User details response:', response.data);
       if (response.data.success) {
         setUserDetails(response.data.user);
         setBioText(response.data.user.bio || '');
       } else {
-        console.error('Failed to fetch user details:', response.data.message);
         showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
-      console.error('Error fetching user details:', error.message, error.response?.data);
       showNotification('Failed to fetch user details', 'error');
     }
   };
 
   // Fetch user posts
   const fetchUserPosts = async () => {
-    console.log('Fetching user posts for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      console.log('User posts response:', response.data);
       if (response.data.success) {
         setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
       } else {
-        console.error('Failed to fetch user posts:', response.data.message);
         showNotification('Failed to fetch user posts', 'error');
       }
     } catch (error) {
-      console.error('Error fetching user posts:', error.message, error.response?.data);
       showNotification('Error fetching user posts', 'error');
     }
   };
 
   // Fetch followers
   const fetchFollowers = async () => {
-    console.log('Fetching followers for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      console.log('Followers response:', response.data);
       if (response.data.success) {
         setFollowers(response.data.followers.slice(0, 5));
       } else {
-        console.error('Failed to fetch followers:', response.data.message);
         showNotification('Failed to fetch followers', 'error');
       }
     } catch (error) {
-      console.error('Error fetching followers:', error.message, error.response?.data);
       showNotification('Error fetching followers', 'error');
     }
   };
 
   // Fetch following
   const fetchFollowing = async () => {
-    console.log('Fetching following for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      console.log('Following response:', response.data);
       if (response.data.success) {
         setFollowing(response.data.following.slice(0, 5));
       } else {
-        console.error('Failed to fetch following:', response.data.message);
         showNotification('Failed to fetch following', 'error');
       }
     } catch (error) {
-      console.error('Error fetching following:', error.message, error.response?.data);
       showNotification('Error fetching following', 'error');
     }
   };
@@ -145,18 +129,13 @@ export default function AccountDetails() {
         params: { id: profileId },
         withCredentials: true,
       });
-      console.log('Delete account response:', response.data);
       if (response.data.success) {
         showNotification('Account deleted successfully');
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
+        setTimeout(() => router.push('/'), 1000);
       } else {
-        console.error('Failed to delete account:', response.data.message);
         showNotification('Failed to delete account', 'error');
       }
     } catch (error) {
-      console.error('Error deleting account:', error.message, error.response?.data);
       showNotification('Failed to delete account', 'error');
     }
     setShowDeleteModal(false);
@@ -169,16 +148,13 @@ export default function AccountDetails() {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
-      console.log('Delete post response:', response.data);
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
         showNotification('Post deleted successfully');
       } else {
-        console.error('Failed to delete post:', response.data.message);
         showNotification('Failed to delete post', 'error');
       }
     } catch (error) {
-      console.error('Error deleting post:', error.message, error.response?.data);
       showNotification('Failed to delete post', 'error');
     }
     setShowDeleteModal(false);
@@ -189,20 +165,18 @@ export default function AccountDetails() {
   const handleBioUpdate = async () => {
     try {
       const success = await updateUserProfile({ bio: bioText });
-      console.log('Bio update result:', success);
       if (success) {
         setUserDetails((prev) => ({ ...prev, bio: bioText }));
         setIsEditingBio(false);
         showNotification('Bio updated successfully');
       }
     } catch (error) {
-      console.error('Error updating bio:', error.message);
       showNotification('Failed to update bio', 'error');
     }
   };
 
-  // Handle profile picture upload
-  const handleProfilePictureChange = async (e) => {
+  // Handle profile picture selection
+  const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -216,17 +190,43 @@ export default function AccountDetails() {
       return;
     }
 
+    setSelectedFile(file);
+    setPreviewImage(URL.createObjectURL(file));
+  };
+
+  // Handle profile picture save
+  const handleSaveProfilePicture = async () => {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('profilePicture', selectedFile);
+
     try {
-      const success = await uploadProfilePicture(file);
-      console.log('Profile picture upload result:', success);
-      if (success) {
-        await fetchUserDetails(); // Refresh user details to get new image URL
+      const response = await axios.post(`${baseUrl}/api/save-profile-picture`, formData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setUserDetails((prev) => ({ ...prev, image: response.data.imageUrl }));
+        setPreviewImage(null);
+        setSelectedFile(null);
         showNotification('Profile picture updated successfully');
+      } else {
+        showNotification('Failed to update profile picture', 'error');
       }
     } catch (error) {
-      console.error('Error uploading profile picture:', error.message);
-      showNotification('Failed to upload profile picture', 'error');
+      showNotification('Failed to update profile picture', 'error');
     }
+  };
+
+  // Handle profile picture cancel
+  const handleCancelProfilePicture = () => {
+    setPreviewImage(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const toggleSidebar = () => {
@@ -240,41 +240,30 @@ export default function AccountDetails() {
 
   // Initial fetch
   useEffect(() => {
-    if (authLoading) {
-      console.log('Waiting for auth to initialize');
-      return;
-    }
+    if (authLoading) return;
     if (profileId && token) {
-      console.log('Starting data fetch for profileId:', profileId);
       setLoading(true);
       Promise.all([
         fetchUserDetails(),
         fetchUserPosts(),
         fetchFollowers(),
         fetchFollowing(),
-      ])
-        .then((results) => {
-          console.log('Promise.all resolved:', results);
-          setLoading(false);
-        })
-        .catch((error) => {
-          console.error('Promise.all failed:', error);
+      ]).then(() => setLoading(false))
+        .catch(() => {
           setLoading(false);
           showNotification('Failed to load profile data', 'error');
         });
-    } else {
-      console.warn('Missing profileId or token:', { profileId, token });
     }
   }, [profileId, token, authLoading]);
 
-  // Update bio text when user details change
+  // Update bio text
   useEffect(() => {
     if (userDetails) {
       setBioText(userDetails.bio || '');
     }
   }, [userDetails]);
 
-  // Clear notifications when error/success changes
+  // Handle notifications
   useEffect(() => {
     if (error) {
       showNotification(error, 'error');
@@ -321,13 +310,13 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-                {/* Cover Image (Placeholder, can be extended with backend support) */}
-                <div className="h-48 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
-                  <div className="absolute bottom-0 left-0 right-0 p-4">
-                    <div className="relative -mb-20 mx-auto w-32 h-32">
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+                {/* Cover Image */}
+                <div className="h-48 bg-gradient-to-r from-indigo-600 to-purple-600 relative">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+                    <div className="relative -mb-20 mx-auto w-32 h-32 sm:w-40 sm:h-40">
                       <Image
-                        src={userDetails.image || '/default-avatar.png'}
+                        src={previewImage || userDetails.image || '/default-avatar.png'}
                         alt={userDetails.name}
                         fill
                         className="rounded-full border-4 border-white object-cover shadow-lg"
@@ -348,16 +337,34 @@ export default function AccountDetails() {
                     </div>
                   </div>
                 </div>
-                <div className="pt-24 pb-8 px-6 text-center">
-                  <h2 className="text-3xl font-bold text-gray-900">{userDetails.name}</h2>
+                {previewImage && (
+                  <div className="flex justify-center gap-3 pt-4 bg-gray-50">
+                    <button
+                      onClick={handleSaveProfilePicture}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                    >
+                      <CheckIcon className="w-5 h-5" />
+                      Save
+                    </button>
+                    <button
+                      onClick={handleCancelProfilePicture}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                    >
+                      <XMarkIcon className="w-5 h-5" />
+                      Cancel
+                    </button>
+                  </div>
+                )}
+                <div className="pt-24 pb-8 px-4 sm:px-8 text-center">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
                   <p className="text-gray-500 text-sm mt-1">@{userDetails.handle}</p>
                   {isEditingBio ? (
                     <div className="mt-4 max-w-md mx-auto">
                       <textarea
                         value={bioText}
                         onChange={(e) => setBioText(e.target.value)}
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-                        rows={3}
+                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm"
+                        rows={4}
                         maxLength={200}
                         placeholder="Tell us about yourself..."
                       />
@@ -369,7 +376,10 @@ export default function AccountDetails() {
                           Save
                         </button>
                         <button
-                          onClick={() => setIsEditingBio(false)}
+                          onClick={() => {
+                            setIsEditingBio(false);
+                            setBioText(userDetails.bio || '');
+                          }}
                           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                         >
                           Cancel
@@ -378,7 +388,7 @@ export default function AccountDetails() {
                     </div>
                   ) : (
                     <div className="mt-4 flex justify-center items-center gap-2">
-                      <p className="text-gray-700 max-w-md">{userDetails.bio || 'Add a bio to tell people about yourself'}</p>
+                      <p className="text-gray-700 max-w-md text-sm">{userDetails.bio || 'Add a bio to tell people about yourself'}</p>
                       <button
                         onClick={() => setIsEditingBio(true)}
                         className="text-gray-500 hover:text-indigo-600 transition-colors"
@@ -387,7 +397,7 @@ export default function AccountDetails() {
                       </button>
                     </div>
                   )}
-                  <div className="flex justify-center gap-8 mt-6">
+                  <div className="flex justify-center gap-6 sm:gap-8 mt-6">
                     <div className="text-center">
                       <p className="text-gray-900 font-semibold text-lg">{userDetails.posts_count || 0}</p>
                       <p className="text-gray-500 text-sm">Posts</p>
@@ -422,7 +432,7 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userPosts.length > 0 ? (
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {userPosts.map((post) => (
                   <motion.div
                     key={post.id}
@@ -432,7 +442,7 @@ export default function AccountDetails() {
                     className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300"
                   >
                     {post.imageUrls && post.imageUrls.length > 0 && (
-                      <div className="relative h-64 w-full">
+                      <div className="relative h-48 w-full">
                         <Image
                           src={post.imageUrls[0]}
                           alt={post.title}
@@ -441,13 +451,13 @@ export default function AccountDetails() {
                         />
                       </div>
                     )}
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                       <div className="flex justify-between items-start">
                         <div>
                           <Link href={`/posts/${post.id}`}>
-                            <h3 className="text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">{post.title}</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">{post.title}</h3>
                           </Link>
-                          <p className="text-gray-600 text-sm mt-2">{post.description}</p>
+                          <p className="text-gray-600 text-sm mt-2 line-clamp-2">{post.description}</p>
                         </div>
                         <div className="flex gap-2">
                           <Link href={`/edit/${post.id}`}>
@@ -511,7 +521,7 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : followers.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {followers.map((user) => (
                   <motion.div
                     key={user.id}
@@ -569,7 +579,7 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : following.length > 0 ? (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {following.map((user) => (
                   <motion.div
                     key={user.id}
@@ -633,7 +643,7 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
                 <div className="space-y-8">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -693,7 +703,7 @@ export default function AccountDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -754,11 +764,11 @@ export default function AccountDetails() {
           initial={{ x: -250 }}
           animate={{ x: isSidebarOpen ? 0 : -250 }}
           transition={{ duration: 0.3 }}
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:flex-col ${
+          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:flex-col border-r border-gray-100 ${
             isSidebarOpen ? 'block' : 'hidden'
           }`}
         >
-          <div className="p-6 flex items-center justify-between">
+          <div className="p-6 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-900">Account</h2>
             <button onClick={toggleSidebar} className="lg:hidden text-gray-600 hover:text-indigo-600">
               <Bars3Icon className="w-6 h-6" />
@@ -799,7 +809,7 @@ export default function AccountDetails() {
         </button>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-100">{renderContent()}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">{renderContent()}</main>
       </div>
     </div>
   );
