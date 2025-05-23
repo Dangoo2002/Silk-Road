@@ -39,7 +39,7 @@ export default function AccountDetails() {
   const [selectedFile, setSelectedFile] = useState(null);
   const fileInputRef = useRef(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -67,6 +67,7 @@ export default function AccountDetails() {
         showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
+      console.error('Fetch user details error:', error);
       showNotification('Failed to fetch user details', 'error');
     }
   };
@@ -152,14 +153,14 @@ export default function AccountDetails() {
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
         showNotification('Post deleted successfully');
-        setShowDeleteModal(false);
-        setDeletePostId(null);
       } else {
         showNotification('Failed to delete post', 'error');
       }
     } catch (error) {
       showNotification('Failed to delete post', 'error');
     }
+    setShowDeleteModal(false);
+    setDeletePostId(null);
   };
 
   // Handle bio update
@@ -202,12 +203,15 @@ export default function AccountDetails() {
     try {
       const success = await uploadProfilePicture(selectedFile);
       if (success) {
-        await fetchUserDetails(); // Refresh user details to ensure latest image
+        await fetchUserDetails(); // Refresh user details to get updated image
         setPreviewImage(null);
         setSelectedFile(null);
         showNotification('Profile picture updated successfully');
+      } else {
+        showNotification('Failed to update profile picture', 'error');
       }
     } catch (error) {
+      console.error('Save profile picture error:', error);
       showNotification('Failed to update profile picture', 'error');
     }
   };
@@ -311,6 +315,7 @@ export default function AccountDetails() {
                         alt={userDetails.name}
                         fill
                         className="rounded-full border-4 border-white object-cover shadow-lg"
+                        onError={() => setUserDetails((prev) => ({ ...prev, image: '/default-avatar.png' }))}
                       />
                       <button
                         onClick={() => fileInputRef.current.click()}
@@ -348,7 +353,7 @@ export default function AccountDetails() {
                 )}
                 <div className="pt-24 pb-8 px-4 sm:px-8 text-center">
                   <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
-                  <p className="text-gray-500 text-sm mt-1">@{userDetails.handle}</p>
+                  <p className="text-gray-500 text-sm mt-1">@{userDetails.handle || 'unknown'}</p>
                   {isEditingBio ? (
                     <div className="mt-4 max-w-md mx-auto">
                       <textarea
@@ -536,7 +541,7 @@ export default function AccountDetails() {
                       >
                         {user.name}
                       </Link>
-                      <p className="text-gray-500 text-sm">@{user.handle}</p>
+                      <p className="text-gray-500 text-sm">@{user.handle || 'unknown'}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -594,7 +599,7 @@ export default function AccountDetails() {
                       >
                         {user.name}
                       </Link>
-                      <p className="text-gray-500 text-sm">@{user.handle}</p>
+                      <p className="text-gray-500 text-sm">@{user.handle || 'unknown'}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -649,7 +654,7 @@ export default function AccountDetails() {
                         <span className="font-medium text-gray-900">Email:</span> {userDetails.email}
                       </p>
                       <p className="text-gray-700">
-                        <span className="font-medium text-gray-900">Username:</span> @{userDetails.handle}
+                        <span className="font-medium text-gray-900">Username:</span> @{userDetails.handle || 'unknown'}
                       </p>
                     </div>
                   </div>
@@ -759,7 +764,6 @@ export default function AccountDetails() {
             isSidebarOpen ? 'block' : 'hidden'
           }`}
         >
-          caro
           <div className="p-6 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-900">Account</h2>
             <button onClick={toggleSidebar} className="lg:hidden text-gray-600 hover:text-indigo-600">
