@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useContext, useRef, Component } from 'react';
+import { useState, useEffect, useContext, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
@@ -8,28 +8,6 @@ import Image from 'next/image';
 import { PencilIcon, CameraIcon, HeartIcon, ChatBubbleLeftIcon, EyeIcon, TrashIcon, Bars3Icon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { UserIcon, BookmarkIcon, UsersIcon, Cog6ToothIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Error Boundary for Image components
-class ImageErrorBoundary extends Component {
-  state = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <img
-          src="/def.jpg"
-          alt="Fallback"
-          className="rounded-full border-4 border-white object-cover shadow-lg w-full h-full"
-        />
-      );
-    }
-    return this.props.children;
-  }
-}
 
 export default function AccountDetails() {
   const {
@@ -76,12 +54,11 @@ export default function AccountDetails() {
   };
 
   // Fetch user details
-  const fetchUserDetails = async (signal) => {
+  const fetchUserDetails = async () => {
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
-        signal,
       });
       if (response.data.success) {
         setUserDetails(response.data.user);
@@ -90,19 +67,17 @@ export default function AccountDetails() {
         showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
-      if (error.name === 'AbortError') return;
       console.error('Fetch user details error:', error);
       showNotification('Failed to fetch user details', 'error');
     }
   };
 
   // Fetch user posts
-  const fetchUserPosts = async (signal) => {
+  const fetchUserPosts = async () => {
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
-        signal,
       });
       if (response.data.success) {
         setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
@@ -110,18 +85,16 @@ export default function AccountDetails() {
         showNotification('Failed to fetch user posts', 'error');
       }
     } catch (error) {
-      if (error.name === 'AbortError') return;
       showNotification('Error fetching user posts', 'error');
     }
   };
 
   // Fetch followers
-  const fetchFollowers = async (signal) => {
+  const fetchFollowers = async () => {
     try {
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
-        signal,
       });
       if (response.data.success) {
         setFollowers(response.data.followers.slice(0, 5));
@@ -129,18 +102,16 @@ export default function AccountDetails() {
         showNotification('Failed to fetch followers', 'error');
       }
     } catch (error) {
-      if (error.name === 'AbortError') return;
       showNotification('Error fetching followers', 'error');
     }
   };
 
   // Fetch following
-  const fetchFollowing = async (signal) => {
+  const fetchFollowing = async () => {
     try {
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
-        signal,
       });
       if (response.data.success) {
         setFollowing(response.data.following.slice(0, 5));
@@ -148,7 +119,6 @@ export default function AccountDetails() {
         showNotification('Failed to fetch following', 'error');
       }
     } catch (error) {
-      if (error.name === 'AbortError') return;
       showNotification('Error fetching following', 'error');
     }
   };
@@ -233,7 +203,7 @@ export default function AccountDetails() {
     try {
       const success = await uploadProfilePicture(selectedFile);
       if (success) {
-        await fetchUserDetails(new AbortController().signal); // Refresh user details
+        await fetchUserDetails(); // Refresh user details to get updated image
         setPreviewImage(null);
         setSelectedFile(null);
         showNotification('Profile picture updated successfully');
@@ -262,25 +232,22 @@ export default function AccountDetails() {
     setShowDeleteModal(true);
   };
 
-  // Initial fetch with cleanup
+  // Initial fetch
   useEffect(() => {
     if (authLoading) return;
     if (profileId && token) {
       setLoading(true);
-      const controller = new AbortController();
       Promise.all([
-        fetchUserDetails(controller.signal),
-        fetchUserPosts(controller.signal),
-        fetchFollowers(controller.signal),
-        fetchFollowing(controller.signal),
+        fetchUserDetails(),
+        fetchUserPosts(),
+        fetchFollowers(),
+        fetchFollowing(),
       ])
         .then(() => setLoading(false))
-        .catch((error) => {
-          if (error.name === 'AbortError') return;
+        .catch(() => {
           setLoading(false);
           showNotification('Failed to load profile data', 'error');
         });
-      return () => controller.abort(); // Cleanup on unmount
     }
   }, [profileId, token, authLoading]);
 
@@ -343,20 +310,13 @@ export default function AccountDetails() {
                 <div className="h-48 bg-gradient-to-r from-indigo-600 to-purple-600 relative">
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
                     <div className="relative -mb-20 mx-auto w-32 h-32 sm:w-40 sm:h-40">
-                      <ImageErrorBoundary>
-                        <Image
-                          src={previewImage || (userDetails.image && userDetails.image !== '/default-avatar.png' ? userDetails.image : '/def.jpg')}
-                          alt={userDetails.name}
-                          fill
-                          width={128}
-                          height={128}
-                          className="rounded-full border-4 border-white object-cover shadow-lg"
-                          onError={() => {
-                            console.error('Failed to load profile image, falling back to default');
-                            setUserDetails((prev) => ({ ...prev, image: '/def.jpg' }));
-                          }}
-                        />
-                      </ImageErrorBoundary>
+                      <Image
+                        src={previewImage || userDetails.image || '/default-avatar.png'}
+                        alt={userDetails.name}
+                        fill
+                        className="rounded-full border-4 border-white object-cover shadow-lg"
+                        onError={() => setUserDetails((prev) => ({ ...prev, image: '/default-avatar.png' }))}
+                      />
                       <button
                         onClick={() => fileInputRef.current.click()}
                         className="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
@@ -479,15 +439,12 @@ export default function AccountDetails() {
                   >
                     {post.imageUrls && post.imageUrls.length > 0 && (
                       <div className="relative h-48 w-full">
-                        <ImageErrorBoundary>
-                          <Image
-                            src={post.imageUrls[0]}
-                            alt={post.title}
-                            fill
-                            className="object-cover"
-                            onError={(e) => (e.target.src = '/def.jpg')}
-                          />
-                        </ImageErrorBoundary>
+                        <Image
+                          src={post.imageUrls[0]}
+                          alt={post.title}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                     )}
                     <div className="p-4 sm:p-6">
@@ -570,15 +527,12 @@ export default function AccountDetails() {
                     className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <div className="relative h-12 w-12">
-                      <ImageErrorBoundary>
-                        <Image
-                          src={user.image && user.image !== '/default-avatar.png' ? user.image : '/def.jpg'}
-                          alt={user.name}
-                          fill
-                          className="rounded-full object-cover"
-                          onError={(e) => (e.target.src = '/def.jpg')}
-                        />
-                      </ImageErrorBoundary>
+                      <Image
+                        src={user.image || '/def.jpg'}
+                        alt={user.name}
+                        fill
+                        className="rounded-full object-cover"
+                      />
                     </div>
                     <div className="flex-1">
                       <Link
@@ -631,15 +585,12 @@ export default function AccountDetails() {
                     className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
                   >
                     <div className="relative h-12 w-12">
-                      <ImageErrorBoundary>
-                        <Image
-                          src={user.image && user.image !== '/default-avatar.png' ? user.image : '/def.jpg'}
-                          alt={user.name}
-                          fill
-                          className="rounded-full object-cover"
-                          onError={(e) => (e.target.src = '/def.jpg')}
-                        />
-                      </ImageErrorBoundary>
+                      <Image
+                        src={user.image || '/def.jpg'}
+                        alt={user.name}
+                        fill
+                        className="rounded-full object-cover"
+                      />
                     </div>
                     <div className="flex-1">
                       <Link
