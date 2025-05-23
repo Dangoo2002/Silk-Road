@@ -10,8 +10,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
   const { userData, isLoggedIn, token } = useContext(AuthContext);
-  const { userId: profileId } = useParams();
+  const params = useParams();
   const router = useRouter();
+  
+  // Safe access to params with fallback
+  const profileId = params?.userId || null;
   const currentUserId = userData?.id || null;
   const isOwnProfile = profileId === currentUserId;
 
@@ -27,10 +30,16 @@ export default function AccountDetails() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePostId, setDeletePostId] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
   const DEFAULT_IMAGE = '/user-symbol.jpg';
+
+  // Handle mounting to prevent hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -39,6 +48,7 @@ export default function AccountDetails() {
 
   // Fetch user details
   const fetchUserDetails = async () => {
+    if (!profileId || !token) return;
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -58,6 +68,7 @@ export default function AccountDetails() {
 
   // Fetch user posts
   const fetchUserPosts = async () => {
+    if (!profileId || !token) return;
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -76,6 +87,7 @@ export default function AccountDetails() {
 
   // Fetch followers
   const fetchFollowers = async () => {
+    if (!profileId || !token) return;
     try {
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -94,6 +106,7 @@ export default function AccountDetails() {
 
   // Fetch following
   const fetchFollowing = async () => {
+    if (!profileId || !token) return;
     try {
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -279,9 +292,9 @@ export default function AccountDetails() {
     setShowDeleteModal(true);
   };
 
-  // Initial fetch
+  // Initial fetch - only run after component mounts and required data is available
   useEffect(() => {
-    if (profileId && token) {
+    if (mounted && profileId && token) {
       setLoading(true);
       Promise.all([
         fetchUserDetails(),
@@ -290,7 +303,7 @@ export default function AccountDetails() {
         fetchFollowing(),
       ]).finally(() => setLoading(false));
     }
-  }, [profileId, token]);
+  }, [mounted, profileId, token]);
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
@@ -303,6 +316,7 @@ export default function AccountDetails() {
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
+
 
   const renderContent = () => {
     switch (activeTab) {
