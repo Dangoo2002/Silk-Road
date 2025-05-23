@@ -305,7 +305,7 @@ export default function AccountDetails() {
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-800">
                 {/* Cover Image */}
                 <div className="h-48 bg-gradient-to-r from-indigo-600 to-purple-600 relative">
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
@@ -314,7 +314,7 @@ export default function AccountDetails() {
                         src={previewImage || userDetails.image || '/def.jpg'}
                         alt={userDetails.name}
                         fill
-                        className="rounded-full border-4 border-white object-cover shadow-lg"
+                        className="rounded-full border-4 border-white dark:border-gray-900 object-cover shadow-lg"
                         onError={() => setUserDetails((prev) => ({ ...prev, image: '/def.jpg' }))}
                       />
                       <button
@@ -334,7 +334,7 @@ export default function AccountDetails() {
                   </div>
                 </div>
                 {previewImage && (
-                  <div className="flex justify-center gap-3 pt-4 bg-gray-50">
+                  <div className="flex justify-center gap-3 pt-4 bg-gray-50 dark:bg-gray-800">
                     <button
                       onClick={handleSaveProfilePicture}
                       className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
@@ -344,7 +344,7 @@ export default function AccountDetails() {
                     </button>
                     <button
                       onClick={handleCancelProfilePicture}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                      className="px-4 py-2 bg-gray-200 dark:bg-gray-700 dark:text-white text-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
                     >
                       <XMarkIcon className="w-5 h-5" />
                       Cancel
@@ -352,19 +352,19 @@ export default function AccountDetails() {
                   </div>
                 )}
                 <div className="pt-24 pb-8 px-4 sm:px-8 text-center">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
-                  <p className="text-gray-500 text-sm mt-1">@{userDetails.handle || 'unknown'}</p>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{userDetails.name}</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">@{userDetails.handle || 'unknown'}</p>
                   {isEditingBio ? (
                     <div className="mt-4 max-w-md mx-auto">
                       <textarea
                         value={bioText}
                         onChange={(e) => setBioText(e.target.value)}
-                        className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm"
+                        className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm dark:bg-gray-800 dark:text-white"
                         rows={4}
                         maxLength={200}
                         placeholder="Tell us about yourself..."
                       />
-                      <div className="flex gap-2 mt-2 justified-center">
+                      <div className="flex gap-2 mt-2 justify-center">
                         <button
                           onClick={handleBioUpdate}
                           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -376,7 +376,7 @@ export default function AccountDetails() {
                             setIsEditingBio(false);
                             setBioText(userDetails.bio || '');
                           }}
-                          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                          className="px-4 py-2 bg-gray-200 dark:bg-gray-700 dark:text-white text-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                         >
                           Cancel
                         </button>
@@ -384,10 +384,10 @@ export default function AccountDetails() {
                     </div>
                   ) : (
                     <div className="mt-4 flex justify-center items-center gap-2">
-                      <p className="text-gray-700 max-w-md text-sm">{userDetails.bio || 'Add a bio to tell people about yourself'}</p>
+                      <p className="text-gray-700 dark:text-gray-300 max-w-md text-sm">{userDetails.bio || 'Add a bio to tell people about yourself'}</p>
                       <button
                         onClick={() => setIsEditingBio(true)}
-                        className="text-gray-500 hover:text-indigo-600 transition-colors"
+                        className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         <PencilIcon className="w-5 h-5" />
                       </button>
@@ -395,22 +395,22 @@ export default function AccountDetails() {
                   )}
                   <div className="flex justify-center gap-6 sm:gap-8 mt-6">
                     <div className="text-center">
-                      <p className="text-gray-900 font-semibold text-lg">{userDetails.posts_count || 0}</p>
-                      <p className="text-gray-500 text-sm">Posts</p>
+                      <p className="text-gray-900 dark:text-white font-semibold text-lg">{userDetails.posts_count || 0}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Posts</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-gray-900 font-semibold text-lg">{userDetails.followers_count || 0}</p>
-                      <p className="text-gray-500 text-sm">Followers</p>
+                      <p className="text-gray-900 dark:text-white font-semibold text-lg">{userDetails.followers_count || 0}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Followers</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-gray-900 font-semibold text-lg">{userDetails.following_count || 0}</p>
-                      <p className="text-gray-500 text-sm">Following</p>
+                      <p className="text-gray-900 dark:text-white font-semibold text-lg">{userDetails.following_count || 0}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">Following</p>
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-10">No user details found.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-10">No user details found.</p>
             )}
           </motion.div>
         );
@@ -422,20 +422,20 @@ export default function AccountDetails() {
             transition={{ duration: 0.5 }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Posts</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Your Posts</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userPosts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {userPosts.map((post) => (
                   <motion.div
                     key={post.id}
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300"
+                    className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-shadow duration-300"
                   >
                     {post.imageUrls && post.imageUrls.length > 0 && (
                       <div className="relative h-48 w-full">
@@ -451,28 +451,28 @@ export default function AccountDetails() {
                       <div className="flex justify-between items-start">
                         <div>
                           <Link href={`/posts/${post.id}`}>
-                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 hover:text-indigo-600 transition-colors">{post.title}</h3>
+                            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">{post.title}</h3>
                           </Link>
-                          <p className="text-gray-600 text-sm mt-2 line-clamp-2">{post.description}</p>
+                          <p className="text-gray-600 dark:text-gray-300 text-sm mt-2 line-clamp-2">{post.description}</p>
                         </div>
                         <div className="flex gap-2">
                           <Link href={`/edit/${post.id}`}>
-                            <button className="p-2 text-indigo-600 hover:text-indigo-800 transition-colors">
+                            <button className="p-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">
                               <PencilIcon className="w-5 h-5" />
                             </button>
                           </Link>
                           <button
                             onClick={() => openDeleteModal(post.id)}
-                            className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                            className="p-2 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                           >
                             <TrashIcon className="w-5 h-5" />
                           </button>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mt-4 text-gray-500 text-sm">
+                      <div className="flex items-center justify-between mt-4 text-gray-500 dark:text-gray-400 text-sm">
                         <div className="flex items-center gap-4">
                           <div className="flex items-center gap-1">
-                            <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500' : ''}`} />
+                            <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500 dark:fill-red-400 dark:text-red-400' : ''}`} />
                             <span>{post.likes_count}</span>
                           </div>
                           <div className="flex items-center gap-1">
@@ -483,7 +483,7 @@ export default function AccountDetails() {
                             <EyeIcon className="w-5 h-5" />
                             <span>{post.views}</span>
                           </div>
-                          </div>
+                        </div>
                         <p>{formatDateTime(post.created_at)}</p>
                       </div>
                     </div>
@@ -491,8 +491,8 @@ export default function AccountDetails() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
-                <p className="text-gray-500">No posts found.</p>
+              <div className="text-center py-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">No posts found.</p>
                 <Link
                   href="/write"
                   className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -511,20 +511,20 @@ export default function AccountDetails() {
             transition={{ duration: 0.5 }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Followers</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Followers</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : followers.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {followers.map((user) => (
                   <motion.div
                     key={user.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+                    className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 dark:border-gray-800"
                   >
                     <div className="relative h-12 w-12">
                       <Image
@@ -537,26 +537,26 @@ export default function AccountDetails() {
                     <div className="flex-1">
                       <Link
                         href={`/profile/${user.id}`}
-                        className="text-gray-900 font-medium hover:text-indigo-600 transition-colors"
+                        className="text-gray-900 dark:text-white font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
-                        {user.name}\
+                        {user.name}
                       </Link>
-                      <p className="text-gray-500 text-sm">@{user.handle || 'unknown'}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">@{user.handle || 'unknown'}</p>
                     </div>
                   </motion.div>
                 ))}
                 {followers.length >= 5 && (
                   <Link
                     href={`/profile/${profileId}/followers`}
-                    className="block text-center text-indigo-600 hover:text-indigo-800 mt-4"
+                    className="block text-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 mt-4"
                   >
                     View all followers
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
-                <p className="text-gray-500">No followers yet.</p>
+              <div className="text-center py-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">No followers yet.</p>
               </div>
             )}
           </motion.div>
@@ -569,20 +569,20 @@ export default function AccountDetails() {
             transition={{ duration: 0.5 }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Following</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Following</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : following.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {following.map((user) => (
                   <motion.div
                     key={user.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300"
+                    className="flex items-center gap-4 p-4 bg-white dark:bg-gray-900 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 dark:border-gray-800"
                   >
                     <div className="relative h-12 w-12">
                       <Image
@@ -595,26 +595,26 @@ export default function AccountDetails() {
                     <div className="flex-1">
                       <Link
                         href={`/profile/${user.id}`}
-                        className="text-gray-900 font-medium hover:text-indigo-600 transition-colors"
+                        className="text-gray-900 dark:text-white font-medium hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
                         {user.name}
                       </Link>
-                      <p className="text-gray-500 text-sm">@{user.handle || 'unknown'}</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-sm">@{user.handle || 'unknown'}</p>
                     </div>
                   </motion.div>
                 ))}
                 {following.length >= 5 && (
                   <Link
                     href={`/profile/${profileId}/following`}
-                    className="block text-center text-indigo-600 hover:text-indigo-800 mt-4"
+                    className="block text-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 mt-4"
                   >
                     View all following
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="text-center py-10 bg-white rounded-2xl shadow-lg border border-gray-100">
-                <p className="text-gray-500">Not following anyone yet.</p>
+              <div className="text-center py-10 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800">
+                <p className="text-gray-500 dark:text-gray-400">Not following anyone yet.</p>
                 <Link
                   href="/explore"
                   className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -633,45 +633,48 @@ export default function AccountDetails() {
             transition={{ duration: 0.5 }}
             className="max-w-4xl mx-auto"
           >
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Account Settings</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
               </div>
             ) : userDetails ? (
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-800">
                 <div className="space-y-8">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <UserIcon className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <UserIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       Personal Information
                     </h3>
                     <div className="space-y-3 pl-7">
-                      <p className="text-gray-700">
-                        <span className="font-medium text-gray-900">Name:</span> {userDetails.name}
+                      <p className="text-gray-700 dark:text-gray-300">
+                        <span className="font-medium text-gray-900 dark:text-white">Name:</span> {userDetails.name}
                       </p>
-                      <p className="text-gray-700">
-                        <span className="font-medium text-gray-900">Email:</span> {userDetails.email}
+                      <p className="text-gray-700 dark:text-gray-300">
+                        <span className="font-medium text-gray-900 dark:text-white">Email:</span> {userDetails.email}
                       </p>
-                      <p className="text-gray-700">
-                        <span className="font-medium text-gray-900">Username:</span> @{userDetails.handle || 'unknown'}
+                      <p className="text-gray-700 dark:text-gray-300">
+                        <span className="font-medium text-gray-900 dark:text-white">Username:</span> @{userDetails.handle || 'unknown'}
                       </p>
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Cog6ToothIcon className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Cog6ToothIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                       Security
                     </h3>
                     <div className="pl-7">
-                      <Link href="/account/change-password" className="text-indigo-600 hover:text-indigo-800">
+                      <Link 
+                        href="/account/change-password" 
+                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                      >
                         Change Password
                       </Link>
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <TrashIcon className="w-5 h-5 text-red-600" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <TrashIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
                       Danger Zone
                     </h3>
                     <div className="pl-7">
@@ -681,7 +684,7 @@ export default function AccountDetails() {
                       >
                         Delete Account
                       </button>
-                      <p className="text-gray-500 text-sm mt-2">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
                         This will permanently delete your account and all associated data.
                       </p>
                     </div>
@@ -689,7 +692,7 @@ export default function AccountDetails() {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-10">No user details found.</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-10">No user details found.</p>
             )}
           </motion.div>
         );
@@ -699,7 +702,7 @@ export default function AccountDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -728,18 +731,18 @@ export default function AccountDetails() {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white p-6 rounded-xl shadow-xl max-w-md w-full"
+            className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl max-w-md w-full border border-gray-200 dark:border-gray-800"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {deletePostId ? 'Delete Post' : 'Delete Account'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               Are you sure you want to delete {deletePostId ? 'this post' : 'your account'}? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 dark:text-white text-gray-800 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Cancel
               </button>
@@ -760,13 +763,16 @@ export default function AccountDetails() {
           initial={{ x: -250 }}
           animate={{ x: isSidebarOpen ? 0 : -250 }}
           transition={{ duration: 0.3 }}
-          className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:flex-col border-r border-gray-100 ${
+          className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 shadow-lg lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:flex lg:flex-col border-r border-gray-100 dark:border-gray-800 ${
             isSidebarOpen ? 'block' : 'hidden'
           }`}
         >
-          <div className="p-6 flex items-center justify-between border-b border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900">Account</h2>
-            <button onClick={toggleSidebar} className="lg:hidden text-gray-600 hover:text-indigo-600">
+          <div className="p-6 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Account</h2>
+            <button 
+              onClick={toggleSidebar} 
+              className="lg:hidden text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
+            >
               <Bars3Icon className="w-6 h-6" />
             </button>
           </div>
@@ -781,8 +787,8 @@ export default function AccountDetails() {
               <motion.li
                 key={tab.id}
                 whileHover={{ x: 5 }}
-                className={`px-6 py-3 cursor-pointer text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-300 flex items-center gap-3 ${
-                  activeTab === tab.id ? 'bg-indigo-50 text-indigo-600 font-semibold' : ''
+                className={`px-6 py-3 cursor-pointer text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all duration-300 flex items-center gap-3 ${
+                  activeTab === tab.id ? 'bg-indigo-50 dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 font-semibold' : ''
                 }`}
                 onClick={() => {
                   setActiveTab(tab.id);
@@ -799,13 +805,17 @@ export default function AccountDetails() {
         {/* Mobile Menu Button */}
         <button
           onClick={toggleSidebar}
-          className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-indigo-600 text-white rounded-full shadow-lg"
+          className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
         >
           <Bars3Icon className="w-6 h-6" />
         </button>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50">{renderContent()}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
       </div>
     </div>
   );
