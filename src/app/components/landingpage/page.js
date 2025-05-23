@@ -41,6 +41,75 @@ export default function SocialMediaHome() {
     return { text: words.slice(0, wordLimit).join(' ') + '...', truncated: true };
   };
 
+  const defaultPosts = [
+    {
+      id: 'default-1',
+      title: 'Welcome to Our Platform',
+      description: 'Discover amazing content and connect with others!',
+      author: 'Platform Team',
+      author_image: DEFAULT_IMAGE,
+      imageUrls: [DEFAULT_IMAGE],
+      created_at: new Date().toISOString(),
+      category: 'Welcome',
+      views: 1000,
+      likes_count: 50,
+      comments_count: 10,
+      tags: ['welcome', 'community'],
+    },
+    {
+      id: 'default-2',
+      title: 'Join the Conversation',
+      description: 'Share your thoughts and ideas with our vibrant community.',
+      author: 'Platform Team',
+      author_image: DEFAULT_IMAGE,
+      imageUrls: [DEFAULT_IMAGE],
+      created_at: new Date().toISOString(),
+      category: 'Community',
+      views: 800,
+      likes_count: 30,
+      comments_count: 5,
+      tags: ['community', 'discussion'],
+    },
+  ];
+
+  const SkeletonCard = () => (
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700 animate-pulse">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
+        </div>
+        <div className="h-48 bg-gray-300 dark:bg-gray-600 rounded-xl"></div>
+      </div>
+    </div>
+  );
+
+  const SkeletonUserCard = () => (
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700 animate-pulse">
+      <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
+      <div className="space-y-3">
+        {[...Array(3)].map((_, index) => (
+          <div key={index} className="flex items-center gap-3 p-2">
+            <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+            <div className="flex-1 space-y-2">
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
+            </div>
+            <div className="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
       setError('Authentication required. Please log in again.');
@@ -481,20 +550,6 @@ export default function SocialMediaHome() {
     setExpandedImage(null);
   };
 
-  const handleSuggestedPostClick = useCallback((postId) => {
-    const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-    if (postElement) {
-      postElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Optional: Add a temporary highlight effect
-      postElement.classList.add('highlight-post');
-      setTimeout(() => {
-        postElement.classList.remove('highlight-post');
-      }, 2000);
-    } else {
-      setError('Post not found on this page.');
-    }
-  }, []);
-
   useEffect(() => {
     if (token) {
       fetchPosts(1);
@@ -503,18 +558,6 @@ export default function SocialMediaHome() {
       fetchSuggestedPosts();
       fetchTrendingTopics();
     }
-
-    const refreshInterval = setInterval(() => {
-      if (token) {
-        fetchPosts(1, true);
-        fetchFollowers();
-        fetchFollowing();
-        fetchSuggestedPosts();
-        fetchTrendingTopics();
-      }
-    }, 7 * 60 * 1000);
-
-    return () => clearInterval(refreshInterval);
   }, [fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, token]);
 
   useEffect(() => {
@@ -608,6 +651,37 @@ export default function SocialMediaHome() {
       </AnimatePresence>
       <div className="container mx-auto px-4 py-8 lg:flex lg:gap-6">
         <div className="lg:w-2/3">
+          {!userId && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700 text-center"
+            >
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                You must be logged in to view personalized content
+              </p>
+              <Link
+                href="/login"
+                className="mt-4 inline-block px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
+              >
+                Log In
+              </Link>
+            </motion.div>
+          )}
+          {isLoading && !userId && (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          )}
+          {userId && isLoading && (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          )}
           {userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -636,418 +710,101 @@ export default function SocialMediaHome() {
               </div>
             </motion.div>
           )}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
-              Trending Topics
-            </h2>
-            {trendingTopics.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
-            ) : (
-              <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                {trendingTopics.map((topic) => (
-                  <Link
-                    key={topic.id}
-                    href={`/`}
-                    className="flex-shrink-0 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
-                  >
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {suggestedPosts.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
-              ) : (
-                suggestedPosts.slice(0, 5).map((post) => (
-                  <div
-                    key={post.id}
-                    onClick={() => handleSuggestedPostClick(post.id)}
-                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 cursor-pointer"
-                  >
-                    <Image
-                      src={post.imageUrls[0] || DEFAULT_IMAGE}
-                      alt={post.title || 'Post'}
-                      width={80}
-                      height={60}
-                      className="rounded-xl object-cover"
-                      onError={(e) => {
-                        console.error(`Failed to load suggested post image: ${post.imageUrls[0]}`);
-                        e.target.src = DEFAULT_IMAGE;
-                      }}
-                    />
-                    <div>
-                      <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {post.category || 'General'} • {post.author || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        <Eye className="inline w-3 h-3 mr-1" />
-                        {post.views || 0} views
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 lg:hidden border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
-              <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
-              Suggested Users
-            </h2>
-            <div className="space-y-3">
-              {suggestedUsers.length === 0 ? (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
-              ) : (
-                suggestedUsers.map((user) => (
-                  <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
-                    <Image
-                      src={user.image || DEFAULT_IMAGE}
-                      alt="User"
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover"
-                      onError={(e) => {
-                        console.error(`Failed to load suggested user image: ${user.image}`);
-                        e.target.src = DEFAULT_IMAGE;
-                      }}
-                    />
-                    <div className="flex-1">
-                      <Link
-                        href={`/profile/${user.id}`}
-                        className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                      >
-                        {user.name || 'User'}
-                      </Link>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
-                        user.is_followed
-                          ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                      }`}
-                    >
-                      {user.is_followed ? (
-                        <>
-                          <UserX className="w-4 h-4" />
-                          Unfollow
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="w-4 h-4" />
-                          Follow
-                        </>
-                      )}
-                    </motion.button>
-                  </div>
-                ))
-              )}
-            </div>
-          </motion.div>
-          <div className="space-y-6">
-            {posts.length === 0 && !isLoading ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-4"
-              >
-                <span className="text-gray-500 dark:text-gray-400">No posts available</span>
-              </motion.div>
-            ) : (
-              posts.map((post) => {
-                const { text: truncatedText, truncated } = truncateDescription(post.description || '');
-                return (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container"
-                    data-post-id={post.id}
-                    ref={(el) => {
-                      if (el) {
-                        const observer = new IntersectionObserver(
-                          ([entry]) => {
-                            if (entry.isIntersecting) {
-                              trackPostView(post.id);
-                              observer.unobserve(el);
-                            }
-                          },
-                          { threshold: 0.5 }
-                        );
-                        observer.observe(el);
-                      }
-                    }}
-                  >
-                    <div className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Image
-                          src={post.author_image || DEFAULT_IMAGE}
-                          alt="User"
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                          onError={(e) => {
-                            console.error(`Failed to load author image: ${post.author_image}`);
-                            e.target.src = DEFAULT_IMAGE;
-                          }}
-                        />
-                        <div>
-                          <Link
-                            href={`/profile/${post.userId}`}
-                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                          >
-                            {post.author || 'Anonymous'}
-                          </Link>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDateTime(post.created_at)} • {post.category || 'General'}
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        <h2 className="text-lg font-semibold mb-2 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 font-heading">
-                          {post.title || 'Untitled'}
-                        </h2>
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                          {expandedPost[post.id] ? (
-                            <div dangerouslySetInnerHTML={{ __html: post.description || '' }} />
-                          ) : (
-                            <span>{truncatedText}</span>
-                          )}
-                          {truncated && (
-                            <button
-                              onClick={() => togglePostExpand(post.id)}
-                              className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
-                            >
-                              {expandedPost[post.id] ? 'Read Less' : 'Read More'}
-                            </button>
-                          )}
-                        </div>
-                        <div className="mb-3">
-                          {post.imageUrls.length === 1 ? (
-                            <Image
-                              src={post.imageUrls[0] || DEFAULT_IMAGE}
-                              alt={`${post.title || 'Post'} image`}
-                              width={600}
-                              height={400}
-                              className="w-full h-64 rounded-xl object-cover cursor-pointer"
-                              onClick={() => handleImageClick(post.imageUrls[0])}
-                              onError={(e) => {
-                                console.error(`Failed to load post image: ${post.imageUrls[0]}`);
-                                e.target.src = DEFAULT_IMAGE;
-                              }}
-                            />
-                          ) : (
-                            <div className="grid gap-2">
-                              <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-2' : ''}>
-                                {post.imageUrls.slice(0, 2).map((url, index) => (
-                                  <Image
-                                    key={index}
-                                    src={url || DEFAULT_IMAGE}
-                                    alt={`${post.title || 'Post'} image ${index + 1}`}
-                                    width={300}
-                                    height={200}
-                                    className="w-full h-48 rounded-xl object-cover cursor-pointer"
-                                    onClick={() => handleImageClick(url)}
-                                    onError={(e) => {
-                                      console.error(`Failed to load post image: ${url}`);
-                                      e.target.src = DEFAULT_IMAGE;
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                              {post.imageUrls.length > 2 && (
-                                <div className="grid grid-cols-3 gap-2">
-                                  {post.imageUrls.slice(2).map((url, index) => (
-                                    <Image
-                                      key={index + 2}
-                                      src={url || DEFAULT_IMAGE}
-                                      alt={`${post.title || 'Post'} image ${index + 3}`}
-                                      width={200}
-                                      height={133}
-                                      className="w-full h-32 rounded-xl object-cover cursor-pointer"
-                                      onClick={() => handleImageClick(url)}
-                                      onError={(e) => {
-                                        console.error(`Failed to load post image: ${url}`);
-                                        e.target.src = DEFAULT_IMAGE;
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {post.tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                              >
-                                <Tag className="w-3 h-3" />
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-2 mb-3">
-                        <div className="flex items-center gap-4">
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handlePostLike(post.id, post.is_liked)}
-                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                          >
-                            <ThumbsUp
-                              className={`w-5 h-5 ${post.is_liked ? 'fill-indigo-500 dark:fill-purple-500 text-indigo-500 dark:text-purple-500' : ''}`}
-                            />
-                            <span className="text-sm">{post.likes_count || 0}</span>
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => toggleComments(post.id)}
-                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                          >
-                            <MessageCircle className="w-5 h-5" />
-                            <span className="text-sm">{post.comments_count || 0}</span>
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handlePostShare(post.id)}
-                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                          >
-                            <Share className="w-5 h-5" />
-                            <span className="text-sm">Share</span>
-                          </motion.button>
-                          {post.link && (
-                            <a
-                              href={post.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                            >
-                              <ExternalLink className="w-5 h-5" />
-                              <span className="text-sm">Link</span>
-                            </a>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                          <Eye className="w-5 h-5" />
-                          <span className="text-sm">{post.views || 0}</span>
-                        </div>
-                      </div>
-                      {showComments[post.id] && (
-                        <div className="mt-3">
-                          <div className="mb-3">
-                            <textarea
-                              value={commentInput[post.id] || ''}
-                              onChange={(e) =>
-                                setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
-                              }
-                              placeholder="Add a comment..."
-                              className="w-full p-2 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 resize-none"
-                              rows="2"
-                            />
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => handlePostCommentSubmit(post.id)}
-                              className="mt-2 px-4 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
-                            >
-                              Post
-                            </motion.button>
-                          </div>
-                          <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-                            {(comments[post.id] || []).map((comment) => (
-                              <div key={comment.id} className="flex gap-2">
-                                <Image
-                                  src={comment.author_image || DEFAULT_IMAGE}
-                                  alt="User"
-                                  width={24}
-                                  height={24}
-                                  className="rounded-full object-cover"
-                                  onError={(e) => {
-                                    console.error(`Failed to load comment author image: ${comment.author_image}`);
-                                    e.target.src = DEFAULT_IMAGE;
-                                  }}
-                                />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      {formatDateTime(comment.created_at)}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    {comment.content}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })
-            )}
-            {isLoading && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-4"
-              >
-                <span className="text-gray-500 dark:text-gray-400">Loading...</span>
-              </motion.div>
-            )}
-            {!hasMore && posts.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center py-4"
-              >
-                <span className="text-gray-500 dark:text-gray-400">No more posts to load</span>
-              </motion.div>
-            )}
-          </div>
-        </div>
-        <div className="hidden lg:block lg:w-1/3">
-          <div className="sticky top-20 space-y-6">
+          {(userId ? trendingTopics.length > 0 : true) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700"
+            >
+              <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
+                Trending Topics
+              </h2>
+              {trendingTopics.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
+              ) : (
+                <div className="flex overflow-x-auto gap-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                  {trendingTopics.map((topic) => (
+                    <Link
+                      key={topic.id}
+                      href={`/`}
+                      className="flex-shrink-0 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    >
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+          {(userId ? suggestedPosts.length > 0 : true) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 border border-gray-200 dark:border-gray-700"
+            >
+              <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
+              {isLoading && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[...Array(4)].map((_, index) => (
+                    <div key={index} className="flex items-center gap-3 p-2 animate-pulse">
+                      <div className="w-20 h-15 rounded-xl bg-gray-300 dark:bg-gray-600"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!isLoading && suggestedPosts.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(userId ? suggestedPosts : defaultPosts).slice(0, 5).map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/post/${post.id}`}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    >
+                      <Image
+                        src={post.imageUrls[0] || DEFAULT_IMAGE}
+                        alt={post.title || 'Post'}
+                        width={80}
+                        height={60}
+                        className="rounded-xl object-cover"
+                        onError={(e) => {
+                          console.error(`Failed to load suggested post image: ${post.imageUrls[0]}`);
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
+                      />
+                      <div>
+                        <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {post.category || 'General'} • {post.author || 'Anonymous'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <Eye className="inline w-3 h-3 mr-1" />
+                          {post.views || 0} views
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+          {userId && isLoading && <SkeletonUserCard />}
+          {userId && !isLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 mb-6 lg:hidden border border-gray-200 dark:border-gray-700"
             >
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
                 <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
@@ -1106,80 +863,461 @@ export default function SocialMediaHome() {
                 )}
               </div>
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
-            >
-              <h2 className="text-lg font-semibold mb-4 font-heading">Followers</h2>
-              <div className="space-y-3">
-                {followers.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No followers yet</p>
-                ) : (
-                  followers.map((user) => (
-                    <Link
-                      key={user.id}
-                      href={`/profile/${user.id}`}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+          )}
+          <div className="space-y-6">
+            {(!userId || (posts.length === 0 && !isLoading)) && (
+              (userId ? posts : defaultPosts).map((post) => {
+                const { text: truncatedText, truncated } = truncateDescription(post.description || '');
+                return (
+                  <Link href={`/post/${post.id}`} key={post.id}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container"
+                      data-post-id={post.id}
+                      ref={(el) => {
+                        if (el && userId) {
+                          const observer = new IntersectionObserver(
+                            ([entry]) => {
+                              if (entry.isIntersecting) {
+                                trackPostView(post.id);
+                                observer.unobserve(el);
+                              }
+                            },
+                            { threshold: 0.5 }
+                          );
+                          observer.observe(el);
+                        }
+                      }}
                     >
-                      <Image
-                        src={user.image || DEFAULT_IMAGE}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load follower image: ${user.image}`);
-                          e.target.src = DEFAULT_IMAGE;
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                      <div className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Image
+                            src={post.author_image || DEFAULT_IMAGE}
+                            alt="User"
+                            width={40}
+                            height={40}
+                            className="rounded-full object-cover"
+                            onError={(e) => {
+                              console.error(`Failed to load author image: ${post.author_image}`);
+                              e.target.src = DEFAULT_IMAGE;
+                            }}
+                          />
+                          <div>
+                            <Link
+                              href={`/profile/${post.userId || 'unknown'}`}
+                              className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                            >
+                              {post.author || 'Anonymous'}
+                            </Link>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {formatDateTime(post.created_at)} • {post.category || 'General'}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          <h2 className="text-lg font-semibold mb-2 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 font-heading">
+                            {post.title || 'Untitled'}
+                          </h2>
+                          <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                            {expandedPost[post.id] ? (
+                              <div dangerouslySetInnerHTML={{ __html: post.description || '' }} />
+                            ) : (
+                              <span>{truncatedText}</span>
+                            )}
+                            {truncated && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  togglePostExpand(post.id);
+                                }}
+                                className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
+                              >
+                                {expandedPost[post.id] ? 'Read Less' : 'Read More'}
+                              </button>
+                            )}
+                          </div>
+                          <div className="mb-3">
+                            {post.imageUrls.length === 1 ? (
+                              <Image
+                                src={post.imageUrls[0] || DEFAULT_IMAGE}
+                                alt={`${post.title || 'Post'} image`}
+                                width={600}
+                                height={400}
+                                className="w-full h-64 rounded-xl object-cover cursor-pointer"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleImageClick(post.imageUrls[0]);
+                                }}
+                                onError={(e) => {
+                                  console.error(`Failed to load post image: ${post.imageUrls[0]}`);
+                                  e.target.src = DEFAULT_IMAGE;
+                                }}
+                              />
+                            ) : (
+                              <div className="grid gap-2">
+                                <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-2' : ''}>
+                                  {post.imageUrls.slice(0, 2).map((url, index) => (
+                                    <Image
+                                      key={index}
+                                      src={url || DEFAULT_IMAGE}
+                                      alt={`${post.title || 'Post'} image ${index + 1}`}
+                                      width={300}
+                                      height={200}
+                                      className="w-full h-48 rounded-xl object-cover cursor-pointer"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        handleImageClick(url);
+                                      }}
+                                      onError={(e) => {
+                                        console.error(`Failed to load post image: ${url}`);
+                                        e.target.src = DEFAULT_IMAGE;
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                                {post.imageUrls.length > 2 && (
+                                  <div className="grid grid-cols-3 gap-2">
+                                    {post.imageUrls.slice(2).map((url, index) => (
+                                      <Image
+                                        key={index + 2}
+                                        src={url || DEFAULT_IMAGE}
+                                        alt={`${post.title || 'Post'} image ${index + 3}`}
+                                        width={200}
+                                        height={133}
+                                        className="w-full h-32 rounded-xl object-cover cursor-pointer"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          handleImageClick(url);
+                                        }}
+                                        onError={(e) => {
+                                          console.error(`Failed to load post image: ${url}`);
+                                          e.target.src = DEFAULT_IMAGE;
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          {post.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-3">
+                              {post.tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="flex items-center gap-1 px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
+                                >
+                                  <Tag className="w-3 h-3" />
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {userId && (
+                          <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-2 mb-3">
+                            <div className="flex items-center gap-4">
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePostLike(post.id, post.is_liked);
+                                }}
+                                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                              >
+                                <ThumbsUp
+                                  className={`w-5 h-5 ${post.is_liked ? 'fill-indigo-500 dark:fill-purple-500 text-indigo-500 dark:text-purple-500' : ''}`}
+                                />
+                                <span className="text-sm">{post.likes_count || 0}</span>
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  toggleComments(post.id);
+                                }}
+                                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                              >
+                                <MessageCircle className="w-5 h-5" />
+                                <span className="text-sm">{post.comments_count || 0}</span>
+                              </motion.button>
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePostShare(post.id);
+                                }}
+                                className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                              >
+                                <Share className="w-5 h-5" />
+                                <span className="text-sm">Share</span>
+                              </motion.button>
+                              {post.link && (
+                                <a
+                                  href={post.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                                  onClick={(e) => e.preventDefault()}
+                                >
+                                  <ExternalLink className="w-5 h-5" />
+                                  <span className="text-sm">Link</span>
+                                </a>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                              <Eye className="w-5 h-5" />
+                              <span className="text-sm">{post.views || 0}</span>
+                            </div>
+                          </div>
+                        )}
+                        {userId && showComments[post.id] && (
+                          <div className="mt-3">
+                            <div className="mb-3">
+                              <textarea
+                                value={commentInput[post.id] || ''}
+                                onChange={(e) =>
+                                  setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
+                                }
+                                placeholder="Add a comment..."
+                                className="w-full p-2 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 resize-none"
+                                rows="2"
+                              />
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePostCommentSubmit(post.id);
+                                }}
+                                className="mt-2 px-4 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
+                              >
+                                Post
+                              </motion.button>
+                            </div>
+                            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+                              {(comments[post.id] || []).map((comment) => (
+                                <div key={comment.id} className="flex gap-2">
+                                  <Image
+                                    src={comment.author_image || DEFAULT_IMAGE}
+                                    alt="User"
+                                    width={24}
+                                    height={24}
+                                    className="rounded-full object-cover"
+                                    onError={(e) => {
+                                      console.error(`Failed to load comment author image: ${comment.author_image}`);
+                                      e.target.src = DEFAULT_IMAGE;
+                                    }}
+                                  />
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
+                                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                                        {formatDateTime(comment.created_at)}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                                      {comment.content}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
-            >
-              <h2 className="text-lg font-semibold mb-4 font-heading">Following</h2>
-              <div className="space-y-3">
-                {following.length === 0 ? (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Not following anyone yet</p>
-                ) : (
-                  following.map((user) => (
-                    <Link
-                      key={user.id}
-                      href={`/profile/${user.id}`}
-                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
-                    >
-                      <Image
-                        src={user.image || DEFAULT_IMAGE}
-                        alt="User"
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          console.error(`Failed to load following image: ${user.image}`);
-                          e.target.src = DEFAULT_IMAGE;
-                        }}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                    </motion.div>
+                  </Link>
+                );
+              })
+            )}
+            {isLoading && userId && (
+              <>
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            )}
+            {!hasMore && posts.length > 0 && userId && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-4"
+              >
+                <span className="text-gray-500 dark:text-gray-400">No more posts to load</span>
+              </motion.div>
+            )}
+            {!userId && !isLoading && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-4"
+              >
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  You must be logged in to view more posts
+                </p>
+                <Link
+                  href="/login"
+                  className="mt-4 inline-block px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
+                >
+                  Log In
+                </Link>
+              </motion.div>
+            )}
+          </div>
+        </div>
+        <div className="hidden lg:block lg:w-1/3">
+          <div className="sticky top-20 space-y-6">
+            {isLoading && <SkeletonUserCard />}
+            {!isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+              >
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
+                  <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
+                  Suggested Users
+                </h2>
+                <div className="space-y-3">
+                  {suggestedUsers.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
+                  ) : (
+                    suggestedUsers.map((user) => (
+                      <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
+                        <Image
+                          src={user.image || DEFAULT_IMAGE}
+                          alt="User"
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                          onError={(e) => {
+                            console.error(`Failed to load suggested user image: ${user.image}`);
+                            e.target.src = DEFAULT_IMAGE;
+                          }}
+                        />
+                        <div className="flex-1">
+                          <Link
+                            href={`/profile/${user.id}`}
+                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          >
+                            {user.name || 'User'}
+                          </Link>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
+                          className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
+                            user.is_followed
+                              ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                              : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                          }`}
+                        >
+                          {user.is_followed ? (
+                            <>
+                              <UserX className="w-4 h-4" />
+                              Unfollow
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4" />
+                              Follow
+                            </>
+                          )}
+                        </motion.button>
                       </div>
-                    </Link>
-                  ))
-                )}
-              </div>
-            </motion.div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+            {isLoading && <SkeletonUserCard />}
+            {!isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+              >
+                <h2 className="text-lg font-semibold mb-4 font-heading">Followers</h2>
+                <div className="space-y-3">
+                  {followers.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No followers yet</p>
+                  ) : (
+                    followers.map((user) => (
+                      <Link
+                        key={user.id}
+                        href={`/profile/${user.id}`}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                      >
+                        <Image
+                          src={user.image || DEFAULT_IMAGE}
+                          alt="User"
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                          onError={(e) => {
+                            console.error(`Failed to load follower image: ${user.image}`);
+                            e.target.src = DEFAULT_IMAGE;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold">{user.name || 'User'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+            {isLoading && <SkeletonUserCard />}
+            {!isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-200 dark:border-gray-700"
+              >
+                <h2 className="text-lg font-semibold mb-4 font-heading">Following</h2>
+                <div className="space-y-3">
+                  {following.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Not following anyone yet</p>
+                  ) : (
+                    following.map((user) => (
+                      <Link
+                        key={user.id}
+                        href={`/profile/${user.id}`}
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                      >
+                        <Image
+                          src={user.image || DEFAULT_IMAGE}
+                          alt="User"
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                          onError={(e) => {
+                            console.error(`Failed to load following image: ${user.image}`);
+                            e.target.src = DEFAULT_IMAGE;
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold">{user.name || 'User'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
+                        </div>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
