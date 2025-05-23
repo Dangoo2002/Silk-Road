@@ -311,11 +311,11 @@ export default function AccountDetails() {
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
                     <div className="relative -mb-20 mx-auto w-32 h-32 sm:w-40 sm:h-40">
                       <Image
-                        src={previewImage || userDetails.image || '/default-avatar.png'}
+                        src={previewImage || userDetails.image || '/def.jpg'}
                         alt={userDetails.name}
                         fill
                         className="rounded-full border-4 border-white object-cover shadow-lg"
-                        onError={() => setUserDetails((prev) => ({ ...prev, image: '/default-avatar.png' }))}
+                        onError={() => setUserDetails((prev) => ({ ...prev, image: '/def.jpg' }))}
                       />
                       <button
                         onClick={() => fileInputRef.current.click()}
@@ -364,7 +364,7 @@ export default function AccountDetails() {
                         maxLength={200}
                         placeholder="Tell us about yourself..."
                       />
-                      <div className="flex gap-2 mt-2 justify-center">
+                      <div className="flex gap-2 mt-2 justified-center">
                         <button
                           onClick={handleBioUpdate}
                           className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
@@ -483,7 +483,7 @@ export default function AccountDetails() {
                             <EyeIcon className="w-5 h-5" />
                             <span>{post.views}</span>
                           </div>
-                        </div>
+                          </div>
                         <p>{formatDateTime(post.created_at)}</p>
                       </div>
                     </div>
@@ -539,7 +539,7 @@ export default function AccountDetails() {
                         href={`/profile/${user.id}`}
                         className="text-gray-900 font-medium hover:text-indigo-600 transition-colors"
                       >
-                        {user.name}
+                        {user.name}\
                       </Link>
                       <p className="text-gray-500 text-sm">@{user.handle || 'unknown'}</p>
                     </div>
