@@ -46,77 +46,117 @@ export default function AccountDetails() {
   };
 
   // Fetch user details
-  const fetchUserDetails = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/user/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData?.token}` },
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setUserDetails(response.data.user);
-        setBioText(response.data.user.bio || '');
-      } else {
-        showNotification('Failed to fetch user details', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching user details:', error);
+const fetchUserDetails = async () => {
+  console.log('Fetching user details for profileId:', profileId);
+  console.log('Using token:', userData?.token);
+  try {
+    const response = await axios.get(`${baseUrl}/user/${profileId}`, {
+      headers: { Authorization: `Bearer ${userData?.token}` },
+      withCredentials: true,
+    });
+    console.log('User details response:', response.data);
+    if (response.data.success) {
+      setUserDetails(response.data.user);
+      setBioText(response.data.user.bio || '');
+    } else {
+      console.error('Failed to fetch user details:', response.data.message);
       showNotification('Failed to fetch user details', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error fetching user details:', error.message, error.response?.data);
+    showNotification('Failed to fetch user details', 'error');
+  }
+};
 
-  // Fetch user posts
-  const fetchUserPosts = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
-        headers: { Authorization: `Bearer ${userData?.token}` },
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
-      } else {
-        showNotification('Failed to fetch user posts', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching user posts:', error);
-      showNotification('Error fetching user posts', 'error');
+// Fetch user posts
+const fetchUserPosts = async () => {
+  console.log('Fetching user posts for profileId:', profileId);
+  try {
+    const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
+      headers: { Authorization: `Bearer ${userData?.token}` },
+      withCredentials: true,
+    });
+    console.log('User posts response:', response.data);
+    if (response.data.success) {
+      setUserPosts(response.data.posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    } else {
+      console.error('Failed to fetch user posts:', response.data.message);
+      showNotification('Failed to fetch user posts', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error fetching user posts:', error.message, error.response?.data);
+    showNotification('Error fetching user posts', 'error');
+  }
+};
 
-  // Fetch followers
-  const fetchFollowers = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData?.token}` },
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setFollowers(response.data.followers.slice(0, 5));
-      } else {
-        showNotification('Failed to fetch followers', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching followers:', error);
-      showNotification('Error fetching followers', 'error');
+// Fetch followers
+const fetchFollowers = async () => {
+  console.log('Fetching followers for profileId:', profileId);
+  try {
+    const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
+      headers: { Authorization: `Bearer ${userData?.token}` },
+      withCredentials: true,
+    });
+    console.log('Followers response:', response.data);
+    if (response.data.success) {
+      setFollowers(response.data.followers.slice(0, 5));
+    } else {
+      console.error('Failed to fetch followers:', response.data.message);
+      showNotification('Failed to fetch followers', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error fetching followers:', error.message, error.response?.data);
+    showNotification('Error fetching followers', 'error');
+  }
+};
 
-  // Fetch following
-  const fetchFollowing = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/following/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData?.token}` },
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setFollowing(response.data.following.slice(0, 5));
-      } else {
-        showNotification('Failed to fetch following', 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching following:', error);
-      showNotification('Error fetching following', 'error');
+// Fetch following
+const fetchFollowing = async () => {
+  console.log('Fetching following for profileId:', profileId);
+  try {
+    const response = await axios.get(`${baseUrl}/following/${profileId}`, {
+      headers: { Authorization: `Bearer ${userData?.token}` },
+      withCredentials: true,
+    });
+    console.log('Following response:', response.data);
+    if (response.data.success) {
+      setFollowing(response.data.following.slice(0, 5));
+    } else {
+      console.error('Failed to fetch following:', response.data.message);
+      showNotification('Failed to fetch following', 'error');
     }
-  };
+  } catch (error) {
+    console.error('Error fetching following:', error.message, error.response?.data);
+    showNotification('Error fetching following', 'error');
+  }
+};
+
+// Initial fetch with logging
+useEffect(() => {
+  console.log('useEffect triggered with profileId:', profileId, 'and userData:', userData);
+  if (profileId && userData?.token) {
+    console.log('Starting data fetch for profileId:', profileId);
+    setLoading(true);
+    Promise.all([
+      fetchUserDetails(),
+      fetchUserPosts(),
+      fetchFollowers(),
+      fetchFollowing(),
+    ])
+      .then((results) => {
+        console.log('Promise.all resolved:', results);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error('Promise.all failed:', error);
+        setLoading(false);
+        showNotification('Failed to load profile data', 'error');
+      });
+  } else {
+    console.warn('Missing profileId or token:', { profileId, token: userData?.token });
+    setLoading(false);
+  }
+}, [profileId, userData?.token]);
 
   // Handle follow
   const handleFollow = async () => {
@@ -277,16 +317,6 @@ export default function AccountDetails() {
     setDeletePostId(postId);
     setShowDeleteModal(true);
   };
-
-  // Initial fetch
-  useEffect(() => {
-    if (profileId && userData?.token) {
-      setLoading(true);
-      Promise.all([fetchUserDetails(), fetchUserPosts(), fetchFollowers(), fetchFollowing()]).finally(() =>
-        setLoading(false)
-      );
-    }
-  }, [profileId, userData?.token]);
 
   // Update bio text when user details change
   useEffect(() => {
