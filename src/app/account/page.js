@@ -18,7 +18,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
-  const { userData, isLoggedIn, token } = useContext(AuthContext);
+  const { userData, token } = useContext(AuthContext);
   const params = useParams();
   const router = useRouter();
 
@@ -49,7 +49,6 @@ export default function AccountDetails() {
     mounted,
     profileId,
     token,
-    isLoggedIn,
     activeTab,
   });
 
@@ -58,7 +57,7 @@ export default function AccountDetails() {
     if (!params?.userId) {
       setError('Invalid profile ID. Please check the URL.');
       setLoading(false);
-      router.push('/login');
+      router.push('/');
     }
   }, [params, router]);
 
@@ -68,8 +67,8 @@ export default function AccountDetails() {
   };
 
   const fetchUserDetails = async () => {
-    if (!profileId || !token) {
-      setError('Missing authentication details. Please log in.');
+    if (!profileId) {
+      setError('Missing profile ID.');
       return;
     }
     try {
@@ -91,8 +90,8 @@ export default function AccountDetails() {
   };
 
   const fetchUserPosts = async () => {
-    if (!profileId || !token) {
-      setError('Missing authentication details. Please log in.');
+    if (!profileId) {
+      setError('Missing profile ID.');
       return;
     }
     try {
@@ -113,8 +112,8 @@ export default function AccountDetails() {
   };
 
   const fetchFollowers = async () => {
-    if (!profileId || !token) {
-      setError('Missing authentication details. Please log in.');
+    if (!profileId) {
+      setError('Missing profile ID.');
       return;
     }
     try {
@@ -135,8 +134,8 @@ export default function AccountDetails() {
   };
 
   const fetchFollowing = async () => {
-    if (!profileId || !token) {
-      setError('Missing authentication details. Please log in.');
+    if (!profileId) {
+      setError('Missing profile ID.');
       return;
     }
     try {
@@ -157,9 +156,8 @@ export default function AccountDetails() {
   };
 
   const handleFollow = async () => {
-    if (!isLoggedIn || !currentUserId) {
-      showNotification('Please log in to follow users', 'error');
-      router.push('/login');
+    if (!currentUserId) {
+      showNotification('User ID not found', 'error');
       return;
     }
     try {
@@ -186,9 +184,8 @@ export default function AccountDetails() {
   };
 
   const handleUnfollow = async () => {
-    if (!isLoggedIn || !currentUserId) {
-      showNotification('Please log in to unfollow users', 'error');
-      router.push('/login');
+    if (!currentUserId) {
+      showNotification('User ID not found', 'error');
       return;
     }
     try {
@@ -251,9 +248,8 @@ export default function AccountDetails() {
   };
 
   const handleBioUpdate = async () => {
-    if (!isOwnProfile || !token) {
-      showNotification('Please log in to update your bio', 'error');
-      router.push('/login');
+    if (!isOwnProfile) {
+      showNotification('Cannot update bio: Not your profile', 'error');
       return;
     }
     try {
@@ -275,9 +271,8 @@ export default function AccountDetails() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!isOwnProfile || !token) {
-      showNotification('Please log in to delete your account', 'error');
-      router.push('/login');
+    if (!isOwnProfile) {
+      showNotification('Cannot delete account: Not your profile', 'error');
       return;
     }
     try {
@@ -299,9 +294,8 @@ export default function AccountDetails() {
   };
 
   const handleDeletePost = async (postId) => {
-    if (!isOwnProfile || !token) {
-      showNotification('Please log in to delete posts', 'error');
-      router.push('/login');
+    if (!isOwnProfile) {
+      showNotification('Cannot delete post: Not your profile', 'error');
       return;
     }
     try {
@@ -346,7 +340,7 @@ export default function AccountDetails() {
   useEffect(() => {
     let isCancelled = false;
 
-    if (mounted && profileId && token && isLoggedIn) {
+    if (mounted && profileId) {
       setLoading(true);
       setError(null);
       Promise.all([fetchUserDetails(), fetchUserPosts(), fetchFollowers(), fetchFollowing()])
@@ -364,16 +358,12 @@ export default function AccountDetails() {
         });
     } else {
       setLoading(false);
-      if (mounted && (!token || !isLoggedIn)) {
-        setError('Please log in to view this profile.');
-        router.push('/login');
-      }
     }
 
     return () => {
       isCancelled = true;
     };
-  }, [mounted, profileId, token, isLoggedIn]);
+  }, [mounted, profileId]);
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
@@ -387,10 +377,10 @@ export default function AccountDetails() {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
-  if (!mounted || !profileId || !isLoggedIn || !token) {
+  if (!mounted || !profileId) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600 text-lg font-medium">{error || 'Checking authentication...'}</div>
+        <div className="text-gray-600 text-lg font-medium">{error || 'Invalid profile ID'}</div>
       </div>
     );
   }
@@ -413,10 +403,10 @@ export default function AccountDetails() {
               Retry
             </button>
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push('/')}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-all duration-300 text-sm sm:text-base"
             >
-              Go to Login
+              Go to Home
             </button>
           </div>
         </motion.div>
@@ -480,7 +470,6 @@ export default function AccountDetails() {
                         <button
                           onClick={handleBioUpdate}
                           className="mt-3 px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 text-sm sm:text-base"
-                          disabled={!isLoggedIn}
                         >
                           Save Bio
                         </button>
@@ -504,7 +493,6 @@ export default function AccountDetails() {
                             ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             : 'bg-blue-600 text-white hover:bg-blue-700'
                         }`}
-                        disabled={!isLoggedIn}
                       >
                         {userDetails.is_followed ? (
                           <>
@@ -525,7 +513,6 @@ export default function AccountDetails() {
                   <button
                     onClick={() => openDeleteModal()}
                     className="px-6 py-2 bg-red-600 text-white font-medium rounded-full hover:bg-red-700 transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
-                    disabled={!isLoggedIn}
                   >
                     Delete Account
                   </button>
@@ -603,7 +590,6 @@ export default function AccountDetails() {
                           <button
                             onClick={() => openDeleteModal(post.id)}
                             className="px-3 py-1 bg-red-600 text-white text-sm rounded-full hover:bg-red-700 transition-all duration-300"
-                            disabled={!isLoggedIn}
                           >
                             Delete
                           </button>
@@ -738,7 +724,6 @@ export default function AccountDetails() {
                 <button
                   onClick={() => openDeleteModal()}
                   className="mt-6 px-6 py-2 bg-red-600 text-white font-medium rounded-full hover:bg-red-700 transition-all duration-300 w-full sm:w-auto text-sm sm:text-base"
-                  disabled={!isLoggedIn}
                 >
                   Delete Account
                 </button>
@@ -815,7 +800,6 @@ export default function AccountDetails() {
               <button
                 onClick={() => (deletePostId ? handleDeletePost(deletePostId) : handleDeleteAccount())}
                 className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all duration-300 text-sm sm:text-base"
-                disabled={!isLoggedIn}
               >
                 Delete
               </button>
