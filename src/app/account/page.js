@@ -15,6 +15,7 @@ export default function AccountDetails() {
     token,
     loading: authLoading,
     updateUserProfile,
+    uploadProfilePicture,
     error,
     success,
     setError,
@@ -151,14 +152,14 @@ export default function AccountDetails() {
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
         showNotification('Post deleted successfully');
+        setShowDeleteModal(false);
+        setDeletePostId(null);
       } else {
         showNotification('Failed to delete post', 'error');
       }
     } catch (error) {
       showNotification('Failed to delete post', 'error');
     }
-    setShowDeleteModal(false);
-    setDeletePostId(null);
   };
 
   // Handle bio update
@@ -198,24 +199,13 @@ export default function AccountDetails() {
   const handleSaveProfilePicture = async () => {
     if (!selectedFile) return;
 
-    const formData = new FormData();
-    formData.append('profilePicture', selectedFile);
-
     try {
-      const response = await axios.post(`${baseUrl}/api/save-profile-picture`, formData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true,
-      });
-      if (response.data.success) {
-        setUserDetails((prev) => ({ ...prev, image: response.data.imageUrl }));
+      const success = await uploadProfilePicture(selectedFile);
+      if (success) {
+        await fetchUserDetails(); // Refresh user details to ensure latest image
         setPreviewImage(null);
         setSelectedFile(null);
         showNotification('Profile picture updated successfully');
-      } else {
-        showNotification('Failed to update profile picture', 'error');
       }
     } catch (error) {
       showNotification('Failed to update profile picture', 'error');
@@ -248,7 +238,8 @@ export default function AccountDetails() {
         fetchUserPosts(),
         fetchFollowers(),
         fetchFollowing(),
-      ]).then(() => setLoading(false))
+      ])
+        .then(() => setLoading(false))
         .catch(() => {
           setLoading(false);
           showNotification('Failed to load profile data', 'error');
@@ -768,6 +759,7 @@ export default function AccountDetails() {
             isSidebarOpen ? 'block' : 'hidden'
           }`}
         >
+          caro
           <div className="p-6 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-900">Account</h2>
             <button onClick={toggleSidebar} className="lg:hidden text-gray-600 hover:text-indigo-600">
