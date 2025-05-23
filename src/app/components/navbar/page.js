@@ -258,33 +258,33 @@ export default function SocialMediaNav() {
             />
             {/* Full-Screen Modal Menu */}
             <motion.nav
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="md:hidden fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-gray-900 z-50 p-6"
+              className="md:hidden fixed top-[10%] left-0 right-0 bottom-0 flex flex-col bg-white dark:bg-gray-900 z-50 p-4 overflow-y-auto"
             >
               <button
                 onClick={toggleMenu}
-                className="absolute top-4 right-4 p-3 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="absolute top-2 right-2 p-2 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                 aria-label="Close menu"
               >
-                <XMarkIcon className="h-8 w-8 text-gray-600 dark:text-gray-300" />
+                <XMarkIcon className="h-6 w-6 text-gray-600 dark:text-gray-300" />
               </button>
-              <div className="flex flex-col items-center gap-6 w-full max-w-md">
-                <Link href="/" className="flex items-center space-x-3 group mb-8" onClick={toggleMenu}>
+              <div className="flex flex-col items-center gap-4 w-full max-w-[90%] mx-auto">
+                <Link href="/" className="flex items-center space-x-3 group mb-6" onClick={toggleMenu}>
                   <div className="relative overflow-hidden rounded-lg">
                     <Image
                       src="/silkroadlogo.jpeg"
                       alt="Silk Road Blogs Logo"
-                      width={40}
-                      height={40}
-                      className="w-12 h-12 object-cover transform group-hover:scale-110 transition-all duration-300"
+                      width={32}
+                      height={32}
+                      className="w-10 h-10 object-cover transform group-hover:scale-110 transition-all duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   <div className="flex flex-col relative">
-                    <span className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                    <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
                       Silk Road
                     </span>
                     <span className="text-sm font-light tracking-wider text-gray-700 dark:text-gray-300">
@@ -293,7 +293,7 @@ export default function SocialMediaNav() {
                     <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-gradient-to-r from-blue-500 to-purple-600 group-hover:w-4/5 transition-all duration-300"></span>
                   </div>
                 </Link>
-                <ul className="flex flex-col gap-4 w-full">
+                <ul className="flex flex-col gap-3 w-full">
                   <motion.li
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -301,10 +301,10 @@ export default function SocialMediaNav() {
                   >
                     <Link
                       href="/notifications"
-                      className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
+                      className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
                       onClick={toggleMenu}
                     >
-                      <BellIcon className="h-7 w-7" />
+                      <BellIcon className="h-6 w-6" />
                       Notifications
                     </Link>
                   </motion.li>
@@ -317,10 +317,10 @@ export default function SocialMediaNav() {
                       >
                         <Link
                           href={`/profile/${userData?.id}`}
-                          className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
+                          className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
                           onClick={toggleMenu}
                         >
-                          <UserCircleIcon className="h-7 w-7" />
+                          <UserCircleIcon className="h-6 w-6" />
                           Profile
                         </Link>
                       </motion.li>
@@ -334,9 +334,9 @@ export default function SocialMediaNav() {
                             handleAccountRedirect();
                             toggleMenu();
                           }}
-                          className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md w-full"
+                          className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md w-full"
                         >
-                          <UserCircleIcon className="h-7 w-7" />
+                          <UserCircleIcon className="h-6 w-6" />
                           Account
                         </button>
                       </motion.li>
@@ -350,9 +350,9 @@ export default function SocialMediaNav() {
                             handleLogout();
                             toggleMenu();
                           }}
-                          className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium text-red-500 dark:text-red-400 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gradient-to-r hover:from-red-100 hover:to-pink-100 dark:hover:from-red-800 dark:hover:to-pink-800 transition-all duration-300 shadow-md w-full"
+                          className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium text-red-500 dark:text-red-400 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gradient-to-r hover:from-red-100 hover:to-pink-100 dark:hover:from-red-800 dark:hover:to-pink-800 transition-all duration-300 shadow-md w-full"
                         >
-                          <UserCircleIcon className="h-7 w-7" />
+                          <UserCircleIcon className="h-6 w-6" />
                           Logout
                         </button>
                       </motion.li>
@@ -366,10 +366,10 @@ export default function SocialMediaNav() {
                       >
                         <Link
                           href="/login"
-                          className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-2xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
+                          className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gradient-to-r hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-800 dark:hover:to-purple-800 transition-all duration-300 shadow-md"
                           onClick={toggleMenu}
                         >
-                          <UserCircleIcon className="h-7 w-7" />
+                          <UserCircleIcon className="h-6 w-6" />
                           Login
                         </Link>
                       </motion.li>
@@ -380,10 +380,10 @@ export default function SocialMediaNav() {
                       >
                         <Link
                           href="/signup"
-                          className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-2xl transition-all duration-300 shadow-md"
+                          className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-all duration-300 shadow-md"
                           onClick={toggleMenu}
                         >
-                          <UserCircleIcon className="h-7 w-7" />
+                          <UserCircleIcon className="h-6 w-6" />
                           Sign Up
                         </Link>
                       </motion.li>
@@ -396,10 +396,10 @@ export default function SocialMediaNav() {
                   >
                     <Link
                       href="/write"
-                      className="flex items-center justify-center gap-3 px-6 py-4 text-lg font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-2xl transition-all duration-300 shadow-md"
+                      className="flex items-center justify-center gap-3 px-4 py-3 text-base font-medium bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 rounded-xl transition-all duration-300 shadow-md"
                       onClick={toggleMenu}
                     >
-                      <UserCircleIcon className="h-7 w-7" />
+                      <UserCircleIcon className="h-6 w-6" />
                       Post
                     </Link>
                   </motion.li>
