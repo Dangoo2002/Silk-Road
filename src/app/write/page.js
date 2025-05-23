@@ -166,17 +166,17 @@ export default function WritePost() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-
+  
     console.log('userData:', userData);
     console.log('token:', token);
-
+  
     if (!token || !userData?.id) {
       setError('You must be logged in to create a post.');
       router.push('/login');
       setSubmitting(false);
       return;
     }
-
+  
     if (!formData.title || formData.title.length < 3) {
       setError('Title is required and must be at least 3 characters.');
       setSubmitting(false);
@@ -203,22 +203,23 @@ export default function WritePost() {
       setSubmitting(false);
       return;
     }
-
+  
     console.log('imageUrls:', formData.imageUrls);
     console.log('imageIds:', formData.imageIds);
-
+  
     const requestBody = {
       userId: userData.id,
+      contentType: 'post', // Add this required field
       title: formData.title,
       description: formData.description,
       imageIds: formData.imageIds,
       link: formData.link || null,
-      category: formData.category || null,
+      category: formData.category || 'General', // Matches DB default
       tags: formData.tags || [],
-      reading_time: formData.reading_time || '5 min',
+      reading_time: formData.reading_time || '5 min', // Matches DB default
     };
     console.log('Request body:', requestBody);
-
+  
     try {
       const response = await fetch(`${apiUrl}/write`, {
         method: 'POST',
@@ -228,18 +229,20 @@ export default function WritePost() {
         },
         body: JSON.stringify(requestBody),
       });
-
+  
+      const responseData = await response.json();
+      console.log('Response:', responseData);
+  
       if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message === 'Invalid token') {
+        if (responseData.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
           router.push('/login');
           setSubmitting(false);
           return;
         }
-        throw new Error(errorData.message || 'Failed to save post');
+        throw new Error(responseData.message || 'Failed to save post');
       }
-
+  
       alert('Post saved successfully!');
       router.push('/');
       setFormData({
@@ -257,12 +260,13 @@ export default function WritePost() {
         return [];
       });
     } catch (err) {
+      console.error('Submit error:', err);
       setError(`An unexpected error occurred while saving the post: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
   };
-
+  
   if (!userData?.id || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
