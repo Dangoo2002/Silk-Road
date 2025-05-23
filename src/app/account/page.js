@@ -5,7 +5,8 @@ import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Bars3Icon, XMarkIcon, UserCheck, UserX, ThumbsUp, MessageCircle, Share, PencilIcon, TrashIcon } from 'lucide-react';
+import { XMarkIcon, Bars3Icon } from '@heroicons/react/24/outline';
+import { UserCheck, UserX, ThumbsUp, MessageCircle, Share, PencilIcon, TrashIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
