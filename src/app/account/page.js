@@ -1,17 +1,17 @@
 'use client';
-import { useState, useEffect, useContext } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, useContext, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
-import { UserCheck, UserX, ThumbsUp, MessageCircle, Share } from 'lucide-react';
+import { Bars3Icon, XMarkIcon, UserCheck, UserX, ThumbsUp, MessageCircle, Share, PencilIcon, TrashIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
-  const { userData, isLoggedIn } = useContext(AuthContext);
+  const { userData, isLoggedIn, token } = useContext(AuthContext);
   const { userId: profileId } = useParams();
+  const router = useRouter();
   const currentUserId = userData?.id || null;
   const isOwnProfile = profileId === currentUserId;
 
@@ -21,17 +21,16 @@ export default function AccountDetails() {
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmNewPassword: '',
-  });
+  const [bio, setBio] = useState('');
+  const [profilePicture, setProfilePicture] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePostId, setDeletePostId] = useState(null);
   const [notification, setNotification] = useState(null);
+  const fileInputRef = useRef(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
+  const DEFAULT_IMAGE = '/user-symbol.jpg';
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -42,10 +41,12 @@ export default function AccountDetails() {
   const fetchUserDetails = async () => {
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
         setUserDetails(response.data.user);
+        setBio(response.data.user.bio || '');
       } else {
         showNotification('Failed to fetch user details', 'error');
       }
@@ -59,6 +60,7 @@ export default function AccountDetails() {
   const fetchUserPosts = async () => {
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
@@ -76,6 +78,7 @@ export default function AccountDetails() {
   const fetchFollowers = async () => {
     try {
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
@@ -93,6 +96,7 @@ export default function AccountDetails() {
   const fetchFollowing = async () => {
     try {
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
@@ -113,10 +117,11 @@ export default function AccountDetails() {
       return;
     }
     try {
-      const response = await axios.post(`${baseUrl}/follow`, {
-        userId: currentUserId,
-        followId: profileId,
-      }, { withCredentials: true });
+      const response = await axios.post(
+        `${baseUrl}/follow`,
+        { userId: currentUserId, followId: profileId },
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
       if (response.data.success) {
         setUserDetails((prev) => ({
           ...prev,
@@ -143,6 +148,7 @@ export default function AccountDetails() {
     try {
       const response = await axios.delete(`${baseUrl}/unfollow`, {
         data: { userId: currentUserId, followId: profileId },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
@@ -162,18 +168,75 @@ export default function AccountDetails() {
     }
   };
 
+  // Handle profile picture upload
+  const handleProfilePictureChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showNotification('Only image files are allowed', 'error');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showNotification('Image size must be less than 5MB', 'error');
+      return;
+    }
+    setProfilePicture(file);
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    try {
+      const response = await axios.post(`${baseUrl}/api/upload-profile-picture`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+      if (response.data.success) {
+        setUserDetails((prev) => ({ ...prev, image: response.data.imageUrl }));
+        showNotification('Profile picture updated successfully');
+      } else {
+        showNotification('Failed to upload profile picture', 'error');
+      }
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      showNotification('Failed to upload profile picture', 'error');
+    }
+    setProfilePicture(null);
+  };
+
+  // Handle bio update
+  const handleBioUpdate = async () => {
+    if (!isOwnProfile) return;
+    try {
+      const response = await axios.put(
+        `${baseUrl}/user/${currentUserId}`,
+        { bio },
+        { headers: { Authorization: `Bearer ${token}` }, withCredentials: true }
+      );
+      if (response.data.success) {
+        setUserDetails(response.data.user);
+        showNotification('Bio updated successfully');
+      } else {
+        showNotification('Failed to update bio', 'error');
+      }
+    } catch (error) {
+      console.error('Error updating bio:', error);
+      showNotification('Failed to update bio', 'error');
+    }
+  };
+
   // Handle delete account
   const handleDeleteAccount = async () => {
     if (!isOwnProfile) return;
     try {
       const response = await axios.delete(`${baseUrl}/user/delete`, {
-        params: { id: currentUserId },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
         showNotification('Account deleted successfully');
         setTimeout(() => {
-          window.location.href = '/';
+          router.push('/');
         }, 1000);
       } else {
         showNotification('Failed to delete account', 'error');
@@ -190,7 +253,7 @@ export default function AccountDetails() {
     if (!isOwnProfile) return;
     try {
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
-        params: { userId: currentUserId },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
@@ -207,23 +270,6 @@ export default function AccountDetails() {
     setDeletePostId(null);
   };
 
-  // Handle password change
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (!isOwnProfile) return;
-    const { currentPassword, newPassword, confirmNewPassword } = passwordData;
-    if (!currentPassword || !newPassword || !confirmNewPassword) {
-      showNotification('All fields are required', 'error');
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      showNotification('New passwords do not match', 'error');
-      return;
-    }
-    showNotification('Password change is not yet implemented on the backend', 'error');
-    setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
-  };
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -235,7 +281,7 @@ export default function AccountDetails() {
 
   // Initial fetch
   useEffect(() => {
-    if (profileId) {
+    if (profileId && token) {
       setLoading(true);
       Promise.all([
         fetchUserDetails(),
@@ -244,7 +290,7 @@ export default function AccountDetails() {
         fetchFollowing(),
       ]).finally(() => setLoading(false));
     }
-  }, [profileId]);
+  }, [profileId, token]);
 
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
@@ -266,49 +312,88 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
+            className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg"
           >
             {loading ? (
-              <p className="text-gray-400 text-center">Loading...</p>
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : userDetails ? (
               <>
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6">
-                  <Image
-                    src={userDetails.image || '/api/placeholder/80/80'}
-                    alt={userDetails.name}
-                    width={80}
-                    height={80}
-                    className="rounded-full border-4 border-blue-500/50"
-                  />
-                  <div className="text-center sm:text-left">
-                    <h2 className="text-xl sm:text-2xl font-bold text-white">{userDetails.name}</h2>
-                    <p className="text-gray-400 text-sm">@{userDetails.handle}</p>
-                    <p className="text-gray-300 mt-2">{userDetails.bio || 'No bio provided'}</p>
-                    <div className="flex gap-4 mt-4">
-                      <p className="text-gray-300">
-                        <span className="font-semibold text-white">{userDetails.followers_count}</span> Followers
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-8">
+                  <div className="relative">
+                    <Image
+                      src={userDetails.image || DEFAULT_IMAGE}
+                      alt={userDetails.name}
+                      width={120}
+                      height={120}
+                      className="rounded-full border-4 border-blue-100 object-cover"
+                      onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                    />
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => fileInputRef.current.click()}
+                        className="absolute bottom-0 right-0 p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all duration-300"
+                      >
+                        <PencilIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleProfilePictureChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                  <div className="text-center sm:text-left flex-1">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">{userDetails.name}</h2>
+                    <p className="text-gray-600 text-sm">@{userDetails.handle}</p>
+                    {isOwnProfile ? (
+                      <div className="mt-4">
+                        <textarea
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value)}
+                          placeholder="Tell us about yourself..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-gray-900"
+                          rows="4"
+                          maxLength={200}
+                        />
+                        <button
+                          onClick={handleBioUpdate}
+                          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all duration-300"
+                        >
+                          Save Bio
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-gray-700 mt-4">{userDetails.bio || 'No bio provided'}</p>
+                    )}
+                    <div className="flex gap-6 mt-6">
+                      <p className="text-gray-700">
+                        <span className="font-semibold text-gray-900">{userDetails.followers_count}</span> Followers
                       </p>
-                      <p className="text-gray-300">
-                        <span className="font-semibold text-white">{userDetails.following_count}</span> Following
+                      <p className="text-gray-700">
+                        <span className="font-semibold text-gray-900">{userDetails.following_count}</span> Following
                       </p>
                     </div>
                     {!isOwnProfile && (
                       <button
                         onClick={userDetails.is_followed ? handleUnfollow : handleFollow}
-                        className={`mt-4 px-4 py-2 rounded-full text-sm flex items-center gap-2 transition-all duration-300 ${
+                        className={`mt-6 px-6 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all duration-300 ${
                           userDetails.is_followed
-                            ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-                            : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
+                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
                         }`}
                       >
                         {userDetails.is_followed ? (
                           <>
-                            <UserX className="w-4 h-4" />
+                            <UserX className="w-5 h-5" />
                             Unfollow
                           </>
                         ) : (
                           <>
-                            <UserCheck className="w-4 h-4" />
+                            <UserCheck className="w-5 h-5" />
                             Follow
                           </>
                         )}
@@ -319,14 +404,14 @@ export default function AccountDetails() {
                 {isOwnProfile && (
                   <button
                     onClick={() => openDeleteModal()}
-                    className="mt-6 px-4 py-2 bg-red-600 text-white font-medium rounded-full hover:bg-red-700 transition-all duration-300 w-full sm:w-auto"
+                    className="px-6 py-2 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 transition-all duration-300 w-full sm:w-auto"
                   >
                     Delete Account
                   </button>
                 )}
               </>
             ) : (
-              <p className="text-gray-400 text-center">No user details found.</p>
+              <p className="text-gray-600 text-center">No user details found.</p>
             )}
           </motion.div>
         );
@@ -336,40 +421,49 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
+            className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg"
           >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Posts</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Posts</h2>
             {loading ? (
-              <p className="text-gray-400 text-center">Loading...</p>
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : userPosts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userPosts.map((post) => (
                   <motion.div
                     key={post.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-gray-900/50 backdrop-blur-lg rounded-lg overflow-hidden border border-gray-700/50 hover:shadow-xl transition-all duration-300"
+                    className="bg-gray-50 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300"
                   >
-                    {post.imageUrl && (
-                      <Image
-                        src={post.imageUrl}
-                        alt={post.title}
-                        width={400}
-                        height={200}
-                        className="w-full h-40 object-cover"
-                      />
+                    {post.imageUrls && post.imageUrls[0] && (
+                      <Link href={`/post/${post.id}`}>
+                        <Image
+                          src={post.imageUrls[0] || DEFAULT_IMAGE}
+                          alt={post.title}
+                          width={400}
+                          height={200}
+                          className="w-full h-48 object-cover"
+                          onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                        />
+                      </Link>
                     )}
                     <div className="p-4">
-                      <h3 className="text-base sm:text-lg font-semibold text-white line-clamp-2">{post.title}</h3>
-                      <p className="text-gray-400 text-sm mt-2 line-clamp-3">{post.description}</p>
+                      <Link href={`/post/${post.id}`}>
+                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 hover:text-blue-500 transition-colors">
+                          {post.title}
+                        </h3>
+                      </Link>
+                      <p className="text-gray-600 text-sm mt-2 line-clamp-3">{post.description.replace(/<[^>]+>/g, '')}</p>
                       <p className="text-gray-500 text-xs mt-2">{formatDateTime(post.created_at)}</p>
                       <div className="flex items-center gap-4 mt-4">
-                        <div className="flex items-center gap-1 text-gray-400">
-                          <ThumbsUp className={`w-4 h-4 ${post.is_liked ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <ThumbsUp className={`w-4 h-4 ${post.is_liked ? 'fill-blue-500 text-blue-500' : ''}`} />
                           <span className="text-sm">{post.likes_count}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-gray-400">
+                        <div className="flex items-center gap-1 text-gray-600">
                           <MessageCircle className="w-4 h-4" />
                           <span className="text-sm">{post.comments_count}</span>
                         </div>
@@ -377,13 +471,13 @@ export default function AccountDetails() {
                       {isOwnProfile && (
                         <div className="mt-4 flex gap-2">
                           <Link href={`/edit/${post.id}`}>
-                            <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded-full hover:bg-blue-700 transition-all duration-300">
+                            <button className="px-3 py-1 bg-blue-500 text-white text-sm rounded-full hover:bg-blue-600 transition-all duration-300">
                               Edit
                             </button>
                           </Link>
                           <button
                             onClick={() => openDeleteModal(post.id)}
-                            className="px-3 py-1 bg-red-600 text-white text-sm rounded-full hover:bg-red-700 transition-all duration-300"
+                            className="px-3 py-1 bg-red-500 text-white text-sm rounded-full hover:bg-red-600 transition-all duration-300"
                           >
                             Delete
                           </button>
@@ -394,7 +488,7 @@ export default function AccountDetails() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400 text-center">No posts found.</p>
+              <p className="text-gray-600 text-center">No posts found.</p>
             )}
           </motion.div>
         );
@@ -404,11 +498,13 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
+            className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg"
           >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Followers</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Followers</h2>
             {loading ? (
-              <p className="text-gray-400 text-center">Loading...</p>
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : followers.length > 0 ? (
               <div className="space-y-4">
                 {followers.map((user) => (
@@ -417,26 +513,27 @@ export default function AccountDetails() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-800/70 transition-all duration-300"
+                    className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300"
                   >
                     <Image
-                      src={user.image || '/api/placeholder/40/40'}
+                      src={user.image || DEFAULT_IMAGE}
                       alt={user.name}
                       width={40}
                       height={40}
-                      className="rounded-full"
+                      className="rounded-full object-cover"
+                      onError={(e) => (e.target.src = DEFAULT_IMAGE)}
                     />
                     <div className="flex-1">
-                      <Link href={`/profile/${user.id}`} className="text-white font-semibold hover:text-blue-400 transition-colors">
+                      <Link href={`/profile/${user.id}`} className="text-gray-900 font-semibold hover:text-blue-500 transition-colors">
                         {user.name}
                       </Link>
-                      <p className="text-gray-400 text-sm">@{user.handle}</p>
+                      <p className="text-gray-600 text-sm">@{user.handle}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400 text-center">No followers found.</p>
+              <p className="text-gray-600 text-center">No followers found.</p>
             )}
           </motion.div>
         );
@@ -446,11 +543,13 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
+            className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg"
           >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Following</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Following</h2>
             {loading ? (
-              <p className="text-gray-400 text-center">Loading...</p>
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : following.length > 0 ? (
               <div className="space-y-4">
                 {following.map((user) => (
@@ -459,26 +558,27 @@ export default function AccountDetails() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex items-center gap-4 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-800/70 transition-all duration-300"
+                    className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-300"
                   >
                     <Image
-                      src={user.image || '/api/placeholder/40/40'}
+                      src={user.image || DEFAULT_IMAGE}
                       alt={user.name}
                       width={40}
                       height={40}
-                      className="rounded-full"
+                      className="rounded-full object-cover"
+                      onError={(e) => (e.target.src = DEFAULT_IMAGE)}
                     />
                     <div className="flex-1">
-                      <Link href={`/profile/${user.id}`} className="text-white font-semibold hover:text-blue-400 transition-colors">
+                      <Link href={`/profile/${user.id}`} className="text-gray-900 font-semibold hover:text-blue-500 transition-colors">
                         {user.name}
                       </Link>
-                      <p className="text-gray-400 text-sm">@{user.handle}</p>
+                      <p className="text-gray-600 text-sm">@{user.handle}</p>
                     </div>
                   </motion.div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-400 text-center">Not following anyone.</p>
+              <p className="text-gray-600 text-center">Not following anyone.</p>
             )}
           </motion.div>
         );
@@ -489,90 +589,36 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
+            className="p-4 sm:p-6 bg-white rounded-2xl shadow-lg"
           >
             {loading ? (
-              <p className="text-gray-400 text-center">Loading...</p>
+              <div className="flex justify-center">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
             ) : userDetails ? (
               <>
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-4">Personal Details</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Personal Details</h2>
                 <div className="space-y-4">
-                  <p className="text-base sm:text-lg text-gray-300">
-                    <span className="font-semibold text-white">Name:</span> {userDetails.name}
+                  <p className="text-lg text-gray-700">
+                    <span className="font-semibold text-gray-900">Name:</span> {userDetails.name}
                   </p>
-                  <p className="text-base sm:text-lg text-gray-300">
-                    <span className="font-semibold text-white">Email:</span> {userDetails.email}
+                  <p className="text-lg text-gray-700">
+                    <span className="font-semibold text-gray-900">Email:</span> {userDetails.email}
                   </p>
-                  <p className="text-base sm:text-lg text-gray-300">
-                    <span className="font-semibold text-white">Bio:</span> {userDetails.bio || 'No bio provided'}
+                  <p className="text-lg text-gray-700">
+                    <span className="font-semibold text-gray-900">Bio:</span> {userDetails.bio || 'No bio provided'}
                   </p>
                 </div>
                 <button
                   onClick={() => openDeleteModal()}
-                  className="mt-6 px-4 py-2 bg-red-600 text-white font-medium rounded-full hover:bg-red-700 transition-all duration-300 w-full sm:w-auto"
+                  className="mt-6 px-6 py-2 bg-red-500 text-white font-medium rounded-full hover:bg-red-600 transition-all duration-300 w-full sm:w-auto"
                 >
                   Delete Account
                 </button>
               </>
             ) : (
-              <p className="text-gray-400 text-center">No user details found.</p>
+              <p className="text-gray-600 text-center">No user details found.</p>
             )}
-          </motion.div>
-        );
-      case 'changePassword':
-        if (!isOwnProfile) return null;
-        return (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="p-4 sm:p-6 bg-gray-800/50 backdrop-blur-lg rounded-xl border border-gray-700/50"
-          >
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Change Password</h2>
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Current Password</label>
-                <input
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                  }
-                  className="mt-1 w-full px-3 py-2 bg-gray-900/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-sm sm:text-base"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300">New Password</label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, newPassword: e.target.value })
-                  }
-                  className="mt-1 w-full px-3 py-2 bg-gray-900/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-sm sm:text-base"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={passwordData.confirmNewPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })
-                  }
-                  className="mt-1 w-full px-3 py-2 bg-gray-900/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 text-sm sm:text-base"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
-              >
-                Change Password
-              </button>
-            </form>
           </motion.div>
         );
       default:
@@ -581,7 +627,23 @@ export default function AccountDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+      <style jsx>{`
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #3b82f6;
+          border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #2563eb;
+        }
+      `}</style>
+
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -589,8 +651,8 @@ export default function AccountDetails() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 ${
-              notification.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            className={`fixed top-4 right-4 px-4 py-2 rounded-lg text-white z-50 shadow-lg ${
+              notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
             }`}
           >
             {notification.message}
@@ -604,30 +666,30 @@ export default function AccountDetails() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
         >
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-gray-800 p-6 rounded-xl border border-gray-700/50 max-w-md w-full"
+            className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full"
           >
-            <h3 className="text-lg font-semibold text-white mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               {deletePostId ? 'Delete Post' : 'Delete Account'}
             </h3>
-            <p className="text-gray-400 mb-6">
+            <p className="text-gray-600 mb-6">
               Are you sure you want to delete {deletePostId ? 'this post' : 'your account'}? This action is irreversible.
             </p>
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-600 text-gray-200 rounded-full hover:bg-gray-500 transition-all duration-300"
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-all duration-300"
               >
                 Cancel
               </button>
               <button
                 onClick={() => (deletePostId ? handleDeletePost(deletePostId) : handleDeleteAccount())}
-                className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-all duration-300"
+                className="px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
               >
                 Delete
               </button>
@@ -637,9 +699,9 @@ export default function AccountDetails() {
       )}
 
       {/* Mobile Header with Toggle Button */}
-      <header className="flex items-center justify-between p-4 bg-gray-800/50 backdrop-blur-lg border-b border-gray-700/50 sm:hidden">
-        <h2 className="text-lg font-bold text-white">{isOwnProfile ? 'Account Settings' : 'User Profile'}</h2>
-        <button onClick={toggleSidebar} className="text-gray-300 hover:text-white focus:outline-none">
+      <header className="flex items-center justify-between p-4 bg-white border-b border-gray-200 sm:hidden">
+        <h2 className="text-lg font-bold text-gray-900">{isOwnProfile ? 'Account Settings' : 'User Profile'}</h2>
+        <button onClick={toggleSidebar} className="text-gray-600 hover:text-gray-900 focus:outline-none">
           {isSidebarOpen ? (
             <XMarkIcon className="w-6 h-6" />
           ) : (
@@ -648,7 +710,7 @@ export default function AccountDetails() {
         </button>
       </header>
 
-      <div className="flex flex-1 flex-col sm:flex-row">
+      <div className="flex flex-1 flex-col sm:flex-row max-w-7xl mx-auto">
         {/* Sidebar */}
         <motion.aside
           initial={{ x: -250 }}
@@ -656,10 +718,10 @@ export default function AccountDetails() {
           transition={{ duration: 0.3 }}
           className={`${
             isSidebarOpen ? 'block' : 'hidden'
-          } sm:block w-full sm:w-64 bg-gray-800/50 backdrop-blur-lg border-r border-gray-700/50 absolute sm:static z-20 sm:z-auto h-full sm:h-auto`}
+          } sm:block w-full sm:w-64 bg-gray-50 border-r border-gray-200 absolute sm:static z-20 sm:z-auto h-full sm:h-auto shadow-sm`}
         >
           <div className="p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-white hidden sm:block">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 hidden sm:block">
               {isOwnProfile ? 'Account Settings' : 'User Profile'}
             </h2>
           </div>
@@ -669,16 +731,13 @@ export default function AccountDetails() {
               { id: 'posts', label: 'Posts' },
               { id: 'followers', label: 'Followers' },
               { id: 'following', label: 'Following' },
-              ...(isOwnProfile ? [
-                { id: 'personalDetails', label: 'Personal Details' },
-                { id: 'changePassword', label: 'Change Password' },
-              ] : []),
+              ...(isOwnProfile ? [{ id: 'personalDetails', label: 'Personal Details' }] : []),
             ].map((tab) => (
               <motion.li
                 key={tab.id}
                 whileHover={{ x: 5 }}
-                className={`px-4 sm:px-6 py-3 cursor-pointer text-gray-300 hover:bg-gray-700/50 hover:text-white transition-all duration-300 text-sm sm:text-base ${
-                  activeTab === tab.id ? 'bg-gradient-to-r from-blue-500/50 to-purple-600/50 text-white font-semibold' : ''
+                className={`px-4 sm:px-6 py-3 cursor-pointer text-gray-700 hover:bg-blue-50 hover:text-blue-500 transition-all duration-300 text-sm sm:text-base ${
+                  activeTab === tab.id ? 'bg-blue-50 text-blue-500 font-semibold' : ''
                 }`}
                 onClick={() => {
                   setActiveTab(tab.id);
