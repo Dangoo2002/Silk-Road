@@ -12,84 +12,42 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Add loading state
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
-  // Update user profile (bio and image)
-  const updateUserProfile = useCallback(async (updates) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${apiUrl}/user/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(updates),
-      });
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    console.log('AuthProvider: Checking localStorage for persisted data');
+    const storedUserData = localStorage.getItem('userData');
+    const storedToken = localStorage.getItem('token');
+    const storedUserId = localStorage.getItem('userId');
 
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data.user);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        setSuccess('Profile updated successfully!');
-        return true;
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to update profile');
-        return false;
-      }
-    } catch (err) {
-      setError('Error updating profile. Please try again.');
-      console.error('Update profile error:', err);
-      return false;
-    } finally {
-      setLoading(false);
+    if (storedUserData && storedToken && storedUserId) {
+      console.log('Restoring from localStorage:', { storedUserData, storedToken, storedUserId });
+      setUserData(JSON.parse(storedUserData));
+      setToken(storedToken);
+      setIsLoggedIn(true);
+    } else {
+      console.log('No valid data in localStorage');
     }
-  }, [apiUrl, token, userData?.id]);
-
-  // Upload profile picture
-  const uploadProfilePicture = useCallback(async (file) => {
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append('profilePicture', file);
-
-      const response = await fetch(`${apiUrl}/api/upload-profile-picture`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(prev => ({ ...prev, image: data.imageUrl }));
-        localStorage.setItem('userData', JSON.stringify({ ...userData, image: data.imageUrl }));
-        setSuccess('Profile picture updated successfully!');
-        return true;
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to upload profile picture');
-        return false;
-      }
-    } catch (err) {
-      setError('Error uploading profile picture. Please try again.');
-      console.error('Upload profile picture error:', err);
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, [apiUrl, token, userData]);
+  }, []);
 
   // Monitor Firebase auth state
   useEffect(() => {
+    console.log('AuthProvider: Initializing onAuthStateChanged');
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('onAuthStateChanged: User state:', user);
       if (user) {
         try {
+          console.log('Fetching ID token for user:', user.uid);
           const idToken = await user.getIdToken();
+          console.log('ID token:', idToken);
+          console.log('Sending request to /auth/google with:', {
+            email: user.email,
+            name: user.displayName,
+            firebase_uid: user.uid,
+          });
           const response = await fetch(`${apiUrl}/auth/google`, {
             method: 'POST',
             headers: {
@@ -102,18 +60,21 @@ export const AuthProvider = ({ children }) => {
               firebase_uid: user.uid,
             }),
           });
+          const responseData = await response.json();
+          console.log('Backend response:', response.status, responseData);
 
           if (response.ok) {
-            const data = await response.json();
+            console.log('Auth successful, setting userData:', responseData.user, 'token:', responseData.token);
             setIsLoggedIn(true);
-            setUserData(data.user);
-            setToken(data.token);
-            localStorage.setItem('userData', JSON.stringify(data.user));
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userId', data.user.id);
+            setUserData(responseData.user);
+            setToken(responseData.token);
+            localStorage.setItem('userData', JSON.stringify(responseData.user));
+            localStorage.setItem('token', responseData.token);
+            localStorage.setItem('userId', responseData.user.id);
             setSuccess('Authentication successful!');
             setError('');
           } else {
+            console.error('Backend auth failed:', response.status, responseData);
             setError('Failed to authenticate with server');
             setIsLoggedIn(false);
             setUserData(null);
@@ -123,10 +84,17 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('userId');
           }
         } catch (err) {
+          console.error('Auth state error:', err.message);
           setError('Authentication error. Please try again.');
-          console.error('Auth state error:', err);
+          setIsLoggedIn(false);
+          setUserData(null);
+          setToken(null);
+          localStorage.removeItem('userData');
+          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
         }
       } else {
+        console.log('No user signed in, clearing auth state');
         setIsLoggedIn(false);
         setUserData(null);
         setToken(null);
@@ -134,9 +102,13 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
       }
+      setLoading(false); // Set loading to false after auth state is resolved
     });
 
-    return () => unsubscribe();
+    return () => {
+      console.log('AuthProvider: Cleaning up onAuthStateChanged');
+      unsubscribe();
+    };
   }, [apiUrl]);
 
   // Google Sign-In
@@ -147,6 +119,11 @@ export const AuthProvider = ({ children }) => {
       const user = result.user;
       const idToken = await user.getIdToken();
 
+      console.log('Google Sign-In: Sending request to /auth/google with:', {
+        email: user.email,
+        name: user.displayName,
+        firebase_uid: user.uid,
+      });
       const response = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
         headers: {
@@ -159,28 +136,28 @@ export const AuthProvider = ({ children }) => {
           firebase_uid: user.uid,
         }),
       });
+      const responseData = await response.json();
+      console.log('Google Sign-In: Backend response:', response.status, responseData);
 
       if (response.ok) {
-        const data = await response.json();
         setIsLoggedIn(true);
-        setUserData(data.user);
-        setToken(data.token);
-        localStorage.setItem('userData', JSON.stringify(data.user));
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userId', data.user.id);
+        setUserData(responseData.user);
+        setToken(responseData.token);
+        localStorage.setItem('userData', JSON.stringify(responseData.user));
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('userId', responseData.user.id);
         setSuccess('Login successful!');
         setError('');
         router.push('/');
         return true;
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Login failed');
+        setError(responseData.message || 'Login failed');
         setSuccess('');
         return false;
       }
     } catch (err) {
-      setError('Google Sign-In failed. Please try again.');
       console.error('Google Sign-In error:', err);
+      setError('Google Sign-In failed. Please try again.');
       return false;
     } finally {
       setLoading(false);
@@ -201,29 +178,103 @@ export const AuthProvider = ({ children }) => {
       setError('');
       router.push('/login');
     } catch (err) {
-      setError('Logout failed. Please try again.');
       console.error('Logout error:', err);
+      setError('Logout failed. Please try again.');
     }
   }, [router]);
 
   return (
     <AuthContext.Provider
-      value={{ 
-        loginWithGoogle, 
-        logout, 
-        error, 
-        success, 
-        isLoggedIn, 
-        loading, 
-        userData, 
+      value={{
+        loginWithGoogle,
+        logout,
+        error,
+        success,
+        isLoggedIn,
+        loading, // Expose loading state
+        userData,
         token,
-        updateUserProfile,
-        uploadProfilePicture,
+        updateUserProfile: useCallback(
+          async (updates) => {
+            try {
+              setLoading(true);
+              const response = await fetch(`${apiUrl}/user/${userData.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(updates),
+              });
+              const responseData = await response.json();
+              console.log('Update profile response:', response.status, responseData);
+
+              if (response.ok) {
+                setUserData(responseData.user);
+                localStorage.setItem('userData', JSON.stringify(responseData.user));
+                setSuccess('Profile updated successfully!');
+                return true;
+              } else {
+                setError(responseData.message || 'Failed to update profile');
+                return false;
+              }
+            } catch (err) {
+              console.error('Update profile error:', err);
+              setError('Error updating profile. Please try again.');
+              return false;
+            } finally {
+              setLoading(false);
+            }
+          },
+          [apiUrl, token, userData?.id]
+        ),
+        uploadProfilePicture: useCallback(
+          async (file) => {
+            try {
+              setLoading(true);
+              const formData = new FormData();
+              formData.append('profilePicture', file);
+
+              const response = await fetch(`${apiUrl}/api/upload-profile-picture`, {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+                body: formData,
+              });
+              const responseData = await response.json();
+              console.log('Upload profile picture response:', response.status, responseData);
+
+              if (response.ok) {
+                setUserData((prev) => ({ ...prev, image: responseData.imageUrl }));
+                localStorage.setItem('userData', JSON.stringify({ ...userData, image: responseData.imageUrl }));
+                setSuccess('Profile picture updated successfully!');
+                return true;
+              } else {
+                setError(responseData.message || 'Failed to upload profile picture');
+                return false;
+              }
+            } catch (err) {
+              console.error('Upload profile picture error:', err);
+              setError('Error uploading profile picture. Please try again.');
+              return false;
+            } finally {
+              setLoading(false);
+            }
+          },
+          [apiUrl, token, userData]
+        ),
         setError,
         setSuccess,
       }}
     >
-      {children}
+      {loading ? (
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

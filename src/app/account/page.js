@@ -6,12 +6,14 @@ import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { PencilIcon, CameraIcon } from '@heroicons/react/24/outline';
-import { UserCheck, UserX, ThumbsUp, MessageCircle, Share, Settings, User, Bookmark, Lock, Trash2 } from 'lucide-react';
+import { UserCheck, UserX, ThumbsUp, MessageCircle, Settings, User, Bookmark, Lock, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
   const {
     userData,
+    token,
+    loading: authLoading, // Add authLoading from AuthContext
     updateUserProfile,
     uploadProfilePicture,
     error,
@@ -20,8 +22,7 @@ export default function AccountDetails() {
     setSuccess,
   } = useContext(AuthContext);
   const router = useRouter();
-  const profileId = userData?.id; // Use userData.id instead of useParams
-  const isOwnProfile = true; // Always true since we're showing the logged-in user's profile
+  const profileId = userData?.id;
   const [activeTab, setActiveTab] = useState('profile');
   const [userDetails, setUserDetails] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
@@ -38,13 +39,13 @@ export default function AccountDetails() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
-  // Redirect to login if userData is not available
+  // Redirect to login if not authenticated
   useEffect(() => {
-    if (!userData?.id || !userData?.token) {
+    if (!authLoading && (!userData?.id || !token)) {
       console.log('No userData or token, redirecting to login');
       router.push('/login');
     }
-  }, [userData, router]);
+  }, [authLoading, userData, token, router]);
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -56,7 +57,7 @@ export default function AccountDetails() {
     console.log('Fetching user details for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('User details response:', response.data);
@@ -78,7 +79,7 @@ export default function AccountDetails() {
     console.log('Fetching user posts for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}/posts`, {
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('User posts response:', response.data);
@@ -99,7 +100,7 @@ export default function AccountDetails() {
     console.log('Fetching followers for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/followers/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('Followers response:', response.data);
@@ -120,7 +121,7 @@ export default function AccountDetails() {
     console.log('Fetching following for profileId:', profileId);
     try {
       const response = await axios.get(`${baseUrl}/following/${profileId}`, {
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('Following response:', response.data);
@@ -140,7 +141,7 @@ export default function AccountDetails() {
   const handleDeleteAccount = async () => {
     try {
       const response = await axios.delete(`${baseUrl}/user/delete`, {
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('Delete account response:', response.data);
@@ -165,7 +166,7 @@ export default function AccountDetails() {
     try {
       const response = await axios.delete(`${baseUrl}/posts/${postId}`, {
         params: { userId: profileId },
-        headers: { Authorization: `Bearer ${userData.token}` },
+        headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       console.log('Delete post response:', response.data);
@@ -219,7 +220,7 @@ export default function AccountDetails() {
       const success = await uploadProfilePicture(file);
       console.log('Profile picture upload result:', success);
       if (success) {
-        await fetchUserDetails(); // Refresh user details
+        await fetchUserDetails();
         showNotification('Profile picture updated successfully');
       }
     } catch (error) {
@@ -239,7 +240,11 @@ export default function AccountDetails() {
 
   // Initial fetch
   useEffect(() => {
-    if (profileId && userData?.token) {
+    if (authLoading) {
+      console.log('Waiting for auth to initialize');
+      return;
+    }
+    if (profileId && token) {
       console.log('Starting data fetch for profileId:', profileId);
       setLoading(true);
       Promise.all([
@@ -258,9 +263,9 @@ export default function AccountDetails() {
           showNotification('Failed to load profile data', 'error');
         });
     } else {
-      console.warn('Missing profileId or token:', { profileId, token: userData?.token });
+      console.warn('Missing profileId or token:', { profileId, token });
     }
-  }, [profileId, userData?.token]);
+  }, [profileId, token, authLoading]);
 
   // Update bio text when user details change
   useEffect(() => {
@@ -294,6 +299,14 @@ export default function AccountDetails() {
   };
 
   const renderContent = () => {
+    if (authLoading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case 'profile':
         return (
@@ -408,7 +421,7 @@ export default function AccountDetails() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Posts</h2>
             {loading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-1212 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             ) : userPosts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
