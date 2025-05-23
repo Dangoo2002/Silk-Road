@@ -16,6 +16,74 @@ export const AuthProvider = ({ children }) => {
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
+  // Update user profile (bio and image)
+  const updateUserProfile = useCallback(async (updates) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${apiUrl}/user/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(data.user);
+        localStorage.setItem('userData', JSON.stringify(data.user));
+        setSuccess('Profile updated successfully!');
+        return true;
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to update profile');
+        return false;
+      }
+    } catch (err) {
+      setError('Error updating profile. Please try again.');
+      console.error('Update profile error:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, token, userData?.id]);
+
+  // Upload profile picture
+  const uploadProfilePicture = useCallback(async (file) => {
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+
+      const response = await fetch(`${apiUrl}/api/upload-profile-picture`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData(prev => ({ ...prev, image: data.imageUrl }));
+        localStorage.setItem('userData', JSON.stringify({ ...userData, image: data.imageUrl }));
+        setSuccess('Profile picture updated successfully!');
+        return true;
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to upload profile picture');
+        return false;
+      }
+    } catch (err) {
+      setError('Error uploading profile picture. Please try again.');
+      console.error('Upload profile picture error:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, token, userData]);
+
   // Monitor Firebase auth state
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -140,7 +208,20 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ loginWithGoogle, logout, error, success, isLoggedIn, loading, userData, token }}
+      value={{ 
+        loginWithGoogle, 
+        logout, 
+        error, 
+        success, 
+        isLoggedIn, 
+        loading, 
+        userData, 
+        token,
+        updateUserProfile,
+        uploadProfilePicture,
+        setError,
+        setSuccess,
+      }}
     >
       {children}
     </AuthContext.Provider>
