@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext } from '../../components/AuthContext/AuthContext';
+import { AuthContext } from '../components/AuthContext/AuthContext';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrashIcon, CheckCircleIcon, XCircleIcon, ChartBarIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
