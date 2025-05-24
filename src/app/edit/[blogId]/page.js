@@ -13,7 +13,8 @@ const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 export default function EditPost() {
   const { token, userData } = useContext(AuthContext);
-  const { id: postId } = useParams();
+  const params = useParams();
+  const postId = params?.blogId; // Use blogId from route /edit/[blogId]
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -34,10 +35,15 @@ export default function EditPost() {
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
+  // Log useParams output for debugging
+  useEffect(() => {
+    console.log('useParams output:', params);
+  }, [params]);
+
   const fetchPost = useCallback(async () => {
     console.log('Fetching post with ID:', postId, 'User ID:', userData?.id);
-    if (!postId) {
-      setError('Post ID is missing');
+    if (!postId || isNaN(parseInt(postId, 10))) {
+      setError('Invalid or missing post ID');
       setLoading(false);
       return;
     }
@@ -86,14 +92,16 @@ export default function EditPost() {
 
   useEffect(() => {
     console.log('useEffect triggered. postId:', postId, 'token:', !!token, 'userData:', userData);
-    if (!postId) {
-      setError('Invalid post ID');
+    if (!postId || isNaN(parseInt(postId, 10))) {
+      setError('Invalid or missing post ID');
       setLoading(false);
+      router.push('/'); // Redirect to home if postId is invalid
       return;
     }
     if (!token || !userData?.id) {
       setError('You must be logged in to edit a post');
       setLoading(false);
+      router.push('/login');
       return;
     }
     fetchPost();
@@ -106,7 +114,7 @@ export default function EditPost() {
         }
       });
     };
-  }, [postId, token, userData, fetchPost]); // Removed previewImages from dependencies
+  }, [postId, token, userData, fetchPost, router]);
 
   // Fallback timeout to prevent infinite loading
   useEffect(() => {
@@ -362,7 +370,7 @@ export default function EditPost() {
     );
   }
 
-  if (error && !userData?.id || !token) {
+  if (error && (!userData?.id || !token)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
         <motion.div
