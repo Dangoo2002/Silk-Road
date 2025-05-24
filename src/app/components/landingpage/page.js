@@ -26,7 +26,7 @@ export default function SocialMediaHome() {
   const [viewedPosts, setViewedPosts] = useState(new Set());
   const [expandedImage, setExpandedImage] = useState(null);
 
-  const DEFAULT_IMAGE = '/default.jpg';
+  const DEFAULT_IMAGE = '/def.jpg';
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   const formatDateTime = (dateString) => {
@@ -171,7 +171,7 @@ export default function SocialMediaHome() {
       return;
     }
     try {
-      const response = await fetch(`${apiUrl}/users?limit=4&random=true`, {
+      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=4`, {
         cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -186,6 +186,8 @@ export default function SocialMediaHome() {
           image: user.image || DEFAULT_IMAGE,
           is_followed: !!user.is_followed,
         })));
+      } else {
+        setError('No suggested users found.');
       }
     } catch (error) {
       console.error('Users error:', error.message);
@@ -324,7 +326,217 @@ export default function SocialMediaHome() {
     }
   }, [userId, token, apiUrl]);
 
-  // ... (keep all other utility functions the same)
+  const handleFollow = async (followId) => {
+    if (!userId || !token) {
+      setError('Authentication required to follow users.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/follow`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, followId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to follow user');
+      }
+      setSuggestedUsers((prev) =>
+        prev.map((user) =>
+          user.id === followId ? { ...user, is_followed: true } : user
+        )
+      );
+      setFollowing((prev) => [
+        ...prev,
+        suggestedUsers.find((user) => user.id === followId),
+      ]);
+    } catch (error) {
+      console.error('Follow error:', error.message);
+      setError(`Failed to follow user: ${error.message}`);
+    }
+  };
+
+  const handleUnfollow = async (followId) => {
+    if (!userId || !token) {
+      setError('Authentication required to unfollow users.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/unfollow`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, followId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to unfollow user');
+      }
+      setSuggestedUsers((prev) =>
+        prev.map((user) =>
+          user.id === followId ? { ...user, is_followed: false } : user
+        )
+      );
+      setFollowing((prev) => prev.filter((user) => user.id !== followId));
+    } catch (error) {
+      console.error('Unfollow error:', error.message);
+      setError(`Failed to unfollow user: ${error.message}`);
+    }
+  };
+
+  const handlePostLike = async (postId, isLiked) => {
+    if (!userId || !token) {
+      setError('Authentication required to like posts.');
+      return;
+    }
+    try {
+      const endpoint = isLiked ? `${apiUrl}/likes` : `${apiUrl}/likes`;
+      const method = isLiked ? 'DELETE' : 'POST';
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId, userId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Failed to ${isLiked ? 'unlike' : 'like'} post`);
+      }
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                is_liked: !isLiked,
+                likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1,
+              }
+            : post
+        )
+      );
+    } catch (error) {
+      console.error('Like error:', error.message);
+      setError(`Failed to ${isLiked ? 'unlike' : 'like'} post: ${error.message}`);
+    }
+  };
+
+  const handlePostCommentSubmit = async (postId) => {
+    if (!userId || !token) {
+      setError('Authentication required to comment.');
+      return;
+    }
+    const content = commentInput[postId]?.trim();
+    if (!content) {
+      setError('Comment cannot be empty.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/comments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId, userId, content }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to post comment');
+      }
+      const data = await response.json();
+      if (data.success) {
+        setComments((prev) => ({
+          ...prev,
+          [postId]: [
+            { ...data.comment, author_image: data.comment.author_image || DEFAULT_IMAGE },
+            ...(prev[postId] || []),
+          ],
+        }));
+        setCommentInput((prev) => ({ ...prev, [postId]: '' }));
+        setPosts((prev) =>
+          prev.map((post) =>
+            post.id === postId
+              ? { ...post, comments_count: (post.comments_count || 0) + 1 }
+              : post
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Comment error:', error.message);
+      setError(`Failed to post comment: ${error.message}`);
+    }
+  };
+
+  const handlePostShare = async (postId) => {
+    if (!userId || !token) {
+      setError('Authentication required to share posts.');
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/shares`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId, userId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to share post');
+      }
+      alert('Post shared successfully!');
+    } catch (error) {
+      console.error('Share error:', error.message);
+      setError(`Failed to share post: ${error.message}`);
+    }
+  };
+
+  const trackPostView = async (postId) => {
+    if (!userId || !token || viewedPosts.has(postId)) {
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/post-views`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postId, userId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to track post view');
+      }
+      setViewedPosts((prev) => new Set(prev).add(postId));
+      setPosts((prev) =>
+        prev.map((post) =>
+          post.id === postId ? { ...post, views: (post.views || 0) + 1 } : post
+        )
+      );
+    } catch (error) {
+      console.error('View tracking error:', error.message);
+    }
+  };
+
+  const toggleComments = (postId) => {
+    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const togglePostExpand = (postId) => {
+    setExpandedPost((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const handleImageClick = (imageUrl) => {
+    setExpandedImage(imageUrl);
+  };
 
   useEffect(() => {
     if (token) {
@@ -337,7 +549,27 @@ export default function SocialMediaHome() {
     }
   }, [fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, fetchSuggestedUsers, token]);
 
-  // ... (keep all other useEffect hooks the same)
+  useEffect(() => {
+    if (!userId || !token) return;
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+          document.documentElement.offsetHeight - 100 &&
+        hasMore &&
+        !isLoading
+      ) {
+        setPage((prev) => prev + 1);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, isLoading, userId, token]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchPosts(page);
+    }
+  }, [page, fetchPosts]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 pt-16">
@@ -362,12 +594,61 @@ export default function SocialMediaHome() {
           }
         }
       `}</style>
-      
-      {/* Error message and expanded image modal remain the same */}
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50"
+        >
+          <span>{error}</span>
+          <button
+            onClick={() => setError('')}
+            className="hover:text-gray-200 transition-all duration-300"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </motion.div>
+      )}
+
+      <AnimatePresence>
+        {expandedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
+            onClick={() => setExpandedImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="relative max-w-4xl w-full h-auto"
+            >
+              <Image
+                src={expandedImage}
+                alt="Expanded image"
+                width={1200}
+                height={800}
+                className="w-full h-auto rounded-xl"
+                onError={(e) => {
+                  e.target.src = DEFAULT_IMAGE;
+                }}
+              />
+              <button
+                onClick={() => setExpandedImage(null)}
+                className="absolute top-4 right-4 bg-gray-800 bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-75 transition-all duration-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="container mx-auto px-4 py-8 lg:flex lg:gap-8">
         <div className="lg:w-2/3">
-          {/* Login prompt for non-logged-in users */}
           {!userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -387,7 +668,6 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          {/* Loading skeletons */}
           {isLoading && !userId && (
             <>
               <SkeletonCard />
@@ -402,7 +682,6 @@ export default function SocialMediaHome() {
             </>
           )}
 
-          {/* User post creation prompt */}
           {userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -431,7 +710,6 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          {/* Trending topics */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -460,7 +738,6 @@ export default function SocialMediaHome() {
             )}
           </motion.div>
 
-          {/* Suggested posts */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -518,7 +795,6 @@ export default function SocialMediaHome() {
             )}
           </motion.div>
 
-          {/* Mobile-only suggested users */}
           {userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -584,7 +860,6 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          {/* Main posts feed */}
           <div className="space-y-8">
             {(userId ? posts : defaultPosts).map((post) => {
               const { text: truncatedText, truncated } = truncateDescription(post.description || '');
@@ -873,10 +1148,8 @@ export default function SocialMediaHome() {
           </div>
         </div>
 
-        {/* Right sidebar (desktop only) */}
         <div className="hidden lg:block lg:w-1/3">
           <div className="sticky top-20 space-y-8">
-            {/* Suggested Users */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
@@ -943,7 +1216,6 @@ export default function SocialMediaHome() {
               </motion.div>
             )}
 
-            {/* Followers */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
@@ -984,7 +1256,6 @@ export default function SocialMediaHome() {
               </motion.div>
             )}
 
-            {/* Following */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
