@@ -389,7 +389,8 @@ export default function SocialMediaHome() {
     }
   };
 
-  const handlePostLike = async (postId, isLiked) => {
+  const handlePostLike = async (postId, isLiked, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     if (!userId || !token) {
       setError('Authentication required to like posts.');
       return;
@@ -426,7 +427,8 @@ export default function SocialMediaHome() {
     }
   };
 
-  const handlePostCommentSubmit = async (postId) => {
+  const handlePostCommentSubmit = async (postId, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     if (!userId || !token) {
       setError('Authentication required to comment.');
       return;
@@ -473,7 +475,8 @@ export default function SocialMediaHome() {
     }
   };
 
-  const handlePostShare = async (postId) => {
+  const handlePostShare = async (postId, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     if (!userId || !token) {
       setError('Authentication required to share posts.');
       return;
@@ -526,15 +529,18 @@ export default function SocialMediaHome() {
     }
   };
 
-  const toggleComments = (postId) => {
+  const toggleComments = (postId, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const togglePostExpand = (postId) => {
+  const togglePostExpand = (postId, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     setExpandedPost((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const handleImageClick = (imageUrl) => {
+  const handleImageClick = (imageUrl, e) => {
+    e.stopPropagation(); // Prevent event from bubbling to parent Link
     setExpandedImage(imageUrl);
   };
 
@@ -922,10 +928,7 @@ export default function SocialMediaHome() {
                           )}
                           {truncated && (
                             <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                togglePostExpand(post.id);
-                              }}
+                              onClick={(e) => togglePostExpand(post.id, e)}
                               className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
                             >
                               {expandedPost[post.id] ? 'Read Less' : 'Read More'}
@@ -940,10 +943,7 @@ export default function SocialMediaHome() {
                               width={800}
                               height={600}
                               className="post-image rounded-xl cursor-pointer"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleImageClick(post.imageUrls[0]);
-                              }}
+                              onClick={(e) => handleImageClick(post.imageUrls[0], e)}
                               onError={(e) => {
                                 e.target.src = DEFAULT_IMAGE;
                               }}
@@ -959,10 +959,7 @@ export default function SocialMediaHome() {
                                     width={400}
                                     height={300}
                                     className="w-full h-48 sm:h-64 rounded-xl object-cover cursor-pointer"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      handleImageClick(url);
-                                    }}
+                                    onClick={(e) => handleImageClick(url, e)}
                                     onError={(e) => {
                                       e.target.src = DEFAULT_IMAGE;
                                     }}
@@ -979,10 +976,7 @@ export default function SocialMediaHome() {
                                       width={300}
                                       height={200}
                                       className="w-full h-32 sm:h-48 rounded-xl object-cover cursor-pointer"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        handleImageClick(url);
-                                      }}
+                                      onClick={(e) => handleImageClick(url, e)}
                                       onError={(e) => {
                                         e.target.src = DEFAULT_IMAGE;
                                       }}
@@ -1013,10 +1007,7 @@ export default function SocialMediaHome() {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePostLike(post.id, post.is_liked);
-                              }}
+                              onClick={(e) => handlePostLike(post.id, post.is_liked, e)}
                               className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <ThumbsUp
@@ -1027,10 +1018,7 @@ export default function SocialMediaHome() {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                toggleComments(post.id);
-                              }}
+                              onClick={(e) => toggleComments(post.id, e)}
                               className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <MessageCircle className="w-5 h-5" />
@@ -1039,10 +1027,7 @@ export default function SocialMediaHome() {
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePostShare(post.id);
-                              }}
+                              onClick={(e) => handlePostShare(post.id, e)}
                               className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <Share className="w-5 h-5" />
@@ -1070,10 +1055,7 @@ export default function SocialMediaHome() {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handlePostCommentSubmit(post.id);
-                              }}
+                              onClick={(e) => handlePostCommentSubmit(post.id, e)}
                               className="mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
                             >
                               Post Comment
