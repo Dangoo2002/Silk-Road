@@ -22,6 +22,7 @@ import {
   CogIcon,
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
 
 export default function AccountDetails() {
   const {
@@ -79,6 +80,7 @@ export default function AccountDetails() {
         showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
+      console.error('Fetch user details error:', error);
       showNotification('Failed to fetch user details', 'error');
     }
   };
@@ -96,6 +98,7 @@ export default function AccountDetails() {
         showNotification('Failed to fetch user posts', 'error');
       }
     } catch (error) {
+      console.error('Fetch user posts error:', error);
       showNotification('Error fetching user posts', 'error');
     }
   };
@@ -113,6 +116,7 @@ export default function AccountDetails() {
         showNotification('Failed to fetch followers', 'error');
       }
     } catch (error) {
+      console.error('Fetch followers error:', error);
       showNotification('Error fetching followers', 'error');
     }
   };
@@ -130,6 +134,7 @@ export default function AccountDetails() {
         showNotification('Failed to fetch following', 'error');
       }
     } catch (error) {
+      console.error('Fetch following error:', error);
       showNotification('Error fetching following', 'error');
     }
   };
@@ -149,6 +154,7 @@ export default function AccountDetails() {
         showNotification('Failed to delete account', 'error');
       }
     } catch (error) {
+      console.error('Delete account error:', error);
       showNotification('Failed to delete account', 'error');
     }
     setShowDeleteModal(false);
@@ -168,6 +174,7 @@ export default function AccountDetails() {
         showNotification('Failed to delete post', 'error');
       }
     } catch (error) {
+      console.error('Delete post error:', error);
       showNotification('Failed to delete post', 'error');
     }
     setShowDeleteModal(false);
@@ -190,6 +197,7 @@ export default function AccountDetails() {
         showNotification('Failed to update bio', 'error');
       }
     } catch (error) {
+      console.error('Bio update error:', error);
       showNotification('Failed to update bio', 'error');
     }
   };
@@ -223,14 +231,23 @@ export default function AccountDetails() {
     try {
       const success = await uploadProfilePicture(selectedFile);
       if (success) {
-        await fetchUserDetails();
-        setPreviewImage(null);
-        setSelectedFile(null);
-        showNotification('Profile picture updated successfully');
+        const response = await axios.get(`${baseUrl}/user/${profileId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+        if (response.data.success) {
+          setUserDetails(response.data.user);
+          setPreviewImage(null);
+          setSelectedFile(null);
+          showNotification('Profile picture updated successfully');
+        } else {
+          showNotification('Failed to refresh user details', 'error');
+        }
       } else {
         showNotification('Failed to update profile picture', 'error');
       }
     } catch (error) {
+      console.error('Profile picture upload error:', error);
       showNotification('Failed to update profile picture', 'error');
     }
   };
@@ -274,7 +291,8 @@ export default function AccountDetails() {
         fetchFollowing(),
       ])
         .then(() => setLoading(false))
-        .catch(() => {
+        .catch((error) => {
+          console.error('Initial fetch error:', error);
           setLoading(false);
           showNotification('Failed to load profile data', 'error');
         });
@@ -424,7 +442,7 @@ export default function AccountDetails() {
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="relative -mb-16 mx-auto w-24 md:w-32 h-24 md:h-32">
                   <Image
-                    src={previewImage || userDetails?.image || DEFAULT_IMAGE}
+                    src={`${previewImage || userDetails?.image || DEFAULT_IMAGE}?t=${Date.now()}`}
                     alt={userDetails?.name || 'User'}
                     fill
                     className="rounded-full border-4 border-white object-cover shadow-md"
@@ -446,25 +464,25 @@ export default function AccountDetails() {
                 </div>
               </div>
             </div>
-            {previewImage && (
-              <div className="flex justify-center gap-3 pt-4 bg-gray-50">
-                <button
-                  onClick={handleSaveProfilePicture}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm font-medium"
-                >
-                  <CheckIcon className="w-5 h-5" />
-                  Save
-                </button>
-                <button
-                  onClick={handleCancelProfilePicture}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                  Cancel
-                </button>
-              </div>
-            )}
             <div className="pt-16 pb-6 px-4 text-center">
+              {previewImage && (
+                <div className="flex justify-center gap-3 mt-4">
+                  <button
+                    onClick={handleSaveProfilePicture}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                  >
+                    <CheckIcon className="w-5 h-5" />
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelProfilePicture}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                    Cancel
+                  </button>
+                </div>
+              )}
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{userDetails?.name || 'User'}</h1>
               <p className="text-sm text-gray-500">@{userDetails?.handle || 'unknown'}</p>
               {isEditingBio ? (
@@ -557,7 +575,7 @@ export default function AccountDetails() {
                       {post.imageUrls && post.imageUrls.length > 0 && (
                         <div className="relative h-48 w-full">
                           <Image
-                            src={post.imageUrls[0] || DEFAULT_IMAGE}
+                            src={`${post.imageUrls[0] || DEFAULT_IMAGE}?t=${Date.now()}`}
                             alt={post.title}
                             fill
                             className="object-cover"
@@ -585,7 +603,10 @@ export default function AccountDetails() {
                             </button>
                           </div>
                         </div>
-                        <p className="mt-2 text-sm text-gray-600 line-clamp-3">{post.description}</p>
+                        <div
+                          className="mt-2 text-sm text-gray-600"
+                          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.description) }}
+                        />
                         <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
@@ -636,7 +657,7 @@ export default function AccountDetails() {
                   >
                     <div className="relative h-12 w-12 mx-auto">
                       <Image
-                        src={user.image || DEFAULT_IMAGE}
+                        src={`${user.image || DEFAULT_IMAGE}?t=${Date.now()}`}
                         alt={user.name}
                         fill
                         className="rounded-full object-cover"
@@ -695,7 +716,7 @@ export default function AccountDetails() {
                   >
                     <div className="relative h-12 w-12 mx-auto">
                       <Image
-                        src={user.image || DEFAULT_IMAGE}
+                        src={`${user.image || DEFAULT_IMAGE}?t=${Date.now()}`}
                         alt={user.name}
                         fill
                         className="rounded-full object-cover"
