@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   // Restore state from localStorage
   useEffect(() => {
@@ -52,6 +52,7 @@ export const AuthProvider = ({ children }) => {
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({
               idToken,
               email: user.email,
@@ -115,6 +116,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           idToken,
           email: user.email,
@@ -157,6 +159,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
       const responseData = await response.json();
@@ -216,9 +219,55 @@ export const AuthProvider = ({ children }) => {
     router.push('/admin/login');
   }, [router]);
 
-  // Update profile picture
+  // Update user profile
+  const updateUserProfile = useCallback(
+    async ({ bio }) => {
+      if (!userData?.id || !token) {
+        setError('User not authenticated');
+        return false;
+      }
+      try {
+        setLoading(true);
+        const response = await fetch(`${apiUrl}/user/${userData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: 'include',
+          body: JSON.stringify({ bio }),
+        });
+        const responseData = await response.json();
+
+        if (response.ok) {
+          setUserData(responseData.user);
+          localStorage.setItem('userData', JSON.stringify(responseData.user));
+          setSuccess('Profile updated successfully!');
+          setError('');
+          return true;
+        } else {
+          setError(responseData.message || 'Failed to update profile');
+          setSuccess('');
+          return false;
+        }
+      } catch (err) {
+        setError(err.message || 'Error updating profile. Please try again.');
+        setSuccess('');
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl, userData?.id, token]
+  );
+
+  // Upload profile picture
   const uploadProfilePicture = useCallback(
     async (file) => {
+      if (!userData?.id || !token) {
+        setError('User not authenticated');
+        return false;
+      }
       try {
         setLoading(true);
         const formData = new FormData();
@@ -229,6 +278,7 @@ export const AuthProvider = ({ children }) => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
           body: formData,
         });
         const responseData = await response.json();
@@ -237,19 +287,22 @@ export const AuthProvider = ({ children }) => {
           setUserData(responseData.user);
           localStorage.setItem('userData', JSON.stringify(responseData.user));
           setSuccess('Profile picture updated successfully!');
+          setError('');
           return true;
         } else {
           setError(responseData.message || 'Failed to upload profile picture');
+          setSuccess('');
           return false;
         }
       } catch (err) {
-        setError('Error uploading profile picture. Please try again.');
+        setError(err.message || 'Error uploading profile picture. Please try again.');
+        setSuccess('');
         return false;
       } finally {
         setLoading(false);
       }
     },
-    [apiUrl, token]
+    [apiUrl, userData?.id, token]
   );
 
   return (
@@ -268,38 +321,7 @@ export const AuthProvider = ({ children }) => {
         token,
         adminData,
         adminToken,
-        updateUserProfile: useCallback(
-          async (updates) => {
-            try {
-              setLoading(true);
-              const response = await fetch(`${apiUrl}/user/${userData?.id}`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(updates),
-              });
-              const responseData = await response.json();
-
-              if (response.ok) {
-                setUserData(responseData.user);
-                localStorage.setItem('userData', JSON.stringify(responseData.user));
-                setSuccess('Profile updated successfully!');
-                return true;
-              } else {
-                setError(responseData.message || 'Failed to update profile');
-                return false;
-              }
-            } catch (err) {
-              setError('Error updating profile. Please try again.');
-              return false;
-            } finally {
-              setLoading(false);
-            }
-          },
-          [apiUrl, token, userData?.id]
-        ),
+        updateUserProfile,
         uploadProfilePicture,
         setError,
         setSuccess,

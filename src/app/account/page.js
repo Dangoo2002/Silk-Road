@@ -5,7 +5,22 @@ import axios from 'axios';
 import { AuthContext } from '../components/AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PencilIcon, CameraIcon, HeartIcon, ChatBubbleLeftIcon, EyeIcon, TrashIcon, CheckIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import {
+  PencilIcon,
+  CameraIcon,
+  HeartIcon,
+  ChatBubbleLeftIcon,
+  EyeIcon,
+  TrashIcon,
+  CheckIcon,
+  XMarkIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  UserIcon,
+  DocumentTextIcon,
+  UsersIcon,
+  CogIcon,
+} from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AccountDetails() {
@@ -34,7 +49,13 @@ export default function AccountDetails() {
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('profile');
   const fileInputRef = useRef(null);
+  const profileRef = useRef(null);
+  const postsRef = useRef(null);
+  const followersRef = useRef(null);
+  const followingRef = useRef(null);
+  const settingsRef = useRef(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
   const DEFAULT_IMAGE = '/def.jpg';
@@ -155,12 +176,18 @@ export default function AccountDetails() {
 
   // Handle bio update
   const handleBioUpdate = async () => {
+    if (!bioText || bioText.length > 200) {
+      showNotification('Bio must be between 1 and 200 characters', 'error');
+      return;
+    }
     try {
       const success = await updateUserProfile({ bio: bioText });
       if (success) {
         setUserDetails((prev) => ({ ...prev, bio: bioText }));
         setIsEditingBio(false);
         showNotification('Bio updated successfully');
+      } else {
+        showNotification('Failed to update bio', 'error');
       }
     } catch (error) {
       showNotification('Failed to update bio', 'error');
@@ -188,7 +215,10 @@ export default function AccountDetails() {
 
   // Handle profile picture save
   const handleSaveProfilePicture = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      showNotification('No image selected', 'error');
+      return;
+    }
 
     try {
       const success = await uploadProfilePicture(selectedFile);
@@ -215,6 +245,22 @@ export default function AccountDetails() {
   const openDeleteModal = (postId = null) => {
     setDeletePostId(postId);
     setShowDeleteModal(true);
+  };
+
+  // Scroll to section
+  const scrollToSection = (section) => {
+    setActiveSection(section);
+    const refMap = {
+      profile: profileRef,
+      posts: postsRef,
+      followers: followersRef,
+      following: followingRef,
+      settings: settingsRef,
+    };
+    const ref = refMap[section];
+    if (ref.current) {
+      ref.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   // Initial fetch
@@ -275,433 +321,477 @@ export default function AccountDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      {/* Notification */}
-      <AnimatePresence>
-        {notification && (
+    <div className="min-h-screen bg-white text-gray-900 flex">
+      {/* Sidebar for small screens */}
+      <div className="fixed inset-y-0 left-0 w-16 bg-gray-50 shadow-md z-50 md:hidden flex flex-col items-center py-4">
+        <button
+          onClick={() => scrollToSection('profile')}
+          className={`p-2 mb-4 rounded-full ${activeSection === 'profile' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+        >
+          <UserIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => scrollToSection('posts')}
+          className={`p-2 mb-4 rounded-full ${activeSection === 'posts' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+        >
+          <DocumentTextIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => scrollToSection('followers')}
+          className={`p-2 mb-4 rounded-full ${activeSection === 'followers' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+        >
+          <UsersIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => scrollToSection('following')}
+          className={`p-2 mb-4 rounded-full ${activeSection === 'following' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+        >
+          <UsersIcon className="w-6 h-6" />
+        </button>
+        <button
+          onClick={() => scrollToSection('settings')}
+          className={`p-2 mb-4 rounded-full ${activeSection === 'settings' ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'}`}
+        >
+          <CogIcon className="w-6 h-6" />
+        </button>
+      </div>
+
+      <div className="flex-1 md:ml-0 ml-16">
+        {/* Notification */}
+        <AnimatePresence>
+          {notification && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className={`fixed top-4 right-4 px-6 py-3 rounded-xl text-white z-50 shadow-lg ${
+                notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              }`}
+            >
+              {notification.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 px-6 py-3 rounded-xl text-white z-50 shadow-lg ${
-              notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-            }`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
           >
-            {notification.message}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full border border-gray-100"
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                {deletePostId ? 'Delete Post' : 'Delete Account'}
+              </h3>
+              <p className="text-gray-600 mb-6 text-sm">
+                Are you sure you want to delete {deletePostId ? 'this post' : 'your account'}? This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => (deletePostId ? handleDeletePost(deletePostId) : handleDeleteAccount())}
+                  className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-        >
+        <div className="container mx-auto px-4 py-8">
+          {/* Profile Section */}
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full border border-gray-100"
+            ref={profileRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="bg-white rounded-xl shadow-md border border-gray-100 mb-8 overflow-hidden"
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {deletePostId ? 'Delete Post' : 'Delete Account'}
-            </h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              Are you sure you want to delete {deletePostId ? 'this post' : 'your account'}? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => (deletePostId ? handleDeletePost(deletePostId) : handleDeleteAccount())}
-                className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
-              >
-                Delete
-              </button>
+            <div className="h-40 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
+              <div className="absolute bottom-0 left-0 right-0 p-4">
+                <div className="relative -mb-16 mx-auto w-24 md:w-32 h-24 md:h-32">
+                  <Image
+                    src={previewImage || userDetails?.image || DEFAULT_IMAGE}
+                    alt={userDetails?.name || 'User'}
+                    fill
+                    className="rounded-full border-4 border-white object-cover shadow-md"
+                    onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current.click()}
+                    className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
+                  >
+                    <CameraIcon className="w-6 h-6 text-white" />
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleProfilePictureChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                </div>
+              </div>
+            </div>
+            {previewImage && (
+              <div className="flex justify-center gap-3 pt-4 bg-gray-50">
+                <button
+                  onClick={handleSaveProfilePicture}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <CheckIcon className="w-5 h-5" />
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelProfilePicture}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                  Cancel
+                </button>
+              </div>
+            )}
+            <div className="pt-16 pb-6 px-4 text-center">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{userDetails?.name || 'User'}</h1>
+              <p className="text-sm text-gray-500">@{userDetails?.handle || 'unknown'}</p>
+              {isEditingBio ? (
+                <div className="mt-4 max-w-md mx-auto">
+                  <textarea
+                    value={bioText}
+                    onChange={(e) => setBioText(e.target.value)}
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm text-gray-900 placeholder-gray-400"
+                    rows={4}
+                    maxLength={200}
+                    placeholder="Tell us about yourself..."
+                  />
+                  <div className="flex gap-2 mt-3 justify-center">
+                    <button
+                      onClick={handleBioUpdate}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsEditingBio(false);
+                        setBioText(userDetails?.bio || '');
+                      }}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 flex justify-center items-center gap-2">
+                  <p className="text-gray-600 max-w-md text-sm">{userDetails?.bio || 'Add a bio to tell people about yourself'}</p>
+                  <button
+                    onClick={() => setIsEditingBio(true)}
+                    className="text-gray-500 hover:text-indigo-600 transition-colors"
+                  >
+                    <PencilIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
+              <div className="flex justify-center gap-6 mt-6 text-sm">
+                <div className="text-center">
+                  <span className="font-semibold text-gray-900">{userDetails?.posts_count || 0}</span>
+                  <span className="text-gray-500"> Posts</span>
+                </div>
+                <div className="text-center">
+                  <span className="font-semibold text-gray-900">{userDetails?.followers_count || 0}</span>
+                  <span className="text-gray-500"> Followers</span>
+                </div>
+                <div className="text-center">
+                  <span className="font-semibold text-gray-900">{userDetails?.following_count || 0}</span>
+                  <span className="text-gray-500"> Following</span>
+                </div>
+              </div>
             </div>
           </motion.div>
-        </motion.div>
-      )}
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Profile Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="bg-white rounded-xl shadow-md border border-gray-100 mb-8 overflow-hidden"
-        >
-          <div className="h-40 bg-gradient-to-r from-indigo-500 to-purple-600 relative">
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <div className="relative -mb-16 mx-auto w-24 md:w-32 h-24 md:h-32">
-                <Image
-                  src={previewImage || userDetails?.image || DEFAULT_IMAGE}
-                  alt={userDetails?.name || 'User'}
-                  fill
-                  className="rounded-full border-4 border-white object-cover shadow-md"
-                  onError={(e) => (e.target.src = DEFAULT_IMAGE)}
-                />
-                <button
-                  onClick={() => fileInputRef.current.click()}
-                  className="absolute inset-0 rounded-full bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300"
+          {/* Posts Section */}
+          <motion.div
+            ref={postsRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-8"
+          >
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Your Posts</h2>
+            {userPosts.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
+                <p className="text-gray-500">No posts found.</p>
+                <Link
+                  href="/write"
+                  className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
                 >
-                  <CameraIcon className="w-6 h-6 text-white" />
-                </button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleProfilePictureChange}
-                  accept="image/*"
-                  className="hidden"
-                />
-              </div>
-            </div>
-          </div>
-          {previewImage && (
-            <div className="flex justify-center gap-3 pt-4 bg-gray-50">
-              <button
-                onClick={handleSaveProfilePicture}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <CheckIcon className="w-5 h-5" />
-                Save
-              </button>
-              <button
-                onClick={handleCancelProfilePicture}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors flex items-center gap-2 text-sm font-medium"
-              >
-                <XMarkIcon className="w-5 h-5" />
-                Cancel
-              </button>
-            </div>
-          )}
-          <div className="pt-16 pb-6 px-4 text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{userDetails?.name || 'User'}</h1>
-            <p className="text-sm text-gray-500">@{userDetails?.handle || 'unknown'}</p>
-            {isEditingBio ? (
-              <div className="mt-4 max-w-md mx-auto">
-                <textarea
-                  value={bioText}
-                  onChange={(e) => setBioText(e.target.value)}
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm text-gray-900 placeholder-gray-400"
-                  rows={4}
-                  maxLength={200}
-                  placeholder="Tell us about yourself..."
-                />
-                <div className="flex gap-2 mt-3 justify-center">
-                  <button
-                    onClick={handleBioUpdate}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditingBio(false);
-                      setBioText(userDetails?.bio || '');
-                    }}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                  Create your first post
+                </Link>
               </div>
             ) : (
-              <div className="mt-4 flex justify-center items-center gap-2">
-                <p className="text-gray-600 max-w-md text-sm">{userDetails?.bio || 'Add a bio to tell people about yourself'}</p>
-                <button
-                  onClick={() => setIsEditingBio(true)}
-                  className="text-gray-500 hover:text-indigo-600 transition-colors"
-                >
-                  <PencilIcon className="w-5 h-5" />
-                </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence>
+                  {userPosts.map((post) => (
+                    <motion.div
+                      key={post.id}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    >
+                      {post.imageUrls && post.imageUrls.length > 0 && (
+                        <div className="relative h-48 w-full">
+                          <Image
+                            src={post.imageUrls[0] || DEFAULT_IMAGE}
+                            alt={post.title}
+                            fill
+                            className="object-cover"
+                            onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                        </div>
+                      )}
+                      <div className="p-4">
+                        <div className="flex justify-between items-start">
+                          <Link href={`/posts/${post.id}`}>
+                            <h3 className="text-lg font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2">{post.title}</h3>
+                          </Link>
+                          <div className="flex gap-2">
+                            <Link href={`/edit/${post.id}`}>
+                              <button className="p-2 text-indigo-600 hover:text-indigo-800 transition-colors">
+                                <PencilIcon className="w-5 h-5" />
+                              </button>
+                            </Link>
+                            <button
+                              onClick={() => openDeleteModal(post.id)}
+                              className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                            >
+                              <TrashIcon className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-600 line-clamp-3">{post.description}</p>
+                        <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500' : ''}`} />
+                              <span>{post.likes_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ChatBubbleLeftIcon className="w-5 h-5" />
+                              <span>{post.comments_count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <EyeIcon className="w-5 h-5" />
+                              <span>{post.views}</span>
+                            </div>
+                          </div>
+                          <p>{formatDateTime(post.created_at)}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               </div>
             )}
-            <div className="flex justify-center gap-6 mt-6 text-sm">
-              <div className="text-center">
-                <span className="font-semibold text-gray-900">{userDetails?.posts_count || 0}</span>
-                <span className="text-gray-500"> Posts</span>
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-gray-900">{userDetails?.followers_count || 0}</span>
-                <span className="text-gray-500"> Followers</span>
-              </div>
-              <div className="text-center">
-                <span className="font-semibold text-gray-900">{userDetails?.following_count || 0}</span>
-                <span className="text-gray-500"> Following</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Posts Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mb-8"
-        >
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Your Posts</h2>
-          {userPosts.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
-              <p className="text-gray-500">No posts found.</p>
-              <Link
-                href="/write"
-                className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
-              >
-                Create your first post
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {userPosts.map((post) => (
+          {/* Followers Section */}
+          <motion.div
+            ref={followersRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mb-8"
+          >
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Followers</h2>
+            {followers.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
+                <p className="text-gray-500">No followers yet.</p>
+              </div>
+            ) : (
+              <div className="flex overflow-x-auto gap-4 pb-4">
+                {followers.map((user) => (
                   <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
+                    key={user.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4"
                   >
-                    {post.imageUrls && post.imageUrls.length > 0 && (
-                      <div className="relative h-48 w-full">
-                        <Image
-                          src={post.imageUrls[0]}
-                          alt={post.title}
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      </div>
-                    )}
-                    <div className="p-4">
-                      <div className="flex justify-between items-start">
-                        <Link href={`/posts/${post.id}`}>
-                          <h3 className="text-lg font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2">{post.title}</h3>
-                        </Link>
-                        <div className="flex gap-2">
-                          <Link href={`/edit/${post.id}`}>
-                            <button className="p-2 text-indigo-600 hover:text-indigo-800 transition-colors">
-                              <PencilIcon className="w-5 h-5" />
-                            </button>
-                          </Link>
-                          <button
-                            onClick={() => openDeleteModal(post.id)}
-                            className="p-2 text-red-600 hover:text-red-800 transition-colors"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-600 line-clamp-3">{post.description}</p>
-                      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500' : ''}`} />
-                            <span>{post.likes_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ChatBubbleLeftIcon className="w-5 h-5" />
-                            <span>{post.comments_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <EyeIcon className="w-5 h-5" />
-                            <span>{post.views}</span>
-                          </div>
-                        </div>
-                        <p>{formatDateTime(post.created_at)}</p>
-                      </div>
+                    <div className="relative h-12 w-12 mx-auto">
+                      <Image
+                        src={user.image || DEFAULT_IMAGE}
+                        alt={user.name}
+                        fill
+                        className="rounded-full object-cover"
+                        onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                      />
                     </div>
+                    <Link
+                      href={`/profile/${user.id}`}
+                      className="block text-center mt-2 text-gray-900 font-medium hover:text-indigo-600 transition-colors truncate"
+                    >
+                      {user.name}
+                    </Link>
+                    <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
                   </motion.div>
                 ))}
-              </AnimatePresence>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Followers Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="mb-8"
-        >
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Followers</h2>
-          {followers.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
-              <p className="text-gray-500">No followers yet.</p>
-            </div>
-          ) : (
-            <div className="flex overflow-x-auto gap-4 pb-4">
-              {followers.map((user) => (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4"
-                >
-                  <div className="relative h-12 w-12 mx-auto">
-                    <Image
-                      src={user.image || DEFAULT_IMAGE}
-                      alt={user.name}
-                      fill
-                      className="rounded-full object-cover"
-                    />
-                  </div>
+                {followers.length >= 5 && (
                   <Link
-                    href={`/profile/${user.id}`}
-                    className="block text-center mt-2 text-gray-900 font-medium hover:text-indigo-600 transition-colors truncate"
+                    href={`/profile/${profileId}/followers`}
+                    className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4 flex items-center justify-center text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
                   >
-                    {user.name}
+                    View all
                   </Link>
-                  <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
-                </motion.div>
-              ))}
-              {followers.length >= 5 && (
-                <Link
-                  href={`/profile/${profileId}/followers`}
-                  className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4 flex items-center justify-center text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
-                >
-                  View all
-                </Link>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Following Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mb-8"
-        >
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Following</h2>
-          {following.length === 0 ? (
-            <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
-              <p className="text-gray-500">Not following anyone yet.</p>
-              <Link
-                href="/explore"
-                className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
-              >
-                Find people to follow
-              </Link>
-            </div>
-          ) : (
-            <div className="flex overflow-x-auto gap-4 pb-4">
-              {following.map((user) => (
-                <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4"
-                >
-                  <div className="relative h-12 w-12 mx-auto">
-                    <Image
-                      src={user.image || DEFAULT_IMAGE}
-                      alt={user.name}
-                      fill
-                      className="rounded-full object-cover"
-                    />
-                  </div>
-                  <Link
-                    href={`/profile/${user.id}`}
-                    className="block text-center mt-2 text-gray-900 font-medium hover:text-indigo-600 transition-colors truncate"
-                  >
-                    {user.name}
-                  </Link>
-                  <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
-                </motion.div>
-              ))}
-              {following.length >= 5 && (
-                <Link
-                  href={`/profile/${profileId}/following`}
-                  className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4 flex items-center justify-center text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
-                >
-                  View all
-                </Link>
-              )}
-            </div>
-          )}
-        </motion.div>
-
-        {/* Settings Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.8 }}
-        >
-          <button
-            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-            className="w-full bg-white rounded-xl shadow-md border border-gray-100 p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-          >
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Account Settings</h2>
-            {isSettingsOpen ? (
-              <ChevronUpIcon className="w-6 h-6 text-gray-500" />
-            ) : (
-              <ChevronDownIcon className="w-6 h-6 text-gray-500" />
+                )}
+              </div>
             )}
-          </button>
-          <AnimatePresence>
-            {isSettingsOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mt-2 overflow-hidden"
-              >
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-                    <div className="space-y-3">
-                      <p className="text-gray-600">
-                        <span className="font-medium text-gray-900">Name:</span> {userDetails?.name || 'N/A'}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium text-gray-900">Email:</span> {userDetails?.email || 'N/A'}
-                      </p>
-                      <p className="text-gray-600">
-                        <span className="font-medium text-gray-900">Username:</span> @{userDetails?.handle || 'unknown'}
+          </motion.div>
+
+          {/* Following Section */}
+          <motion.div
+            ref={followingRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="mb-8"
+          >
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Following</h2>
+            {following.length === 0 ? (
+              <div className="text-center py-8 bg-white rounded-xl shadow-md border border-gray-100">
+                <p className="text-gray-500">Not following anyone yet.</p>
+                <Link
+                  href="/explore"
+                  className="mt-4 inline-block px-6 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors text-sm font-medium"
+                >
+                  Find people to follow
+                </Link>
+              </div>
+            ) : (
+              <div className="flex overflow-x-auto gap-4 pb-4">
+                {following.map((user) => (
+                  <motion.div
+                    key={user.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4"
+                  >
+                    <div className="relative h-12 w-12 mx-auto">
+                      <Image
+                        src={user.image || DEFAULT_IMAGE}
+                        alt={user.name}
+                        fill
+                        className="rounded-full object-cover"
+                        onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                      />
+                    </div>
+                    <Link
+                      href={`/profile/${user.id}`}
+                      className="block text-center mt-2 text-gray-900 font-medium hover:text-indigo-600 transition-colors truncate"
+                    >
+                      {user.name}
+                    </Link>
+                    <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
+                  </motion.div>
+                ))}
+                {following.length >= 5 && (
+                  <Link
+                    href={`/profile/${profileId}/following`}
+                    className="flex-none w-48 bg-white rounded-xl shadow-md border border-gray-100 p-4 flex items-center justify-center text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
+                  >
+                    View all
+                  </Link>
+                )}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Settings Section */}
+          <motion.div
+            ref={settingsRef}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+          >
+            <button
+              onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+              className="w-full bg-white rounded-xl shadow-md border border-gray-100 p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
+            >
+              <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Account Settings</h2>
+              {isSettingsOpen ? (
+                <ChevronUpIcon className="w-6 h-6 text-gray-500" />
+              ) : (
+                <ChevronDownIcon className="w-6 h-6 text-gray-500" />
+              )}
+            </button>
+            <AnimatePresence>
+              {isSettingsOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mt-2 overflow-hidden"
+                >
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
+                      <div className="space-y-3">
+                        <p className="text-gray-600">
+                          <span className="font-medium text-gray-900">Name:</span> {userDetails?.name || 'N/A'}
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium text-gray-900">Email:</span> {userDetails?.email || 'N/A'}
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium text-gray-900">Username:</span> @{userDetails?.handle || 'unknown'}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Security</h3>
+                      <Link
+                        href="/account/change-password"
+                        className="text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
+                      >
+                        Change Password
+                      </Link>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Danger Zone</h3>
+                      <button
+                        onClick={() => openDeleteModal()}
+                        className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
+                      >
+                        Delete Account
+                      </button>
+                      <p className="text-gray-500 text-sm mt-2">
+                        This will permanently delete your account and all associated data.
                       </p>
                     </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Security</h3>
-                    <Link
-                      href="/account/change-password"
-                      className="text-indigo-600 hover:text-indigo-800 transition-colors text-sm font-medium"
-                    >
-                      Change Password
-                    </Link>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Danger Zone</h3>
-                    <button
-                      onClick={() => openDeleteModal()}
-                      className="px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors text-sm font-medium"
-                    >
-                      Delete Account
-                    </button>
-                    <p className="text-gray-500 text-sm mt-2">
-                      This will permanently delete your account and all associated data.
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
