@@ -875,7 +875,7 @@ export default function AccountDetails() {
               </div>
               <p className="text-gray-500 mb-6">Not following anyone yet.</p>
               <Link
-                href="/explore"
+                href="/"
                 className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-medium shadow-lg"
               >
                 Find people to follow
