@@ -12,10 +12,6 @@ const SkeletonProfile = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
-        {/* Skeleton Search Bar */}
-        <div className="mb-8 animate-pulse">
-          <div className="h-12 bg-gray-300 dark:bg-gray-600 rounded-xl w-full max-w-md mx-auto" />
-        </div>
         {/* Skeleton Profile Header */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-xl p-6 mb-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-600/10" />

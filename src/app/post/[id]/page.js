@@ -13,6 +13,24 @@ import DOMPurify from 'dompurify';
 
 export const dynamic = 'force-dynamic';
 
+const VerifiedBadge = () => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className="inline-block ml-1"
+    title="Verified"
+  >
+    <circle cx="12" cy="12" r="12" fill="#1DA1F2" />
+    <path
+      d="M9.75 16.5L5.25 12L6.6825 10.5675L9.75 13.6275L17.3175 6.06L18.75 7.5L9.75 16.5Z"
+      fill="white"
+    />
+  </svg>
+);
+
 export default function BlogPost({ params }) {
   const { id } = params;
   const { userData, token } = useContext(AuthContext);
@@ -75,6 +93,7 @@ export default function BlogPost({ params }) {
           imageUrls: Array.isArray(data.post.imageUrls) && data.post.imageUrls.length > 0 
             ? data.post.imageUrls 
             : [DEFAULT_IMAGE],
+          verified: data.post.verified || 0,
         });
       } else {
         throw new Error('Invalid response data');
@@ -96,6 +115,7 @@ export default function BlogPost({ params }) {
         setComments(data.comments.map(comment => ({
           ...comment,
           author_image: comment.author_image || DEFAULT_IMAGE,
+          verified: comment.verified || 0,
         })));
       } else {
         throw new Error('Invalid comments response');
@@ -224,7 +244,8 @@ export default function BlogPost({ params }) {
         { 
           ...result.comment, 
           fullName: userData?.name || 'User',
-          author_image: userData?.image || DEFAULT_IMAGE 
+          author_image: userData?.image || DEFAULT_IMAGE,
+          verified: userData?.verified || 0,
         },
         ...prev,
       ]);
@@ -462,6 +483,7 @@ export default function BlogPost({ params }) {
                     className="text-lg font-medium hover:text-indigo-500 dark:hover:text-purple-500 transition-colors duration-300"
                   >
                     {post.fullName}
+                    {post.verified ? <VerifiedBadge /> : null}
                   </Link>
                   <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                     <span>{formatDateTime(post.created_at)}</span>
@@ -636,6 +658,7 @@ export default function BlogPost({ params }) {
                           <div>
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                               {comment.fullName}
+                              {comment.verified ? <VerifiedBadge /> : null}
                             </span>
                             <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                               {formatDateTime(comment.created_at)}
@@ -683,6 +706,7 @@ export default function BlogPost({ params }) {
                 className="text-lg font-medium hover:text-indigo-500 dark:hover:text-purple-500 transition-colors duration-300"
               >
                 {post.fullName}
+                {post.verified ? <VerifiedBadge /> : null}
               </Link>
               <p className="text-sm text-gray-600 dark:text-gray-300">{post.author_bio}</p>
             </div>
