@@ -8,6 +8,64 @@ import { HeartIcon, ChatBubbleOvalLeftIcon, UserPlusIcon, UserMinusIcon } from '
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
+const SkeletonProfile = () => {
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      <div className="container mx-auto px-4 py-8">
+        {/* Skeleton Profile Header */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg dark:shadow-xl p-6 mb-8 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-600/10" />
+          <div className="relative flex flex-col md:flex-row items-center md:items-start gap-6 animate-pulse">
+            {/* Skeleton Profile Picture */}
+            <div className="relative">
+              <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-300 dark:bg-gray-600 border-4 border-white dark:border-gray-800" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500/20 to-purple-600/20" />
+            </div>
+            {/* Skeleton User Info */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-2 mx-auto md:mx-0" />
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-4 mx-auto md:mx-0" />
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-64 mb-4 mx-auto md:mx-0" />
+              {/* Skeleton Stats */}
+              <div className="mt-4 flex justify-center md:justify-start gap-6">
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20" />
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20" />
+                <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-20" />
+              </div>
+              {/* Skeleton Follow Button */}
+              <div className="mt-4 h-10 bg-gray-300 dark:bg-gray-600 rounded-full w-32 mx-auto md:mx-0" />
+            </div>
+          </div>
+        </div>
+
+        {/* Skeleton Posts Section */}
+        <div>
+          <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-32 mb-6" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, index) => (
+              <div
+                key={index}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-xl overflow-hidden animate-pulse"
+              >
+                <div className="w-full h-48 bg-gray-300 dark:bg-gray-600" />
+                <div className="p-4">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2" />
+                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6 mb-4" />
+                  <div className="flex items-center gap-4">
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-12" />
+                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-12" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ProfilePage() {
   const { isLoggedIn, userData, token } = useContext(AuthContext);
   const router = useRouter();
@@ -17,7 +75,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const DEFAULT_IMAGE = '/def.jpg';
 
   useEffect(() => {
@@ -96,11 +154,7 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-gray-600 dark:text-gray-300 text-lg">Loading...</div>
-      </div>
-    );
+    return <SkeletonProfile />;
   }
 
   if (error || !user) {
