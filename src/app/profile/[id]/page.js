@@ -1,10 +1,10 @@
 'use client';
-import { useContext, useEffect, useState, useRef } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { HeartIcon, ChatBubbleOvalLeftIcon, UserPlusIcon, UserMinusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, ChatBubbleOvalLeftIcon, UserPlusIcon, UserMinusIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
@@ -92,65 +92,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const searchRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
   const DEFAULT_IMAGE = '/def.jpg';
-
-  // Handle click outside to close search dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setIsSearchOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Debounced search
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
-        fetchSearchResults();
-      } else {
-        setSearchResults([]);
-        setIsSearchOpen(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  const fetchSearchResults = async () => {
-    try {
-      const headers = isLoggedIn && token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await fetch(`${apiUrl}/search-users?q=${encodeURIComponent(searchQuery)}`, {
-        headers,
-        cache: 'no-store',
-      });
-      const result = await response.json();
-      if (result.success) {
-        setSearchResults(
-          result.users.map((user) => ({
-            ...user,
-            image: user.image || DEFAULT_IMAGE,
-            verified: user.verified || 0,
-          }))
-        );
-        setIsSearchOpen(true);
-      } else {
-        setSearchResults([]);
-        setIsSearchOpen(false);
-      }
-    } catch (err) {
-      console.error('Search error:', err);
-      setSearchResults([]);
-      setIsSearchOpen(false);
-    }
-  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -242,66 +185,6 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative mb-8 max-w-md mx-auto"
-          ref={searchRef}
-        >
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search users..."
-              className="w-full pl-10 pr-4 py-3 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 text-sm shadow-sm"
-            />
-          </div>
-          <AnimatePresence>
-            {isSearchOpen && searchResults.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute z-10 w-full mt-2 bg-black text-white rounded-xl shadow-lg max-h-96 overflow-y-auto"
-              >
-                {searchResults.map((result) => (
-                  <Link
-                    key={result.id}
-                    href={`/profile/${result.id}`}
-                    className="flex items-center gap-3 p-3 hover:bg-gray-800 transition-colors duration-200"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSearchResults([]);
-                      setIsSearchOpen(false);
-                    }}
-                  >
-                    <Image
-                      src={result.image}
-                      alt={result.name}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full object-cover"
-                      onError={(e) => (e.target.src = DEFAULT_IMAGE)}
-                    />
-                    <div>
-                      <p className="text-sm font-medium flex items-center gap-1">
-                        {result.name}
-                        {result.verified ? <VerifiedBadge /> : null}
-                      </p>
-                      <p className="text-xs text-gray-400">@{result.handle}</p>
-                    </div>
-                  </Link>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-
         {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

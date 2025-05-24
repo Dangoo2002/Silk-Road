@@ -35,22 +35,33 @@ export default function EditPost() {
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   const fetchPost = useCallback(async () => {
+    console.log('Fetching post with ID:', postId, 'User ID:', userData?.id);
     if (!postId) {
       setError('Post ID is missing');
       setLoading(false);
       return;
     }
+    if (!apiUrl) {
+      setError('Backend URL is not configured');
+      setLoading(false);
+      return;
+    }
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
       const response = await fetch(`${apiUrl}/posts/${postId}?userId=${userData?.id || ''}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch post');
+        throw new Error(errorData.message || `HTTP error ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
         const post = data.post;
+        console.log('Fetched post:', post);
         setFormData({
           title: post.title || '',
           description: post.description || '',
@@ -66,7 +77,7 @@ export default function EditPost() {
         throw new Error('Failed to fetch post details');
       }
     } catch (error) {
-      console.error('Error fetching post:', error.message);
+      console.error('Error fetching post:', error.name, error.message);
       setError(`Failed to fetch post: ${error.message}`);
     } finally {
       setLoading(false);
@@ -74,16 +85,40 @@ export default function EditPost() {
   }, [postId, userData, token, apiUrl]);
 
   useEffect(() => {
-    if (postId && token && userData?.id) {
-      fetchPost();
-    } else if (!token || !userData?.id) {
-      setError('You must be logged in to edit a post.');
+    console.log('useEffect triggered. postId:', postId, 'token:', !!token, 'userData:', userData);
+    if (!postId) {
+      setError('Invalid post ID');
       setLoading(false);
+      return;
     }
+    if (!token || !userData?.id) {
+      setError('You must be logged in to edit a post');
+      setLoading(false);
+      return;
+    }
+    fetchPost();
+
+    // Cleanup preview images
     return () => {
-      previewImages.forEach((url) => URL.revokeObjectURL(url));
+      previewImages.forEach((url) => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
-  }, [postId, token, userData, fetchPost, previewImages]);
+  }, [postId, token, userData, fetchPost]); // Removed previewImages from dependencies
+
+  // Fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Loading timed out');
+        setLoading(false);
+        setError('Request timed out. Please try again.');
+      }
+    }, 15000); // 15s timeout
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   const validateUrl = (url) => {
     try {
@@ -123,11 +158,15 @@ export default function EditPost() {
     Array.from(files).forEach((file) => formDataToSend.append('images', file));
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const response = await fetch(`${apiUrl}/api/upload-images`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
       const data = await response.json();
       if (!response.ok) {
         if (data.message === 'Invalid token') {
@@ -185,7 +224,9 @@ export default function EditPost() {
     }));
     setPreviewImages((prev) => {
       const newPreviews = prev.filter((_, i) => i !== index);
-      if (prev[index]) URL.revokeObjectURL(prev[index]);
+      if (prev[index] && prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index]);
+      }
       return newPreviews;
     });
   };
@@ -255,15 +296,18 @@ export default function EditPost() {
     };
 
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       const response = await fetch(`${apiUrl}/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}` ,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestBody),
+        signal: controller.signal,
       });
-
+      clearTimeout(timeoutId);
       const responseData = await response.json();
       if (!response.ok) {
         if (responseData.message === 'Invalid token') {
@@ -290,7 +334,11 @@ export default function EditPost() {
           reading_time: '5 min',
         });
         setPreviewImages((prev) => {
-          prev.forEach((url) => URL.revokeObjectURL(url));
+          prev.forEach((url) => {
+            if (url.startsWith('blob:')) {
+              URL.revokeObjectURL(url);
+            }
+          });
           return [];
         });
       }, 2000);
@@ -314,7 +362,7 @@ export default function EditPost() {
     );
   }
 
-  if (!userData?.id || !token) {
+  if (error && !userData?.id || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -325,7 +373,7 @@ export default function EditPost() {
         >
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center font-heading">Login Required</h2>
           <p className="text-gray-600 dark:text-gray-300 text-center">
-            You must be logged in to edit a post.
+            {error || 'You must be logged in to edit a post.'}
           </p>
           <div className="flex justify-center">
             <Link
@@ -333,6 +381,30 @@ export default function EditPost() {
               className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
             >
               Go to Login
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 space-y-6 border border-gray-200 dark:border-gray-700"
+        >
+          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center font-heading">Error</h2>
+          <p className="text-gray-600 dark:text-gray-300 text-center">{error}</p>
+          <div className="flex justify-center">
+            <Link
+              href="/"
+              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg"
+            >
+              Back to Home
             </Link>
           </div>
         </motion.div>

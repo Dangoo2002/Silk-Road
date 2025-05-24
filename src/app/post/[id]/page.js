@@ -56,7 +56,7 @@ export default function BlogPost({ params }) {
       return;
     }
     setPost(null);
-    Promise.all([fetchPost(), fetchComments(), fetchMorePosts()])
+    Promise.all([fetchPost(), fetchComments()])
       .then(() => {
         if (isMounted) setLoading(false);
       })
@@ -68,6 +68,13 @@ export default function BlogPost({ params }) {
       isMounted = false;
     };
   }, [id, userId]);
+
+  // Separate useEffect for fetching more posts, dependent on post
+  useEffect(() => {
+    if (post && post.userId) {
+      fetchMorePosts();
+    }
+  }, [post]);
 
   const fetchPost = async () => {
     try {
@@ -129,7 +136,7 @@ export default function BlogPost({ params }) {
   const fetchMorePosts = async () => {
     try {
       const response = await fetch(
-        `${apiUrl}/posts?userId=${post?.userId || ''}&exclude=${id}&limit=3`,
+        `${apiUrl}/posts?userId=${post.userId}&exclude=${id}&limit=3`,
         {
           cache: 'no-store',
           headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -137,12 +144,16 @@ export default function BlogPost({ params }) {
       );
       const data = await response.json();
       if (data && data.success) {
-        setMorePosts(data.posts.map(p => ({
-          ...p,
-          imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 
-            ? p.imageUrls 
-            : [DEFAULT_IMAGE],
-        })));
+        const filteredPosts = data.posts
+          .filter(p => p.id !== parseInt(id, 10)) // Explicitly exclude current post
+          .map(p => ({
+            ...p,
+            imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 
+              ? p.imageUrls 
+              : [DEFAULT_IMAGE],
+          }));
+        console.log('Fetched more posts:', filteredPosts);
+        setMorePosts(filteredPosts);
       }
     } catch (error) {
       console.error('Fetch more posts error:', error);
