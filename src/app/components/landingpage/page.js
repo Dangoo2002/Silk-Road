@@ -73,7 +73,7 @@ export default function SocialMediaHome() {
   ];
 
   const SkeletonCard = () => (
-    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-pulse">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700 animate-pulse">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
         <div className="flex-1 space-y-2">
@@ -93,7 +93,7 @@ export default function SocialMediaHome() {
   );
 
   const SkeletonUserCard = () => (
-    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-pulse">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700 animate-pulse">
       <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
       <div className="space-y-4">
         {[...Array(4)].map((_, index) => (
@@ -654,7 +654,7 @@ export default function SocialMediaHome() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 text-center"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700 text-center"
             >
               <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
                 You must be logged in to view personalized content
@@ -687,7 +687,7 @@ export default function SocialMediaHome() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
             >
               <div className="flex items-center gap-4">
                 <Image
@@ -714,7 +714,7 @@ export default function SocialMediaHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
           >
             <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
@@ -742,7 +742,7 @@ export default function SocialMediaHome() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
           >
             <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
             {isLoading && (
@@ -800,7 +800,7 @@ export default function SocialMediaHome() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 lg:hidden border border-gray-200 dark:border-gray-700"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 lg:hidden border border-gray-200 dark:border-gray-700"
             >
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
                 <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
@@ -860,7 +860,7 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          <div className="space-y-8">
+          <div className="space-y-12">
             {(userId ? posts : defaultPosts).map((post) => {
               const { text: truncatedText, truncated } = truncateDescription(post.description || '');
               return (
@@ -869,7 +869,7 @@ export default function SocialMediaHome() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container"
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container mb-12"
                     data-post-id={post.id}
                     ref={(el) => {
                       if (el && userId) {
@@ -1149,7 +1149,7 @@ export default function SocialMediaHome() {
         </div>
 
         <div className="hidden lg:block lg:w-1/3">
-          <div className="sticky top-20 space-y-8">
+          <div className="sticky top-20 space-y-12">
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
