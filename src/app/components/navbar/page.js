@@ -17,7 +17,7 @@ export default function SocialMediaNav() {
   const [searchResults, setSearchResults] = useState({ posts: [], users: [] });
   const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef(null);
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Initialize theme
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function SocialMediaNav() {
         },
       ];
 
-  const DEFAULT_IMAGE = '/user-symbol.jpg';
+  const DEFAULT_IMAGE = '/def.jpg';
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
