@@ -58,14 +58,19 @@ export default function AccountDetails() {
   const followingRef = useRef(null);
   const settingsRef = useRef(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
   const DEFAULT_IMAGE = '/def.jpg';
 
-  // Validate image URLs to prevent [object Object] errors
+  // Validate image URLs to prevent invalid values
   useEffect(() => {
-    if (userDetails?.image && typeof userDetails.image !== 'string') {
-      console.error('Invalid userDetails.image:', userDetails.image);
-      setError('Invalid profile image data');
+    if (userDetails?.image) {
+      if (typeof userDetails.image !== 'string') {
+        console.error('Invalid userDetails.image:', userDetails.image);
+        setUserDetails((prev) => ({ ...prev, image: null })); // Reset invalid image
+        setError('Invalid profile image data');
+      } else if (!userDetails.image.startsWith('http')) {
+        console.warn('Non-URL image value:', userDetails.image);
+      }
     }
     userPosts.forEach((post, index) => {
       if (post.imageUrls && (!Array.isArray(post.imageUrls) || post.imageUrls.some(url => typeof url !== 'string'))) {
@@ -80,22 +85,30 @@ export default function AccountDetails() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // Fetch user details
-  const fetchUserDetails = async () => {
+  // Fetch user details with retry logic
+  const fetchUserDetails = async (retryCount = 3) => {
     try {
       const response = await axios.get(`${baseUrl}/user/${profileId}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
       if (response.data.success) {
-        setUserDetails(response.data.user);
-        setBioText(response.data.user.bio || '');
+        const user = response.data.user;
+        // Ensure image is a valid URL or null
+        user.image = typeof user.image === 'string' && user.image.startsWith('http') ? user.image : null;
+        setUserDetails(user);
+        setBioText(user.bio || '');
       } else {
         showNotification('Failed to fetch user details', 'error');
       }
     } catch (error) {
       console.error('Fetch user details error:', error);
-      showNotification('Failed to fetch user details', 'error');
+      if (retryCount > 0) {
+        console.log(`Retrying fetchUserDetails (${retryCount} attempts left)`);
+        setTimeout(() => fetchUserDetails(retryCount - 1), 1000);
+      } else {
+        showNotification('Failed to fetch user details', 'error');
+      }
     }
   };
 
@@ -245,18 +258,12 @@ export default function AccountDetails() {
     try {
       const success = await uploadProfilePicture(selectedFile);
       if (success) {
-        const response = await axios.get(`${baseUrl}/user/${profileId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        });
-        if (response.data.success) {
-          setUserDetails(response.data.user);
-          setPreviewImage(null);
-          setSelectedFile(null);
-          showNotification('Profile picture updated successfully');
-        } else {
-          showNotification('Failed to refresh user details', 'error');
-        }
+        setPreviewImage(null);
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        // Refetch user details to ensure latest image URL
+        await fetchUserDetails();
+        showNotification('Profile picture updated successfully');
       } else {
         showNotification('Failed to update profile picture', 'error');
       }
@@ -475,6 +482,7 @@ export default function AccountDetails() {
                       console.error('Profile image load error:', e);
                       e.target.src = DEFAULT_IMAGE;
                     }}
+                    onLoadingComplete={() => console.log('Profile image loaded successfully')}
                   />
                   <button
                     onClick={() => fileInputRef.current.click()}
@@ -615,6 +623,7 @@ export default function AccountDetails() {
                               console.error('Post image load error:', e);
                               e.target.src = DEFAULT_IMAGE;
                             }}
+                            onLoadingComplete={() => console.log(`Post image ${post.id} loaded successfully`)}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                         </div>
@@ -704,6 +713,7 @@ export default function AccountDetails() {
                           console.error('Follower image load error:', e);
                           e.target.src = DEFAULT_IMAGE;
                         }}
+                        onLoadingComplete={() => console.log(`Follower image ${user.id} loaded successfully`)}
                       />
                     </div>
                     <Link
@@ -770,6 +780,7 @@ export default function AccountDetails() {
                           console.error('Following image load error:', e);
                           e.target.src = DEFAULT_IMAGE;
                         }}
+                        onLoadingComplete={() => console.log(`Following image ${user.id} loaded successfully`)}
                       />
                     </div>
                     <Link
