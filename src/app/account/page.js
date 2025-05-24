@@ -407,9 +407,8 @@ export default function AccountDetails() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className={`fixed top-4 right-4 px-6 py-3 rounded-xl text-white z-50 shadow-lg ${
-                notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-              }`}
+              className={`fixed top-4 right-4 px-6 py-3 rounded-xl text-white z-50 shadow-lg ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                }`}
             >
               {notification.message}
             </motion.div>
@@ -468,21 +467,20 @@ export default function AccountDetails() {
                 <div className="relative -mb-16 mx-auto w-24 md:w-32 h-24 md:h-32">
                   <Image
                     src={
-                      previewImage
-                        ? previewImage
-                        : userDetails?.image && typeof userDetails.image === 'string'
-                        ? `${userDetails.image}?t=${Date.now()}`
-                        : DEFAULT_IMAGE
+                      previewImage ||
+                      (userDetails?.image && typeof userDetails.image === 'string' ?
+                        `${userDetails.image.split('?')[0]}?t=${Date.now()}` :
+                        DEFAULT_IMAGE)
                     }
                     alt={userDetails?.name || 'User'}
-                    fill
+                    width={128}
+                    height={128}
                     priority
                     className="rounded-full border-4 border-white object-cover shadow-md"
                     onError={(e) => {
                       console.error('Profile image load error:', e);
                       e.target.src = DEFAULT_IMAGE;
                     }}
-                    onLoadingComplete={() => console.log('Profile image loaded successfully')}
                   />
                   <button
                     onClick={() => fileInputRef.current.click()}
