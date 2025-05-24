@@ -10,6 +10,9 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
   const [token, setToken] = useState(null);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminData, setAdminData] = useState(null);
+  const [adminToken, setAdminToken] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
@@ -21,16 +24,24 @@ export const AuthProvider = ({ children }) => {
     const storedUserData = localStorage.getItem('userData');
     const storedToken = localStorage.getItem('token');
     const storedUserId = localStorage.getItem('userId');
+    const storedAdminData = localStorage.getItem('adminData');
+    const storedAdminToken = localStorage.getItem('adminToken');
+    const storedAdminId = localStorage.getItem('adminId');
 
     if (storedUserData && storedToken && storedUserId) {
       setUserData(JSON.parse(storedUserData));
       setToken(storedToken);
       setIsLoggedIn(true);
     }
-    setLoading(false); // Move loading=false here to avoid blocking UI
+    if (storedAdminData && storedAdminToken && storedAdminId) {
+      setAdminData(JSON.parse(storedAdminData));
+      setAdminToken(storedAdminToken);
+      setIsAdminLoggedIn(true);
+    }
+    setLoading(false);
   }, []);
 
-  // Monitor Firebase auth state
+  // Monitor Firebase auth state for users
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -137,7 +148,44 @@ export const AuthProvider = ({ children }) => {
     }
   }, [apiUrl, router]);
 
-  // Logout
+  // Admin Login
+  const loginAsAdmin = useCallback(async (email, password) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${apiUrl}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const responseData = await response.json();
+
+      if (response.ok) {
+        setIsAdminLoggedIn(true);
+        setAdminData(responseData.admin);
+        setAdminToken(responseData.token);
+        localStorage.setItem('adminData', JSON.stringify(responseData.admin));
+        localStorage.setItem('adminToken', responseData.token);
+        localStorage.setItem('adminId', responseData.admin.id);
+        setSuccess('Admin login successful!');
+        setError('');
+        router.push('/admin');
+        return true;
+      } else {
+        setError(responseData.message || 'Admin login failed');
+        setSuccess('');
+        return false;
+      }
+    } catch (err) {
+      setError('Admin login failed. Please try again.');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, [apiUrl, router]);
+
+  // Logout (User)
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
@@ -153,6 +201,19 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       setError('Logout failed. Please try again.');
     }
+  }, [router]);
+
+  // Admin Logout
+  const adminLogout = useCallback(() => {
+    setIsAdminLoggedIn(false);
+    setAdminData(null);
+    setAdminToken(null);
+    localStorage.removeItem('adminData');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminId');
+    setSuccess('Admin logged out successfully!');
+    setError('');
+    router.push('/admin/login');
   }, [router]);
 
   // Update profile picture
@@ -173,7 +234,7 @@ export const AuthProvider = ({ children }) => {
         const responseData = await response.json();
 
         if (response.ok) {
-          setUserData(responseData.user); // Update with full user object
+          setUserData(responseData.user);
           localStorage.setItem('userData', JSON.stringify(responseData.user));
           setSuccess('Profile picture updated successfully!');
           return true;
@@ -196,12 +257,17 @@ export const AuthProvider = ({ children }) => {
       value={{
         loginWithGoogle,
         logout,
+        loginAsAdmin,
+        adminLogout,
         error,
         success,
         isLoggedIn,
+        isAdminLoggedIn,
         loading,
         userData,
         token,
+        adminData,
+        adminToken,
         updateUserProfile: useCallback(
           async (updates) => {
             try {
@@ -241,7 +307,7 @@ export const AuthProvider = ({ children }) => {
     >
       {loading ? (
         <div className="flex justify-center items-center h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
         </div>
       ) : (
         children

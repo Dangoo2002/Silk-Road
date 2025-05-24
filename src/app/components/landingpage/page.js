@@ -414,10 +414,10 @@ export default function SocialMediaHome() {
         prev.map((post) =>
           post.id === postId
             ? {
-                ...post,
-                is_liked: !isLiked,
-                likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1,
-              }
+              ...post,
+              is_liked: !isLiked,
+              likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1,
+            }
             : post
         )
       );
@@ -560,7 +560,7 @@ export default function SocialMediaHome() {
     const handleScroll = () => {
       if (
         window.innerHeight + document.documentElement.scrollTop >=
-          document.documentElement.offsetHeight - 100 &&
+        document.documentElement.offsetHeight - 100 &&
         hasMore &&
         !isLoading
       ) {
@@ -841,11 +841,10 @@ export default function SocialMediaHome() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
-                        className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
-                          user.is_followed
-                            ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                        }`}
+                        className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${user.is_followed
+                          ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                          }`}
                       >
                         {user.is_followed ? (
                           <>
@@ -907,9 +906,10 @@ export default function SocialMediaHome() {
                       <div>
                         <Link
                           href={`/profile/${post.userId || 'unknown'}`}
-                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 flex items-center gap-1"
                         >
                           {post.author || 'Anonymous'}
+                          {post.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
                         </Link>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {formatDateTime(post.created_at)} • {post.category || 'General'}
@@ -1164,9 +1164,10 @@ export default function SocialMediaHome() {
                         <div className="flex-1">
                           <Link
                             href={`/profile/${user.id}`}
-                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 flex items-center gap-1"
                           >
                             {user.name || 'User'}
+                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
                           </Link>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
@@ -1174,11 +1175,10 @@ export default function SocialMediaHome() {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
-                          className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
-                            user.is_followed
-                              ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
-                              : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                          }`}
+                          className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${user.is_followed
+                            ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                            }`}
                         >
                           {user.is_followed ? (
                             <>
@@ -1229,7 +1229,10 @@ export default function SocialMediaHome() {
                           }}
                         />
                         <div>
-                          <p className="text-sm font-semibold">{user.name || 'User'}</p>
+                          <p className="text-sm font-semibold flex items-center gap-1">
+                            {user.name || 'User'}
+                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                          </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
                       </Link>
@@ -1269,7 +1272,10 @@ export default function SocialMediaHome() {
                           }}
                         />
                         <div>
-                          <p className="text-sm font-semibold">{user.name || 'User'}</p>
+                          <p className="text-sm font-semibold flex items-center gap-1">
+                            {user.name || 'User'}
+                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                          </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
                       </Link>
