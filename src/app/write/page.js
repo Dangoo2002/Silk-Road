@@ -27,6 +27,7 @@ export default function WritePost() {
   const [submitting, setSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [showBanner, setShowBanner] = useState(false);
   const fileInputRef = useRef(null);
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
@@ -166,17 +167,17 @@ export default function WritePost() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-  
+
     console.log('userData:', userData);
     console.log('token:', token);
-  
+
     if (!token || !userData?.id) {
       setError('You must be logged in to create a post.');
       router.push('/login');
       setSubmitting(false);
       return;
     }
-  
+
     if (!formData.title || formData.title.length < 3) {
       setError('Title is required and must be at least 3 characters.');
       setSubmitting(false);
@@ -203,23 +204,23 @@ export default function WritePost() {
       setSubmitting(false);
       return;
     }
-  
+
     console.log('imageUrls:', formData.imageUrls);
     console.log('imageIds:', formData.imageIds);
-  
+
     const requestBody = {
       userId: userData.id,
-      contentType: 'post', // Add this required field
+      contentType: 'post',
       title: formData.title,
       description: formData.description,
       imageIds: formData.imageIds,
       link: formData.link || null,
-      category: formData.category || 'General', // Matches DB default
+      category: formData.category || 'General',
       tags: formData.tags || [],
-      reading_time: formData.reading_time || '5 min', // Matches DB default
+      reading_time: formData.reading_time || '5 min',
     };
     console.log('Request body:', requestBody);
-  
+
     try {
       const response = await fetch(`${apiUrl}/write`, {
         method: 'POST',
@@ -229,10 +230,10 @@ export default function WritePost() {
         },
         body: JSON.stringify(requestBody),
       });
-  
+
       const responseData = await response.json();
       console.log('Response:', responseData);
-  
+
       if (!response.ok) {
         if (responseData.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
@@ -242,23 +243,26 @@ export default function WritePost() {
         }
         throw new Error(responseData.message || 'Failed to save post');
       }
-  
-      alert('Post saved successfully!');
-      router.push('/');
-      setFormData({
-        title: '',
-        description: '',
-        imageUrls: [],
-        imageIds: [],
-        link: '',
-        tags: [],
-        category: 'General',
-        reading_time: '5 min',
-      });
-      setPreviewImages((prev) => {
-        prev.forEach((url) => URL.revokeObjectURL(url));
-        return [];
-      });
+
+      setShowBanner(true);
+      setTimeout(() => {
+        setShowBanner(false);
+        router.push('/');
+        setFormData({
+          title: '',
+          description: '',
+          imageUrls: [],
+          imageIds: [],
+          link: '',
+          tags: [],
+          category: 'General',
+          reading_time: '5 min',
+        });
+        setPreviewImages((prev) => {
+          prev.forEach((url) => URL.revokeObjectURL(url));
+          return [];
+        });
+      }, 2000);
     } catch (err) {
       console.error('Submit error:', err);
       setError(`An unexpected error occurred while saving the post: ${err.message}`);
@@ -266,7 +270,7 @@ export default function WritePost() {
       setSubmitting(false);
     }
   };
-  
+
   if (!userData?.id || !token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
@@ -297,6 +301,33 @@ export default function WritePost() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
+      <AnimatePresence>
+        {showBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
+          >
+            <svg
+              className="w-5 h-5 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            <span className="text-sm font-medium">Post created successfully!</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
