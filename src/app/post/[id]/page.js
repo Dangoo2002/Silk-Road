@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useContext } from 'react';
-import { HeartIcon, ShareIcon, ChatBubbleLeftIcon, HomeIcon, UserIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, ShareIcon, ChatBubbleLeftIcon, HomeIcon, UserIcon, DocumentTextIcon, UserPlusIcon} from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 import Image from 'next/image';
