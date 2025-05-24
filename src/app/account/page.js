@@ -22,6 +22,8 @@ import {
   CogIcon,
   PlusIcon,
   ExclamationTriangleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
@@ -53,6 +55,9 @@ export default function AccountDetails() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('profile');
+  const [postIndex, setPostIndex] = useState(0);
+  const [followerIndex, setFollowerIndex] = useState(0);
+  const [followingIndex, setFollowingIndex] = useState(0);
   const fileInputRef = useRef(null);
   const profileRef = useRef(null);
   const postsRef = useRef(null);
@@ -139,7 +144,7 @@ export default function AccountDetails() {
         withCredentials: true,
       });
       if (response.data.success) {
-        setFollowers(response.data.followers.slice(0, 5));
+        setFollowers(response.data.followers);
       } else {
         showNotification('Failed to fetch followers', 'error');
       }
@@ -157,7 +162,7 @@ export default function AccountDetails() {
         withCredentials: true,
       });
       if (response.data.success) {
-        setFollowing(response.data.following.slice(0, 5));
+        setFollowing(response.data.following);
       } else {
         showNotification('Failed to fetch following', 'error');
       }
@@ -197,6 +202,7 @@ export default function AccountDetails() {
       });
       if (response.data.success) {
         setUserPosts(userPosts.filter((post) => post.id !== postId));
+        setPostIndex((prev) => Math.max(0, prev - 1));
         showNotification('Post deleted successfully');
       } else {
         showNotification('Failed to delete post', 'error');
@@ -350,6 +356,14 @@ export default function AccountDetails() {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  // Carousel navigation
+  const handlePrevPost = () => setPostIndex((prev) => Math.max(0, prev - 1));
+  const handleNextPost = () => setPostIndex((prev) => Math.min(userPosts.length - 1, prev + 1));
+  const handlePrevFollower = () => setFollowerIndex((prev) => Math.max(0, prev - 1));
+  const handleNextFollower = () => setFollowerIndex((prev) => Math.min(followers.length - 1, prev + 1));
+  const handlePrevFollowing = () => setFollowingIndex((prev) => Math.max(0, prev - 1));
+  const handleNextFollowing = () => setFollowingIndex((prev) => Math.min(following.length - 1, prev + 1));
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white flex items-center justify-center">
@@ -367,9 +381,9 @@ export default function AccountDetails() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 backdrop-blur-xl border border-gray-200/50 rounded-2xl px-6 py-3 shadow-lg shadow-gray-200/20 md:flex hidden"
+        className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 backdrop-blur-xl border border-gray-200/50 rounded-2xl px-4 py-2 shadow-lg shadow-gray-200/20 flex"
       >
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {[
             { key: 'profile', icon: UserIcon, label: 'Profile' },
             { key: 'posts', icon: DocumentTextIcon, label: 'Posts' },
@@ -400,28 +414,6 @@ export default function AccountDetails() {
           ))}
         </div>
       </motion.div>
-
-      {/* Mobile Sidebar */}
-      <div className="fixed inset-y-0 left-0 w-16 bg-gray-50 shadow-md z-50 flex flex-col items-center py-4 md:hidden">
-        {[
-          { key: 'profile', icon: UserIcon, label: 'Profile' },
-          { key: 'posts', icon: DocumentTextIcon, label: 'Posts' },
-          { key: 'followers', icon: UsersIcon, label: 'Followers' },
-          { key: 'following', icon: UsersIcon, label: 'Following' },
-          { key: 'settings', icon: CogIcon, label: 'Settings' },
-        ].map(({ key, icon: Icon, label }) => (
-          <button
-            key={key}
-            onClick={() => scrollToSection(key)}
-            className={`p-2 mb-4 rounded-full ${
-              activeSection === key ? 'bg-indigo-100 text-indigo-600' : 'text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Icon className="w-6 h-6" />
-            <span className="sr-only">{label}</span>
-          </button>
-        ))}
-      </div>
 
       {/* Notifications */}
       <AnimatePresence>
@@ -493,7 +485,7 @@ export default function AccountDetails() {
         )}
       </AnimatePresence>
 
-      <div className="container mx-auto px-4 py-20 md:ml-16">
+      <div className="container mx-auto px-4 py-20">
         {/* Profile Section */}
         <motion.div
           ref={profileRef}
@@ -698,26 +690,27 @@ export default function AccountDetails() {
               </Link>
             </motion.div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <AnimatePresence>
-                {userPosts.map((post, index) => (
-                  <motion.div
-                    key={post.id}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
-                  >
-                    {post.imageUrls && Array.isArray(post.imageUrls) && post.imageUrls.length > 0 && (
-                      <div className="relative h-48 w-full">
+            <div className="relative">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={postIndex}
+                  initial={{ opacity: 0, x: 100 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+                >
+                  {userPosts[postIndex].imageUrls &&
+                    Array.isArray(userPosts[postIndex].imageUrls) &&
+                    userPosts[postIndex].imageUrls.length > 0 && (
+                      <div className="relative h-64 w-full">
                         <Image
                           src={
-                            post.imageUrls[0] && typeof post.imageUrls[0] === 'string'
-                              ? `${post.imageUrls[0]}?t=${Date.now()}`
+                            userPosts[postIndex].imageUrls[0] && typeof userPosts[postIndex].imageUrls[0] === 'string'
+                              ? `${userPosts[postIndex].imageUrls[0]}?t=${Date.now()}`
                               : DEFAULT_IMAGE
                           }
-                          alt={post.title}
+                          alt={userPosts[postIndex].title}
                           fill
                           className="object-cover"
                           onError={(e) => {
@@ -728,58 +721,85 @@ export default function AccountDetails() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                       </div>
                     )}
-                    <div className="p-6">
-                      <div className="flex justify-between items-start">
-                        <Link href={`/posts/${post.id}`}>
-                          <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
-                            {post.title}
-                          </h3>
-                        </Link>
-                        <div className="flex gap-2">
-                          <Link href={`/edit/${post.id}`}>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
-                            >
-                              <PencilIcon className="w-5 h-5" />
-                            </motion.button>
-                          </Link>
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <Link href={`/posts/${userPosts[postIndex].id}`}>
+                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
+                          {userPosts[postIndex].title}
+                        </h3>
+                      </Link>
+                      <div className="flex gap-2">
+                        <Link href={`/edit/${userPosts[postIndex].id}`}>
                           <motion.button
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
-                            onClick={() => openDeleteModal(post.id)}
-                            className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                            className="p-2 text-blue-600 hover:text-blue-800 transition-colors"
                           >
-                            <TrashIcon className="w-5 h-5" />
+                            <PencilIcon className="w-5 h-5" />
                           </motion.button>
-                        </div>
-                      </div>
-                      <div
-                        className="mt-2 text-sm text-gray-600 line-clamp-3"
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.description) }}
-                      />
-                      <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <HeartIcon className={`w-5 h-5 ${post.is_liked ? 'fill-red-500 text-red-500' : ''}`} />
-                            <span>{post.likes_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <ChatBubbleLeftIcon className="w-5 h-5" />
-                            <span>{post.comments_count}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <EyeIcon className="w-5 h-5" />
-                            <span>{post.views}</span>
-                          </div>
-                        </div>
-                        <p>{formatDateTime(post.created_at)}</p>
+                        </Link>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => openDeleteModal(userPosts[postIndex].id)}
+                          className="p-2 text-red-600 hover:text-red-800 transition-colors"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </motion.button>
                       </div>
                     </div>
-                  </motion.div>
-                ))}
+                    <div
+                      className="mt-2 text-sm text-gray-600 line-clamp-3"
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userPosts[postIndex].description) }}
+                    />
+                    <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <HeartIcon
+                            className={`w-5 h-5 ${userPosts[postIndex].is_liked ? 'fill-red-500 text-red-500' : ''}`}
+                          />
+                          <span>{userPosts[postIndex].likes_count}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <ChatBubbleLeftIcon className="w-5 h-5" />
+                          <span>{userPosts[postIndex].comments_count}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <EyeIcon className="w-5 h-5" />
+                          <span>{userPosts[postIndex].views}</span>
+                        </div>
+                      </div>
+                      <p>{formatDateTime(userPosts[postIndex].created_at)}</p>
+                    </div>
+                  </div>
+                </motion.div>
               </AnimatePresence>
+              {userPosts.length > 1 && (
+                <>
+                  <motion.button
+                    onClick={handlePrevPost}
+                    disabled={postIndex === 0}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      postIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronLeftIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                  <motion.button
+                    onClick={handleNextPost}
+                    disabled={postIndex === userPosts.length - 1}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      postIndex === userPosts.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronRightIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                </>
+              )}
             </div>
           )}
         </motion.div>
@@ -807,23 +827,24 @@ export default function AccountDetails() {
               <p className="text-gray-500 mb-6">No followers yet.</p>
             </motion.div>
           ) : (
-            <div className="flex overflow-x-auto gap-6 pb-4">
-              {followers.map((user) => (
+            <div className="relative">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  key={followerIndex}
+                  initial={{ opacity: 0, x: 100 }}
                   animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.3 }}
-                  className="flex-none w-48 bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-4 shadow-lg"
+                  className="bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-6 shadow-lg"
                 >
-                  <div className="relative h-12 w-12 mx-auto">
+                  <div className="relative h-16 w-16 mx-auto">
                     <Image
                       src={
-                        user.image && typeof user.image === 'string'
-                          ? `${user.image}?t=${Date.now()}`
+                        followers[followerIndex].image && typeof followers[followerIndex].image === 'string'
+                          ? `${followers[followerIndex].image}?t=${Date.now()}`
                           : DEFAULT_IMAGE
                       }
-                      alt={user.name}
+                      alt={followers[followerIndex].name}
                       fill
                       className="rounded-full object-cover"
                       onError={(e) => {
@@ -833,22 +854,50 @@ export default function AccountDetails() {
                     />
                   </div>
                   <Link
-                    href={`/profile/${user.id}`}
-                    className="block text-center mt-2 text-gray-900 font-medium hover:text-blue-600 transition-colors truncate"
+                    href={`/profile/${followers[followerIndex].id}`}
+                    className="block text-center mt-4 text-gray-900 font-medium hover:text-blue-600 transition-colors truncate"
                   >
-                    {user.name}
+                    {followers[followerIndex].name}
                   </Link>
-                  <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
+                  <p className="text-gray-500 text-sm text-center truncate">
+                    @{followers[followerIndex].handle || 'unknown'}
+                  </p>
                 </motion.div>
-              ))}
-              {followers.length >= 5 && (
+              </AnimatePresence>
+              {followers.length > 1 && (
+                <>
+                  <motion.button
+                    onClick={handlePrevFollower}
+                    disabled={followerIndex === 0}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      followerIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronLeftIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                  <motion.button
+                    onClick={handleNextFollower}
+                    disabled={followerIndex === followers.length - 1}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      followerIndex === followers.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronRightIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                </>
+              )}
+              <div className="mt-6 text-center">
                 <Link
                   href={`/profile/${profileId}/followers`}
-                  className="flex-none w-48 bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-4 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                  className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
                 >
-                  View all
+                  View all followers
                 </Link>
-              )}
+              </div>
             </div>
           )}
         </motion.div>
@@ -875,30 +924,31 @@ export default function AccountDetails() {
               </div>
               <p className="text-gray-500 mb-6">Not following anyone yet.</p>
               <Link
-                href="/"
+                href="/explore"
                 className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl font-medium shadow-lg"
               >
                 Find people to follow
               </Link>
             </motion.div>
           ) : (
-            <div className="flex overflow-x-auto gap-6 pb-4">
-              {following.map((user) => (
+            <div className="relative">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={user.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  key={followingIndex}
+                  initial={{ opacity: 0, x: 100 }}
                   animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
                   transition={{ duration: 0.3 }}
-                  className="flex-none w-48 bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-4 shadow-lg"
+                  className="bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-6 shadow-lg"
                 >
-                  <div className="relative h-12 w-12 mx-auto">
+                  <div className="relative h-16 w-16 mx-auto">
                     <Image
                       src={
-                        user.image && typeof user.image === 'string'
-                          ? `${user.image}?t=${Date.now()}`
+                        following[followingIndex].image && typeof following[followingIndex].image === 'string'
+                          ? `${following[followingIndex].image}?t=${Date.now()}`
                           : DEFAULT_IMAGE
                       }
-                      alt={user.name}
+                      alt={following[followingIndex].name}
                       fill
                       className="rounded-full object-cover"
                       onError={(e) => {
@@ -908,22 +958,50 @@ export default function AccountDetails() {
                     />
                   </div>
                   <Link
-                    href={`/profile/${user.id}`}
-                    className="block text-center mt-2 text-gray-900 font-medium hover:text-blue-600 transition-colors truncate"
+                    href={`/profile/${following[followingIndex].id}`}
+                    className="block text-center mt-4 text-gray-900 font-medium hover:text-blue-600 transition-colors truncate"
                   >
-                    {user.name}
+                    {following[followingIndex].name}
                   </Link>
-                  <p className="text-gray-500 text-sm text-center truncate">@{user.handle || 'unknown'}</p>
+                  <p className="text-gray-500 text-sm text-center truncate">
+                    @{following[followingIndex].handle || 'unknown'}
+                  </p>
                 </motion.div>
-              ))}
-              {following.length >= 5 && (
+              </AnimatePresence>
+              {following.length > 1 && (
+                <>
+                  <motion.button
+                    onClick={handlePrevFollowing}
+                    disabled={followingIndex === 0}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      followingIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronLeftIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                  <motion.button
+                    onClick={handleNextFollowing}
+                    disabled={followingIndex === following.length - 1}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/80 backdrop-blur-sm rounded-full shadow-lg ${
+                      followingIndex === following.length - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white'
+                    }`}
+                  >
+                    <ChevronRightIcon className="w-6 h-6 text-gray-700" />
+                  </motion.button>
+                </>
+              )}
+              <div className="mt-6 text-center">
                 <Link
                   href={`/profile/${profileId}/following`}
-                  className="flex-none w-48 bg-white/50 backdrop-blur-xl rounded-3xl border border-gray-200/50 p-4 flex items-center justify-center text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                  className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
                 >
-                  View all
+                  View all following
                 </Link>
-              )}
+              </div>
             </div>
           )}
         </motion.div>
