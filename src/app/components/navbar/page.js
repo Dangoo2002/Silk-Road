@@ -1,10 +1,11 @@
 'use client';
-import { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserCircleIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, MoonIcon, SunIcon, PencilSquareIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
 
 export default function SocialMediaNav() {
   const { logout, isLoggedIn, userData } = useContext(AuthContext);
@@ -12,6 +13,11 @@ export default function SocialMediaNav() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useState('light');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState({ posts: [], users: [] });
+  const [isSearching, setIsSearching] = useState(false);
+  const searchRef = useRef(null);
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
   // Initialize theme
   useEffect(() => {
@@ -19,6 +25,50 @@ export default function SocialMediaNav() {
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, []);
+
+  // Handle clicks outside search results to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchResults({ posts: [], users: [] });
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Debounced search
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim().length >= 2) {
+        setIsSearching(true);
+        try {
+          const response = await fetch(
+            `${apiUrl}/search?q=${encodeURIComponent(searchQuery)}&userId=${userData?.id || ''}`,
+            {
+              cache: 'no-store',
+              headers: userData?.token ? { Authorization: `Bearer ${userData.token}` } : {},
+            }
+          );
+          const data = await response.json();
+          if (data.success) {
+            setSearchResults(data.results);
+          } else {
+            setSearchResults({ posts: [], users: [] });
+          }
+        } catch (error) {
+          console.error('Search error:', error);
+          setSearchResults({ posts: [], users: [] });
+        }
+        setIsSearching(false);
+      } else {
+        setSearchResults({ posts: [], users: [] });
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, userData, apiUrl]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -30,11 +80,13 @@ export default function SocialMediaNav() {
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
     setIsSearchOpen(false);
+    setSearchResults({ posts: [], users: [] });
   };
 
   const toggleSearch = () => {
     setIsSearchOpen((prev) => !prev);
     setMenuOpen(false);
+    setSearchResults({ posts: [], users: [] });
   };
 
   const toggleDropdown = () => {
@@ -53,6 +105,16 @@ export default function SocialMediaNav() {
 
   const closeMenu = () => {
     setMenuOpen(false);
+    setSearchResults({ posts: [], users: [] });
+  };
+
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults({ posts: [], users: [] });
   };
 
   const menuItems = [
@@ -60,38 +122,42 @@ export default function SocialMediaNav() {
       icon: PencilSquareIcon,
       label: 'Write Post',
       href: '/write',
-      color: 'from-purple-500 to-pink-500'
-    }
+      color: 'from-purple-500 to-pink-500',
+    },
   ];
 
-  const userMenuItems = isLoggedIn ? [
-    {
-      icon: Cog6ToothIcon,
-      label: 'Account',
-      action: handleAccountRedirect,
-      color: 'from-gray-500 to-slate-500'
-    },
-    {
-      icon: ArrowRightOnRectangleIcon,
-      label: 'Logout',
-      action: handleLogout,
-      color: 'from-red-500 to-rose-500',
-      isLogout: true
-    }
-  ] : [
-    {
-      icon: UserCircleIcon,
-      label: 'Login',
-      href: '/login',
-      color: 'from-blue-500 to-indigo-500'
-    },
-    {
-      icon: UserCircleIcon,
-      label: 'Sign Up',
-      href: '/signup',
-      color: 'from-purple-500 to-violet-500'
-    }
-  ];
+  const userMenuItems = isLoggedIn
+    ? [
+        {
+          icon: Cog6ToothIcon,
+          label: 'Account',
+          action: handleAccountRedirect,
+          color: 'from-gray-500 to-slate-500',
+        },
+        {
+          icon: ArrowRightOnRectangleIcon,
+          label: 'Logout',
+          action: handleLogout,
+          color: 'from-red-500 to-rose-500',
+          isLogout: true,
+        },
+      ]
+    : [
+        {
+          icon: UserCircleIcon,
+          label: 'Login',
+          href: '/login',
+          color: 'from-blue-500 to-indigo-500',
+        },
+        {
+          icon: UserCircleIcon,
+          label: 'Sign Up',
+          href: '/signup',
+          color: 'from-purple-500 to-violet-500',
+        },
+      ];
+
+  const DEFAULT_IMAGE = '/user-symbol.jpg';
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
@@ -121,15 +187,123 @@ export default function SocialMediaNav() {
         </Link>
 
         {/* Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1 mx-4">
+        <div className="hidden md:flex flex-1 mx-4 relative" ref={searchRef}>
           <div className="relative w-full max-w-xs">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search posts, people..."
+              value={searchQuery}
+              onChange={handleSearchInput}
               className="w-full pl-10 pr-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-colors text-sm"
+              aria-label="Search posts and people"
             />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                aria-label="Clear search"
+              >
+                <XMarkIcon className="h-4 w-4" />
+              </button>
+            )}
           </div>
+          {/* Search Results Dropdown */}
+          <AnimatePresence>
+            {(searchResults.posts.length > 0 || searchResults.users.length > 0 || isSearching) && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="absolute top-full left-0 mt-2 w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 z-50 max-h-96 overflow-y-auto"
+              >
+                {isSearching ? (
+                  <div className="p-4 text-center text-gray-500 dark:text-gray-400">Searching...</div>
+                ) : (
+                  <>
+                    {/* Posts Section */}
+                    {searchResults.posts.length > 0 && (
+                      <div className="border-b border-gray-200 dark:border-gray-600">
+                        <h3 className="px-4 pt-3 pb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                          Posts
+                        </h3>
+                        {searchResults.posts.map((post) => (
+                          <Link
+                            key={post.id}
+                            href={`/post/${post.id}`}
+                            onClick={() => {
+                              setSearchQuery('');
+                              setSearchResults({ posts: [], users: [] });
+                            }}
+                            className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <Image
+                              src={post.imageUrls[0] || DEFAULT_IMAGE}
+                              alt={post.title}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded-md object-cover"
+                              onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                            />
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
+                                {post.title}
+                              </h4>
+                              <p
+                                className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2"
+                                dangerouslySetInnerHTML={{
+                                  __html: DOMPurify.sanitize(post.description, { ALLOWED_TAGS: [] }),
+                                }}
+                              />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {/* Users Section */}
+                    {searchResults.users.length > 0 && (
+                      <div>
+                        <h3 className="px-4 pt-3 pb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                          People
+                        </h3>
+                        {searchResults.users.map((user) => (
+                          <Link
+                            key={user.id}
+                            href={`/profile/${user.id}`}
+                            onClick={() => {
+                              setSearchQuery('');
+                              setSearchResults({ posts: [], users: [] });
+                            }}
+                            className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          >
+                            <Image
+                              src={user.image || DEFAULT_IMAGE}
+                              alt={user.name}
+                              width={40}
+                              height={40}
+                              className="w-10 h-10 rounded-full object-cover"
+                              onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                            />
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {user.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                    {searchResults.posts.length === 0 && searchResults.users.length === 0 && !isSearching && (
+                      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No results found
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Mobile Controls (Search Toggle, Theme Toggle, Hamburger) */}
@@ -248,16 +422,127 @@ export default function SocialMediaNav() {
             animate={{ scaleX: 1, opacity: 1 }}
             exit={{ scaleX: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden px-4 py-2 bg-white dark:bg-gray-900 border-t border-gray-300 dark:border-gray-600"
+            className="md:hidden px-4 py-2 bg-white dark:bg-gray-900 border-t border-gray-300 dark:border-gray-600 relative"
+            ref={searchRef}
           >
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search posts, people..."
+                value={searchQuery}
+                onChange={handleSearchInput}
                 className="w-full pl-10 pr-4 py-2 rounded-full bg-white/50 dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-colors text-sm"
+                aria-label="Search posts and people"
               />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  aria-label="Clear search"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              )}
             </div>
+            {/* Mobile Search Results */}
+            <AnimatePresence>
+              {(searchResults.posts.length > 0 || searchResults.users.length > 0 || isSearching) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 z-50 max-h-96 overflow-y-auto"
+                >
+                  {isSearching ? (
+                    <div className="p-4 text-center text-gray-500 dark:text-gray-400">Searching...</div>
+                  ) : (
+                    <>
+                      {/* Posts Section */}
+                      {searchResults.posts.length > 0 && (
+                        <div className="border-b border-gray-200 dark:border-gray-600">
+                          <h3 className="px-4 pt-3 pb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                            Posts
+                          </h3>
+                          {searchResults.posts.map((post) => (
+                            <Link
+                              key={post.id}
+                              href={`/post/${post.id}`}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setSearchResults({ posts: [], users: [] });
+                                setIsSearchOpen(false);
+                              }}
+                              className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <Image
+                                src={post.imageUrls[0] || DEFAULT_IMAGE}
+                                alt={post.title}
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded-md object-cover"
+                                onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                              />
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
+                                  {post.title}
+                                </h4>
+                                <p
+                                  className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2"
+                                  dangerouslySetInnerHTML={{
+                                    __html: DOMPurify.sanitize(post.description, { ALLOWED_TAGS: [] }),
+                                  }}
+                                />
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      {/* Users Section */}
+                      {searchResults.users.length > 0 && (
+                        <div>
+                          <h3 className="px-4 pt-3 pb-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                            People
+                          </h3>
+                          {searchResults.users.map((user) => (
+                            <Link
+                              key={user.id}
+                              href={`/profile/${user.id}`}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setSearchResults({ posts: [], users: [] });
+                                setIsSearchOpen(false);
+                              }}
+                              className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                            >
+                              <Image
+                                src={user.image || DEFAULT_IMAGE}
+                                alt={user.name}
+                                width={40}
+                                height={40}
+                                className="w-10 h-10 rounded-full object-cover"
+                                onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                              />
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {user.name}
+                                </h4>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                      {searchResults.posts.length === 0 && searchResults.users.length === 0 && !isSearching && (
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                          No results found
+                        </div>
+                      )}
+                    </>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>
