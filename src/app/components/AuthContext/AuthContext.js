@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Restore state from localStorage
   useEffect(() => {

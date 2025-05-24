@@ -15,7 +15,7 @@ export default function AdminDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
   const router = useRouter();
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Protect route
   useEffect(() => {
