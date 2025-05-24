@@ -27,7 +27,7 @@ export default function BlogPost({ params }) {
   const [error, setError] = useState('');
   const [expandedImage, setExpandedImage] = useState(null);
 
-  const DEFAULT_IMAGE = '/user-symbol.jpg';
+  const DEFAULT_IMAGE = '/def.jpg';
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
 
   useEffect(() => {
@@ -697,7 +697,7 @@ export default function BlogPost({ params }) {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-12"
           >
-            <h2 className="text-2xl font-semibold mb-4 font-heading">More from {post.fullName}</h2>
+            <h2 className="text-2xl font-semibold mb-4 font-heading">Also Read</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {morePosts.map((relatedPost) => (
                 <Link
