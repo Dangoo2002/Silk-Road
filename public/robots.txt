@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://silkroadblogs.vercel.app
+
+# Sitemaps
+Sitemap: https://silkroadblogs.vercel.app/sitemap.xml
