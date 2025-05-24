@@ -145,7 +145,7 @@ export default function BlogPost({ params }) {
       const data = await response.json();
       if (data && data.success) {
         const filteredPosts = data.posts
-          .filter(p => p.id !== parseInt(id, 10)) // Explicitly exclude current post
+          .filter(p => p.id !== parseInt(id, 10))
           .map(p => ({
             ...p,
             imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 
@@ -204,7 +204,7 @@ export default function BlogPost({ params }) {
         body: JSON.stringify({ postId: id, userId }),
       });
       if (!response.ok) {
-        throw new Error('Failed to share post');
+        throw new Error('DRAMATIC Failed to share post');
       }
       const postUrl = `${window.location.origin}/post/${id}`;
       if (platform === 'clipboard') {
@@ -320,7 +320,7 @@ export default function BlogPost({ params }) {
             <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
           </div>
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+            <div className="w-12 h-12 rounded-full Transnational Institutebg-gray-300 dark:bg-gray-700"></div>
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
               <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
@@ -365,6 +365,17 @@ export default function BlogPost({ params }) {
         }
         .post-content p {
           margin-bottom: 1rem;
+        }
+        .post-image {
+          width: 100%;
+          height: auto;
+          max-height: 500px;
+          object-fit: cover;
+        }
+        @media (min-width: 1024px) {
+          .post-image {
+            max-height: 600px;
+          }
         }
       `}</style>
 
@@ -427,7 +438,7 @@ export default function BlogPost({ params }) {
           transition={{ duration: 0.5 }}
           className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
         >
-          {/* Header Images */}
+          {/* Header Image */}
           <div className="relative">
             <div className="w-full h-64 sm:h-80 md:h-96">
               {post.imageUrls && post.imageUrls.length > 0 ? (
@@ -518,26 +529,71 @@ export default function BlogPost({ params }) {
             </div>
 
             {/* Post Images */}
-            {post.imageUrls && post.imageUrls.length > 1 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                {post.imageUrls.slice(1).map((url, index) => (
+            {post.imageUrls && post.imageUrls.length > 0 && (
+              <div className="mb-8">
+                {post.imageUrls.length === 1 ? (
                   <motion.div
-                    key={index}
                     whileHover={{ scale: 1.02 }}
-                    className="relative h-48 sm:h-64 rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => setExpandedImage(url)}
+                    className="relative rounded-xl overflow-hidden cursor-pointer"
+                    onClick={() => setExpandedImage(post.imageUrls[0])}
                   >
                     <Image
-                      src={url}
-                      alt={`${post.title} image ${index + 2}`}
-                      fill
-                      className="object-cover"
+                      src={post.imageUrls[0] || DEFAULT_IMAGE}
+                      alt={`${post.title} image`}
+                      width={800}
+                      height={600}
+                      className="post-image rounded-xl"
                       onError={(e) => {
                         e.target.src = DEFAULT_IMAGE;
                       }}
                     />
                   </motion.div>
-                ))}
+                ) : (
+                  <div className="grid gap-3">
+                    <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-3' : ''}>
+                      {post.imageUrls.slice(0, 2).map((url, index) => (
+                        <motion.div
+                          key={index}
+                          whileHover={{ scale: 1.02 }}
+                          className="relative h-48 sm:h-64 rounded-xl overflow-hidden cursor-pointer"
+                          onClick={() => setExpandedImage(url)}
+                        >
+                          <Image
+                            src={url || DEFAULT_IMAGE}
+                            alt={`${post.title} image ${index + 1}`}
+                            fill
+                            className="object-cover rounded-xl"
+                            onError={(e) => {
+                              e.target.src = DEFAULT_IMAGE;
+                            }}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                    {post.imageUrls.length > 2 && (
+                      <div className="grid grid-cols-3 gap-3">
+                        {post.imageUrls.slice(2).map((url, index) => (
+                          <motion.div
+                            key={index + 2}
+                            whileHover={{ scale: 1.02 }}
+                            className="relative h-32 sm:h-48 rounded-xl overflow-hidden cursor-pointer"
+                            onClick={() => setExpandedImage(url)}
+                          >
+                            <Image
+                              src={url || DEFAULT_IMAGE}
+                              alt={`${post.title} image ${index + 3}`}
+                              fill
+                              className="object-cover rounded-xl"
+                              onError={(e) => {
+                                e.target.src = DEFAULT_IMAGE;
+                              }}
+                            />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
