@@ -20,92 +20,93 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(120,119,198,0.3),transparent_50%)] animate-pulse"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,119,198,0.3),transparent_50%)] animate-pulse delay-1000"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_80%,rgba(120,200,255,0.3),transparent_50%)] animate-pulse delay-2000"></div>
+    <div className="min-h-screen bg-white flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.02]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+        }}></div>
       </div>
 
-      {/* Floating Particles */}
+      {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-float"></div>
-        <div className="absolute top-3/4 right-1/4 w-1 h-1 bg-purple-300/30 rounded-full animate-float-delayed"></div>
-        <div className="absolute top-1/2 left-3/4 w-3 h-3 bg-pink-300/20 rounded-full animate-float-slow"></div>
-        <div className="absolute bottom-1/4 left-1/2 w-1.5 h-1.5 bg-blue-300/25 rounded-full animate-float-fast"></div>
-        <div className="absolute top-2/3 left-1/3 w-2.5 h-2.5 bg-emerald-300/20 rounded-full animate-float"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-1 h-1 bg-yellow-300/25 rounded-full animate-float-delayed"></div>
+        <div className="absolute top-20 left-20 w-2 h-2 bg-gray-200 rounded-full animate-float opacity-40"></div>
+        <div className="absolute top-40 right-32 w-1 h-1 bg-gray-300 rounded-full animate-float-delayed opacity-30"></div>
+        <div className="absolute bottom-32 left-40 w-3 h-3 bg-gray-100 rounded-full animate-float-slow opacity-50"></div>
+        <div className="absolute bottom-20 right-20 w-1.5 h-1.5 bg-gray-200 rounded-full animate-float-fast opacity-35"></div>
+        <div className="absolute top-32 right-40 w-2.5 h-2.5 bg-gray-150 rounded-full animate-float opacity-25"></div>
+        <div className="absolute bottom-40 left-32 w-1 h-1 bg-gray-300 rounded-full animate-float-delayed opacity-40"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md mx-4 sm:mx-auto">
+      <div className="w-full max-w-md relative">
         {/* Main Card */}
-        <div className="bg-white/95 backdrop-blur-md border border-white/30 rounded-3xl shadow-2xl p-8 sm:p-10 space-y-8 transform transition-all duration-700 hover:scale-[1.02] hover:shadow-3xl hover:bg-white">
+        <div className="bg-white rounded-3xl shadow-[0_20px_80px_-12px_rgba(0,0,0,0.08)] border border-gray-100/80 p-8 sm:p-10 space-y-8 relative overflow-hidden transform transition-all duration-500 hover:shadow-[0_25px_100px_-12px_rgba(0,0,0,0.12)]">
           
-          {/* Logo with Glow Effect */}
+          {/* Subtle Card Accent */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gray-400 via-gray-500 to-gray-600"></div>
+          
+          {/* Logo Section */}
           <div className="flex justify-center relative">
             <div className="relative group">
-              <div className="absolute -inset-4 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-full opacity-0 group-hover:opacity-30 blur-xl transition-all duration-500"></div>
+              <div className="absolute -inset-3 bg-gray-100 rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 blur-sm"></div>
               <img
                 src="/silkroadlogo.jpeg"
                 alt="Silk Road Logo"
-                className="relative h-20 w-20 sm:h-24 sm:w-24 object-cover rounded-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg"
+                className="relative h-16 w-16 sm:h-20 sm:w-20 object-cover rounded-2xl transition-all duration-300 group-hover:scale-105 shadow-sm"
               />
             </div>
           </div>
 
-          {/* Title with Gradient Text */}
-          <div className="text-center space-y-3">
-            <h1 className="text-4xl sm:text-5xl font-black bg-gradient-to-r from-gray-800 via-purple-900 to-pink-900 bg-clip-text text-transparent tracking-tight leading-tight">
+          {/* Title Section */}
+          <div className="text-center space-y-4">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
               Join Silk Road
             </h1>
-            <p className="text-gray-600 text-base sm:text-lg font-light tracking-wide">
-              Create an account to start sharing
+            <p className="text-gray-600 text-base font-normal leading-relaxed">
+              Create your account and start your journey
             </p>
-            <div className="w-20 h-1 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full mx-auto"></div>
+            <div className="w-12 h-0.5 bg-gray-900 mx-auto rounded-full"></div>
           </div>
 
-          {/* Success/Error Messages with Enhanced Styling */}
+          {/* Messages */}
           {success && (
-            <div className="bg-emerald-500/20 backdrop-blur-sm text-emerald-800 p-4 rounded-2xl flex items-center gap-3 border border-emerald-400/30 animate-slide-up">
-              <div className="flex-shrink-0 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-2xl flex items-center gap-3 animate-slide-down">
+              <div className="flex-shrink-0 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="font-medium">{success}</span>
+              <span className="text-sm font-medium">{success}</span>
             </div>
           )}
 
           {error && (
-            <div className="bg-red-500/20 backdrop-blur-sm text-red-800 p-4 rounded-2xl flex items-center gap-3 border border-red-400/30 animate-slide-up">
-              <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl flex items-center gap-3 animate-slide-down">
+              <div className="flex-shrink-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="font-medium">{error}</span>
+              <span className="text-sm font-medium">{error}</span>
             </div>
           )}
 
-          {/* Enhanced Google Sign-Up Button */}
-          <div className="space-y-4">
+          {/* Google Sign-Up Button */}
+          <div className="space-y-6">
             <button
               onClick={handleGoogleSignup}
               disabled={loading}
-              className={`group relative w-full py-4 px-6 bg-white/95 hover:bg-white text-gray-800 font-semibold rounded-2xl transition-all duration-300 flex items-center justify-center gap-4 shadow-lg hover:shadow-xl transform hover:-translate-y-1 active:scale-95 ${
-                loading ? 'opacity-60 cursor-not-allowed' : 'hover:scale-[1.02]'
+              className={`group relative w-full py-4 px-6 bg-white border-2 border-gray-200 hover:border-gray-300 text-gray-800 font-semibold rounded-2xl transition-all duration-200 flex items-center justify-center gap-4 shadow-sm hover:shadow-md transform hover:-translate-y-0.5 active:scale-[0.98] ${
+                loading ? 'opacity-60 cursor-not-allowed' : ''
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <FcGoogle className="text-2xl transition-transform duration-200 group-hover:scale-110" />
               
-              <FcGoogle className="text-2xl sm:text-3xl relative z-10 transition-transform duration-300 group-hover:scale-110" />
-              
-              <span className="relative z-10 text-base sm:text-lg">
+              <span className="text-base">
                 {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                    Signing up...
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+                    Creating account...
                   </div>
                 ) : (
                   'Sign up with Google'
@@ -113,76 +114,92 @@ export default function Signup() {
               </span>
               
               {!loading && (
-                <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-1 group-hover:translate-x-0">
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </div>
               )}
             </button>
+
+            {/* Terms and Privacy */}
+            <div className="text-center">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                By signing up, you agree to our{' '}
+                <Link href="/terms" className="text-gray-700 hover:text-gray-900 underline underline-offset-2 transition-colors duration-200">
+                  Terms of Service
+                </Link>
+                {' '}and{' '}
+                <Link href="/privacy" className="text-gray-700 hover:text-gray-900 underline underline-offset-2 transition-colors duration-200">
+                  Privacy Policy
+                </Link>
+              </p>
+            </div>
           </div>
 
-          {/* Enhanced Login Link */}
-          <div className="text-center">
-            <p className="text-gray-600 text-sm sm:text-base">
+          {/* Login Link */}
+          <div className="text-center pt-4 border-t border-gray-100">
+            <p className="text-gray-600 text-sm">
               Already have an account?{' '}
               <Link 
                 href="/login" 
-                className="font-semibold bg-gradient-to-r from-pink-400 to-purple-400 bg-clip-text text-transparent hover:from-pink-300 hover:to-purple-300 transition-all duration-300 relative group"
+                className="font-semibold text-gray-900 hover:text-gray-700 transition-colors duration-200 relative group"
               >
-                Log in
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                Sign in
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gray-900 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-full blur-xl"></div>
-        <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-tr from-blue-500/20 to-indigo-500/20 rounded-full blur-xl"></div>
+        {/* Decorative Shadows */}
+        <div className="absolute -top-4 -right-4 w-20 h-20 bg-gray-100 rounded-full blur-2xl opacity-30"></div>
+        <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-gray-50 rounded-full blur-2xl opacity-40"></div>
       </div>
 
       {/* Custom Styles */}
       <style jsx>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-20px) rotate(180deg); }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
         }
         @keyframes float-delayed {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(-180deg); }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
         }
         @keyframes float-slow {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-10px) rotate(90deg); }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-4px); }
         }
         @keyframes float-fast {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-25px) rotate(-90deg); }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-10px); }
         }
-        @keyframes slide-up {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes slide-down {
+          from { 
+            opacity: 0; 
+            transform: translateY(-10px); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
         }
         
         .animate-float {
-          animation: float 6s ease-in-out infinite;
+          animation: float 4s ease-in-out infinite;
         }
         .animate-float-delayed {
-          animation: float-delayed 4s ease-in-out infinite;
+          animation: float-delayed 5s ease-in-out infinite;
         }
         .animate-float-slow {
-          animation: float-slow 8s ease-in-out infinite;
+          animation: float-slow 6s ease-in-out infinite;
         }
         .animate-float-fast {
           animation: float-fast 3s ease-in-out infinite;
         }
-        .animate-slide-up {
-          animation: slide-up 0.6s ease-out;
-        }
-        
-        .shadow-3xl {
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
         }
       `}</style>
     </div>

@@ -1,9 +1,9 @@
 'use client';
-import { useContext, useState, useEffect, useRef } from 'react';
+import { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserCircleIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, MoonIcon, SunIcon, PencilSquareIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ChevronDownIcon, Bars3Icon, XMarkIcon, MagnifyingGlassIcon, MoonIcon, SunIcon, PencilSquareIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, InformationCircleIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
@@ -16,8 +16,10 @@ export default function SocialMediaNav() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ posts: [], users: [] });
   const [isSearching, setIsSearching] = useState(false);
+  const [userImage, setUserImage] = useState('/def.jpg');
   const searchRef = useRef(null);
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
+  const DEFAULT_IMAGE = '/def.jpg';
 
   // Initialize theme
   useEffect(() => {
@@ -25,6 +27,36 @@ export default function SocialMediaNav() {
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, []);
+
+  // Fetch user image
+  const fetchUserImage = useCallback(async () => {
+    if (!isLoggedIn || !userData?.id || !userData?.token) {
+      setUserImage(DEFAULT_IMAGE);
+      return;
+    }
+    try {
+      const response = await fetch(`${apiUrl}/profile/${userData.id}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${userData.token}` },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
+      }
+      const data = await response.json();
+      if (data.success && data.user?.image) {
+        setUserImage(data.user.image);
+      } else {
+        setUserImage(DEFAULT_IMAGE);
+      }
+    } catch (error) {
+      console.error('User image fetch error:', error.message);
+      setUserImage(DEFAULT_IMAGE);
+    }
+  }, [isLoggedIn, userData, apiUrl]);
+
+  useEffect(() => {
+    fetchUserImage();
+  }, [fetchUserImage]);
 
   // Handle clicks outside search results to close dropdown
   useEffect(() => {
@@ -81,6 +113,7 @@ export default function SocialMediaNav() {
     setMenuOpen((prev) => !prev);
     setIsSearchOpen(false);
     setSearchResults({ posts: [], users: [] });
+    setDropdownOpen(false);
   };
 
   const toggleSearch = () => {
@@ -91,6 +124,7 @@ export default function SocialMediaNav() {
 
   const toggleDropdown = () => {
     setDropdownOpen((prev) => !prev);
+    setMenuOpen(false);
   };
 
   const handleLogout = async () => {
@@ -100,6 +134,7 @@ export default function SocialMediaNav() {
   };
 
   const handleAccountRedirect = () => {
+    setDropdownOpen(false);
     window.location.href = '/account';
   };
 
@@ -135,6 +170,18 @@ export default function SocialMediaNav() {
           color: 'from-gray-500 to-slate-500',
         },
         {
+          icon: InformationCircleIcon,
+          label: 'About Us',
+          href: '/about',
+          color: 'from-blue-500 to-indigo-500',
+        },
+        {
+          icon: ShieldCheckIcon,
+          label: 'Privacy Policy',
+          href: '/privacy',
+          color: 'from-green-500 to-teal-500',
+        },
+        {
           icon: ArrowRightOnRectangleIcon,
           label: 'Logout',
           action: handleLogout,
@@ -155,9 +202,19 @@ export default function SocialMediaNav() {
           href: '/signup',
           color: 'from-purple-500 to-violet-500',
         },
+        {
+          icon: InformationCircleIcon,
+          label: 'About Us',
+          href: '/about',
+          color: 'from-blue-500 to-indigo-500',
+        },
+        {
+          icon: ShieldCheckIcon,
+          label: 'Privacy Policy',
+          href: '/privacy',
+          color: 'from-green-500 to-teal-500',
+        },
       ];
-
-  const DEFAULT_IMAGE = '/def.jpg';
 
   return (
     <div className="fixed top-0 left-0 w-full z-50 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow-lg dark:shadow-xl transition-colors duration-300 h-14">
@@ -239,7 +296,7 @@ export default function SocialMediaNav() {
                           >
                             <Image
                               src={post.imageUrls[0] || DEFAULT_IMAGE}
-                              alt={post.title}
+                              alt={post.title || 'Post'}
                               width={40}
                               height={40}
                               className="w-10 h-10 rounded-md object-cover"
@@ -247,12 +304,12 @@ export default function SocialMediaNav() {
                             />
                             <div>
                               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
-                                {post.title}
+                                {post.title || 'Untitled'}
                               </h4>
                               <p
                                 className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2"
                                 dangerouslySetInnerHTML={{
-                                  __html: DOMPurify.sanitize(post.description, { ALLOWED_TAGS: [] }),
+                                  __html: DOMPurify.sanitize(post.description || '', { ALLOWED_TAGS: [] }),
                                 }}
                               />
                             </div>
@@ -278,7 +335,7 @@ export default function SocialMediaNav() {
                           >
                             <Image
                               src={user.image || DEFAULT_IMAGE}
-                              alt={user.name}
+                              alt={user.name || 'User'}
                               width={40}
                               height={40}
                               className="w-10 h-10 rounded-full object-cover"
@@ -286,9 +343,9 @@ export default function SocialMediaNav() {
                             />
                             <div>
                               <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {user.name}
+                                {user.name || 'User'}
                               </h4>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                             </div>
                           </Link>
                         ))}
@@ -364,10 +421,14 @@ export default function SocialMediaNav() {
                 className="flex items-center gap-2 cursor-pointer"
                 onClick={toggleDropdown}
               >
-                <div className="relative">
-                  <UserCircleIcon className="h-8 w-8 rounded-full bg-white/50 dark:bg-gray-800/50 p-1 text-gray-600 dark:text-gray-300" />
-                  <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-indigo-500 dark:bg-purple-500 rounded-full border-2 border-white dark:border-gray-800"></span>
-                </div>
+                <Image
+                  src={userImage}
+                  alt={userData?.name || 'User'}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 rounded-full object-cover"
+                  onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                />
                 <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{userData?.name || 'User'}</span>
                 <ChevronDownIcon className={`h-4 w-4 text-gray-600 dark:text-gray-300 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </div>
@@ -379,18 +440,26 @@ export default function SocialMediaNav() {
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-2 z-50"
                   >
-                    <button
-                      onClick={handleAccountRedirect}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm"
-                    >
-                      Account
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-red-500 text-sm"
-                    >
-                      Logout
-                    </button>
+                    {userMenuItems.map((item, index) => (
+                      <div key={item.label}>
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            onClick={() => setDropdownOpen(false)}
+                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm ${item.isLogout ? 'text-red-500' : ''}`}
+                          >
+                            {item.label}
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={item.action}
+                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm ${item.isLogout ? 'text-red-500' : ''}`}
+                          >
+                            {item.label}
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -441,7 +510,7 @@ export default function SocialMediaNav() {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   aria-label="Clear search"
                 >
-                  <XMarkIcon className="h-4 w-4" />
+                  <XMarkIcon className g="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -477,7 +546,7 @@ export default function SocialMediaNav() {
                             >
                               <Image
                                 src={post.imageUrls[0] || DEFAULT_IMAGE}
-                                alt={post.title}
+                                alt={post.title || 'Post'}
                                 width={40}
                                 height={40}
                                 className="w-10 h-10 rounded-md object-cover"
@@ -485,12 +554,12 @@ export default function SocialMediaNav() {
                               />
                               <div>
                                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 line-clamp-1">
-                                  {post.title}
+                                  {post.title || 'Untitled'}
                                 </h4>
                                 <p
                                   className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2"
                                   dangerouslySetInnerHTML={{
-                                    __html: DOMPurify.sanitize(post.description, { ALLOWED_TAGS: [] }),
+                                    __html: DOMPurify.sanitize(post.description || '', { ALLOWED_TAGS: [] }),
                                   }}
                                 />
                               </div>
@@ -517,7 +586,7 @@ export default function SocialMediaNav() {
                             >
                               <Image
                                 src={user.image || DEFAULT_IMAGE}
-                                alt={user.name}
+                                alt={user.name || 'User'}
                                 width={40}
                                 height={40}
                                 className="w-10 h-10 rounded-full object-cover"
@@ -525,9 +594,9 @@ export default function SocialMediaNav() {
                               />
                               <div>
                                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {user.name}
+                                  {user.name || 'User'}
                                 </h4>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                               </div>
                             </Link>
                           ))}
@@ -597,9 +666,14 @@ export default function SocialMediaNav() {
                 >
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {userData?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      </div>
+                      <Image
+                        src={userImage}
+                        alt={userData?.name || 'User'}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                      />
                       <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
                     </div>
                     <div>

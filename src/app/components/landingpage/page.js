@@ -16,13 +16,16 @@ export default function SocialMediaHome() {
   const [expandedPost, setExpandedPost] = useState({});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isLoadingSuggestedPosts, setIsLoadingSuggestedPosts] = useState(false);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(false);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [suggestedUsers, setSuggestedUsers] = useState([]);
   const [suggestedPosts, setSuggestedPosts] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState([]);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [viewedPosts, setViewedPosts] = useState(new Set());
   const [expandedImage, setExpandedImage] = useState(null);
 
@@ -112,6 +115,17 @@ export default function SocialMediaHome() {
     </div>
   );
 
+  const SkeletonSuggestedPost = () => (
+    <div className="flex items-center gap-3 p-2 animate-pulse">
+      <div className="w-20 h-15 rounded-xl bg-gray-300 dark:bg-gray-600"></div>
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+        <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+      </div>
+    </div>
+  );
+
   const VerifiedBadge = () => (
     <svg
       width="16"
@@ -130,12 +144,17 @@ export default function SocialMediaHome() {
     </svg>
   );
 
+  const showMessage = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(''), 2000);
+  };
+
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
-      setError('Authentication required. Please log in again.');
+      showMessage('Authentication required. Please log in again.');
       return;
     }
-    setIsLoading(true);
+    setIsLoadingPosts(true);
     try {
       const endpoint = `${apiUrl}/posts?page=${pageNum}&limit=20&t=${Date.now()}&userId=${userId}`;
       const response = await fetch(endpoint, {
@@ -163,37 +182,41 @@ export default function SocialMediaHome() {
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
         const commentsData = {};
-        for (const post of newPosts) {
-          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, {
+        const commentPromises = newPosts.map(post =>
+          fetch(`${apiUrl}/comments/${post.id}`, {
             cache: 'no-store',
             headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          const commentsResult = await commentsResponse.json();
-          if (commentsResult.success) {
-            commentsData[post.id] = commentsResult.comments.map(comment => ({
+          }).then(res => res.json()).then(commentsResult => ({
+            postId: post.id,
+            comments: commentsResult.success ? commentsResult.comments.map(comment => ({
               ...comment,
               author_image: comment.author_image || DEFAULT_IMAGE,
               verified: comment.verified || 0,
-            }));
-          }
-        }
+            })) : [],
+          }))
+        );
+        const commentsResults = await Promise.all(commentPromises);
+        commentsResults.forEach(({ postId, comments }) => {
+          commentsData[postId] = comments;
+        });
         setComments((prev) => (isRefresh ? commentsData : { ...prev, ...commentsData }));
       }
     } catch (error) {
       console.error('Posts error:', error.message);
-      setError(`Failed to load posts: ${error.message}`);
+      showMessage(`Failed to load posts: ${error.message}`);
     } finally {
-      setIsLoading(false);
+      setIsLoadingPosts(false);
     }
   }, [token, apiUrl, userId]);
 
   const fetchSuggestedUsers = useCallback(async () => {
     if (!userId || !token) {
-      setError('Authentication required to fetch users.');
+      showMessage('Authentication required to fetch users.');
       return;
     }
+    setIsLoadingUsers(true);
     try {
-      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=4`, {
+      const response = await fetch(`${apiUrl}/suggested-users?userId=${userId}&limit=4&unfollowed=true`, {
         cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -206,21 +229,24 @@ export default function SocialMediaHome() {
         setSuggestedUsers(data.users.map(user => ({
           ...user,
           image: user.image || DEFAULT_IMAGE,
-          is_followed: !!user.is_followed,
+          is_followed: false,
           verified: user.verified || 0,
         })));
       } else {
-        setError('No suggested users found.');
+        showMessage('No suggested users found.');
       }
     } catch (error) {
       console.error('Users error:', error.message);
-      setError(`Failed to load users: ${error.message}`);
+      showMessage(`Failed to load users: ${error.message}`);
+    } finally {
+      setIsLoadingUsers(false);
     }
   }, [userId, token, apiUrl]);
 
   const fetchSuggestedPosts = useCallback(async () => {
+    setIsLoadingSuggestedPosts(true);
     try {
-      const response = await fetch(`${apiUrl}/posts?limit=5&userId=${userId}&sort=created_at&order=desc`, {
+      const response = await fetch(`${apiUrl}/posts?limit=6&userId=${userId}&sort=views&order=desc`, {
         cache: 'no-store',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -232,8 +258,8 @@ export default function SocialMediaHome() {
       if (data.success) {
         const sortedPosts = data.posts
           .filter(post => Array.isArray(post.imageUrls))
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          .slice(0, 5)
+          .sort((a, b) => (b.views || 0) - (a.views || 0))
+          .slice(0, 6)
           .map(post => ({
             ...post,
             imageUrls: Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [DEFAULT_IMAGE],
@@ -247,11 +273,14 @@ export default function SocialMediaHome() {
       }
     } catch (error) {
       console.error('Suggested posts error:', error.message);
-      setError(`Failed to load suggested posts: ${error.message}`);
+      showMessage(`Failed to load suggested posts: ${error.message}`);
+    } finally {
+      setIsLoadingSuggestedPosts(false);
     }
   }, [token, apiUrl, userId]);
 
   const fetchTrendingTopics = useCallback(async () => {
+    setIsLoadingTrending(true);
     try {
       const response = await fetch(`${apiUrl}/posts?sort=views&limit=100&userId=${userId}`, {
         cache: 'no-store',
@@ -293,14 +322,17 @@ export default function SocialMediaHome() {
         { id: 'electric-vehicles', name: 'Electric Vehicles', views: 800 },
         { id: 'tech-startups', name: 'Tech Startups', views: 600 },
       ]);
+    } finally {
+      setIsLoadingTrending(false);
     }
   }, [token, apiUrl, userId]);
 
   const fetchFollowers = useCallback(async () => {
     if (!userId || !token) {
-      setError('Authentication required to fetch followers.');
+      showMessage('Authentication required to fetch followers.');
       return;
     }
+    setIsLoadingUsers(true);
     try {
       const response = await fetch(`${apiUrl}/followers/${userId}`, {
         cache: 'no-store',
@@ -320,15 +352,18 @@ export default function SocialMediaHome() {
       }
     } catch (error) {
       console.error('Followers error:', error.message);
-      setError(`Failed to load followers: ${error.message}`);
+      showMessage(`Failed to load followers: ${error.message}`);
+    } finally {
+      setIsLoadingUsers(false);
     }
   }, [userId, token, apiUrl]);
 
   const fetchFollowing = useCallback(async () => {
     if (!userId || !token) {
-      setError('Authentication required to fetch following.');
+      showMessage('Authentication required to fetch following.');
       return;
     }
+    setIsLoadingUsers(true);
     try {
       const response = await fetch(`${apiUrl}/following/${userId}`, {
         cache: 'no-store',
@@ -348,13 +383,15 @@ export default function SocialMediaHome() {
       }
     } catch (error) {
       console.error('Following error:', error.message);
-      setError(`Failed to load following: ${error.message}`);
+      showMessage(`Failed to load following: ${error.message}`);
+    } finally {
+      setIsLoadingUsers(false);
     }
   }, [userId, token, apiUrl]);
 
   const handleFollow = async (followId) => {
     if (!userId || !token) {
-      setError('Authentication required to follow users.');
+      showMessage('Authentication required to follow users.');
       return;
     }
     try {
@@ -371,23 +408,23 @@ export default function SocialMediaHome() {
         throw new Error(errorData.message || 'Failed to follow user');
       }
       setSuggestedUsers((prev) =>
-        prev.map((user) =>
-          user.id === followId ? { ...user, is_followed: true } : user
-        )
+        prev.filter((user) => user.id !== followId)
       );
       setFollowing((prev) => [
         ...prev,
         suggestedUsers.find((user) => user.id === followId),
       ]);
+      fetchSuggestedUsers(); // Refresh suggested users to get new unfollowed users
+      showMessage('Followed user successfully!');
     } catch (error) {
       console.error('Follow error:', error.message);
-      setError(`Failed to follow user: ${error.message}`);
+      showMessage(`Failed to follow user: ${error.message}`);
     }
   };
 
   const handleUnfollow = async (followId) => {
     if (!userId || !token) {
-      setError('Authentication required to unfollow users.');
+      showMessage('Authentication required to unfollow users.');
       return;
     }
     try {
@@ -403,22 +440,19 @@ export default function SocialMediaHome() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to unfollow user');
       }
-      setSuggestedUsers((prev) =>
-        prev.map((user) =>
-          user.id === followId ? { ...user, is_followed: false } : user
-        )
-      );
       setFollowing((prev) => prev.filter((user) => user.id !== followId));
+      fetchSuggestedUsers(); // Refresh suggested users
+      showMessage('Unfollowed user successfully!');
     } catch (error) {
       console.error('Unfollow error:', error.message);
-      setError(`Failed to unfollow user: ${error.message}`);
+      showMessage(`Failed to unfollow user: ${error.message}`);
     }
   };
 
   const handlePostLike = async (postId, isLiked, e) => {
     e.stopPropagation();
     if (!userId || !token) {
-      setError('Authentication required to like posts.');
+      showMessage('Authentication required to like posts.');
       return;
     }
     try {
@@ -447,21 +481,22 @@ export default function SocialMediaHome() {
             : post
         )
       );
+      showMessage(`Post ${isLiked ? 'unliked' : 'liked'} successfully!`);
     } catch (error) {
       console.error('Like error:', error.message);
-      setError(`Failed to ${isLiked ? 'unlike' : 'like'} post: ${error.message}`);
+      showMessage(`Failed to ${isLiked ? 'unlike' : 'like'} post: ${error.message}`);
     }
   };
 
   const handlePostCommentSubmit = async (postId, e) => {
     e.stopPropagation();
     if (!userId || !token) {
-      setError('Authentication required to comment.');
+      showMessage('Authentication required to comment.');
       return;
     }
     const content = commentInput[postId]?.trim();
     if (!content) {
-      setError('Comment cannot be empty.');
+      showMessage('Comment cannot be empty.');
       return;
     }
     try {
@@ -494,17 +529,18 @@ export default function SocialMediaHome() {
               : post
           )
         );
+        showMessage('Comment posted successfully!');
       }
     } catch (error) {
       console.error('Comment error:', error.message);
-      setError(`Failed to post comment: ${error.message}`);
+      showMessage(`Failed to post comment: ${error.message}`);
     }
   };
 
   const handlePostShare = async (postId, e) => {
     e.stopPropagation();
     if (!userId || !token) {
-      setError('Authentication required to share posts.');
+      showMessage('Authentication required to share posts.');
       return;
     }
     try {
@@ -520,10 +556,10 @@ export default function SocialMediaHome() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to share post');
       }
-      alert('Post shared successfully!');
+      showMessage('Post shared successfully!');
     } catch (error) {
       console.error('Share error:', error.message);
-      setError(`Failed to share post: ${error.message}`);
+      showMessage(`Failed to share post: ${error.message}`);
     }
   };
 
@@ -572,12 +608,17 @@ export default function SocialMediaHome() {
 
   useEffect(() => {
     if (token) {
-      fetchPosts(1);
-      fetchFollowers();
-      fetchFollowing();
-      fetchSuggestedPosts();
-      fetchTrendingTopics();
-      fetchSuggestedUsers();
+      Promise.all([
+        fetchPosts(1, true),
+        fetchFollowers(),
+        fetchFollowing(),
+        fetchSuggestedPosts(),
+        fetchTrendingTopics(),
+        fetchSuggestedUsers(),
+      ]).catch((error) => {
+        console.error('Batch fetch error:', error.message);
+        showMessage('Failed to load some content.');
+      });
     }
   }, [fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, fetchSuggestedUsers, token]);
 
@@ -588,14 +629,14 @@ export default function SocialMediaHome() {
         window.innerHeight + document.documentElement.scrollTop >=
         document.documentElement.offsetHeight - 100 &&
         hasMore &&
-        !isLoading
+        !isLoadingPosts
       ) {
         setPage((prev) => prev + 1);
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading, userId, token]);
+  }, [hasMore, isLoadingPosts, userId, token]);
 
   useEffect(() => {
     if (page > 1) {
@@ -627,21 +668,24 @@ export default function SocialMediaHome() {
         }
       `}</style>
 
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50"
-        >
-          <span>{error}</span>
-          <button
-            onClick={() => setError('')}
-            className="hover:text-gray-200 transition-all duration-300"
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-white text-black px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50"
           >
-            <X className="w-5 h-5" />
-          </button>
-        </motion.div>
-      )}
+            <span>{message}</span>
+            <button
+              onClick={() => setMessage('')}
+              className="hover:text-gray-600 transition-all duration-300"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {expandedImage && (
@@ -700,13 +744,13 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          {isLoading && !userId && (
+          {isLoadingPosts && !userId && (
             <>
               <SkeletonCard />
               <SkeletonCard />
             </>
           )}
-          {userId && isLoading && (
+          {isLoadingPosts && userId && (
             <>
               <SkeletonCard />
               <SkeletonCard />
@@ -742,92 +786,110 @@ export default function SocialMediaHome() {
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
-              Trending Topics
-            </h2>
-            {trendingTopics.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
-            ) : (
+          {isLoadingTrending ? (
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700 animate-pulse">
+              <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
               <div className="flex flex-wrap gap-2">
-                {trendingTopics.map((topic) => (
-                  <Link
-                    key={topic.id}
-                    href={`/`}
-                    className="flex-shrink-0 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
-                  >
-                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
-          >
-            <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
-            {isLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[...Array(4)].map((_, index) => (
-                  <div key={index} className="flex items-center gap-3 p-2 animate-pulse">
-                    <div className="w-20 h-15 rounded-xl bg-gray-300 dark:bg-gray-600"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
-                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
-                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
-                    </div>
-                  </div>
+                  <div key={index} className="h-10 w-24 bg-gray-300 dark:bg-gray-600 rounded-xl"></div>
                 ))}
               </div>
-            )}
-            {!isLoading && suggestedPosts.length === 0 && userId ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(userId ? suggestedPosts : defaultPosts).slice(0, 5).map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/post/${post.id}`}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
-                  >
-                    <Image
-                      src={post.imageUrls[0] || DEFAULT_IMAGE}
-                      alt={post.title || 'Post'}
-                      width={80}
-                      height={60}
-                      className="rounded-xl object-cover w-20 h-15"
-                      onError={(e) => {
-                        e.target.src = DEFAULT_IMAGE;
-                      }}
-                    />
-                    <div>
-                      <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {post.category || 'General'} • {post.author || 'Anonymous'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        <Eye className="inline w-3 h-3 mr-1" />
-                        {post.views || 0} views
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </motion.div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
+            >
+              <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
+                Trending Topics
+              </h2>
+              {trendingTopics.length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {trendingTopics.map((topic) => (
+                    <Link
+                      key={topic.id}
+                      href={`/`}
+                      className="flex-shrink-0 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
+                    >
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
 
-          {userId && (
+          {isLoadingSuggestedPosts ? (
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700">
+              <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4 animate-pulse"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[...Array(6)].map((_, index) => (
+                  <SkeletonSuggestedPost key={index} />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 border border-gray-200 dark:border-gray-700"
+            >
+              <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
+              {(userId ? suggestedPosts : defaultPosts).length === 0 && userId ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {(userId ? suggestedPosts : defaultPosts).slice(0, 6).map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/post/${post.id}`}
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                    >
+                      <Image
+                        src={post.imageUrls[0] || DEFAULT_IMAGE}
+                        alt={post.title || 'Post'}
+                        width={80}
+                        height={60}
+                        className="rounded-xl object-cover w-20 h-15"
+                        onError={(e) => {
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
+                      />
+                      <div>
+                        <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {post.category || 'General'} • {post.author || 'Anonymous'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <Eye className="inline w-3 h-3 mr-1" />
+                          {post.views || 0} views
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {userId && isLoadingUsers && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-12 lg:hidden border border-gray-200 dark:border-gray-700"
+            >
+              <SkeletonUserCard />
+            </motion.div>
+          )}
+          {userId && !isLoadingUsers && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1126,7 +1188,7 @@ export default function SocialMediaHome() {
                 </motion.div>
               );
             })}
-            {isLoading && userId && (
+            {isLoadingPosts && userId && (
               <>
                 <SkeletonCard />
                 <SkeletonCard />
@@ -1141,7 +1203,7 @@ export default function SocialMediaHome() {
                 <span className="text-gray-500 dark:text-gray-400">No more posts to load</span>
               </motion.div>
             )}
-            {!userId && !isLoading && (
+            {!userId && !isLoadingPosts && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -1163,8 +1225,9 @@ export default function SocialMediaHome() {
 
         <div className="hidden lg:block lg:w-1/3">
           <div className="sticky top-20 space-y-12">
-            {isLoading && <SkeletonUserCard />}
-            {!isLoading && (
+            {isLoadingUsers ? (
+              <SkeletonUserCard />
+            ) : (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1229,8 +1292,9 @@ export default function SocialMediaHome() {
               </motion.div>
             )}
 
-            {isLoading && <SkeletonUserCard />}
-            {!isLoading && (
+            {isLoadingUsers ? (
+              <SkeletonUserCard />
+            ) : (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1272,8 +1336,9 @@ export default function SocialMediaHome() {
               </motion.div>
             )}
 
-            {isLoading && <SkeletonUserCard />}
-            {!isLoading && (
+            {isLoadingUsers ? (
+              <SkeletonUserCard />
+            ) : (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
