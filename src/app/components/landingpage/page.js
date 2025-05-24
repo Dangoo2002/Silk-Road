@@ -3,7 +3,7 @@ import { useEffect, useState, useContext, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserCheck, UserX, Tag } from 'lucide-react';
+import { X, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, MessageCircle, UserX, Tag } from 'lucide-react';
 import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function SocialMediaHome() {
@@ -55,6 +55,7 @@ export default function SocialMediaHome() {
       likes_count: 50,
       comments_count: 10,
       tags: ['welcome', 'community'],
+      verified: 0,
     },
     {
       id: 'default-2',
@@ -69,6 +70,7 @@ export default function SocialMediaHome() {
       likes_count: 30,
       comments_count: 5,
       tags: ['community', 'discussion'],
+      verified: 0,
     },
   ];
 
@@ -110,6 +112,24 @@ export default function SocialMediaHome() {
     </div>
   );
 
+  const VerifiedBadge = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="inline-block ml-1"
+      title="Verified"
+    >
+      <circle cx="12" cy="12" r="12" fill="#1DA1F2" />
+      <path
+        d="M9.75 16.5L5.25 12L6.6825 10.5675L9.75 13.6275L17.3175 6.06L18.75 7.5L9.75 16.5Z"
+        fill="white"
+      />
+    </svg>
+  );
+
   const fetchPosts = useCallback(async (pageNum, isRefresh = false) => {
     if (!token && userId) {
       setError('Authentication required. Please log in again.');
@@ -138,6 +158,7 @@ export default function SocialMediaHome() {
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
             tags: Array.isArray(post.tags) ? post.tags : [],
+            verified: post.verified || 0,
           }));
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
@@ -152,6 +173,7 @@ export default function SocialMediaHome() {
             commentsData[post.id] = commentsResult.comments.map(comment => ({
               ...comment,
               author_image: comment.author_image || DEFAULT_IMAGE,
+              verified: comment.verified || 0,
             }));
           }
         }
@@ -185,6 +207,7 @@ export default function SocialMediaHome() {
           ...user,
           image: user.image || DEFAULT_IMAGE,
           is_followed: !!user.is_followed,
+          verified: user.verified || 0,
         })));
       } else {
         setError('No suggested users found.');
@@ -218,6 +241,7 @@ export default function SocialMediaHome() {
             author: post.author || 'Anonymous',
             created_at: post.created_at || new Date().toISOString(),
             tags: Array.isArray(post.tags) ? post.tags : [],
+            verified: post.verified || 0,
           }));
         setSuggestedPosts(sortedPosts);
       }
@@ -291,6 +315,7 @@ export default function SocialMediaHome() {
         setFollowers(data.followers.slice(0, 5).map(user => ({
           ...user,
           image: user.image || DEFAULT_IMAGE,
+          verified: user.verified || 0,
         })));
       }
     } catch (error) {
@@ -318,6 +343,7 @@ export default function SocialMediaHome() {
         setFollowing(data.following.slice(0, 5).map(user => ({
           ...user,
           image: user.image || DEFAULT_IMAGE,
+          verified: user.verified || 0,
         })));
       }
     } catch (error) {
@@ -456,7 +482,7 @@ export default function SocialMediaHome() {
         setComments((prev) => ({
           ...prev,
           [postId]: [
-            { ...data.comment, author_image: data.comment.author_image || DEFAULT_IMAGE },
+            { ...data.comment, author_image: data.comment.author_image || DEFAULT_IMAGE, verified: data.comment.verified || 0 },
             ...(prev[postId] || []),
           ],
         }));
@@ -831,9 +857,10 @@ export default function SocialMediaHome() {
                       <div className="flex-1">
                         <Link
                           href={`/profile/${user.id}`}
-                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 flex items-center gap-1"
                         >
                           {user.name || 'User'}
+                          {user.verified ? <VerifiedBadge /> : null}
                         </Link>
                         <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                       </div>
@@ -853,7 +880,7 @@ export default function SocialMediaHome() {
                           </>
                         ) : (
                           <>
-                            <UserCheck className="w-4 h-4" />
+                            <UserPlus className="w-4 h-4" />
                             Follow
                           </>
                         )}
@@ -909,7 +936,7 @@ export default function SocialMediaHome() {
                           className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 flex items-center gap-1"
                         >
                           {post.author || 'Anonymous'}
-                          {post.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                          {post.verified ? <VerifiedBadge /> : null}
                         </Link>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {formatDateTime(post.created_at)} • {post.category || 'General'}
@@ -1078,7 +1105,10 @@ export default function SocialMediaHome() {
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
+                                  <span className="text-sm font-medium">
+                                    {comment.fullName || 'User'}
+                                    {comment.verified ? <VerifiedBadge /> : null}
+                                  </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400">
                                     {formatDateTime(comment.created_at)}
                                   </span>
@@ -1167,7 +1197,7 @@ export default function SocialMediaHome() {
                             className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 flex items-center gap-1"
                           >
                             {user.name || 'User'}
-                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                            {user.verified ? <VerifiedBadge /> : null}
                           </Link>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
@@ -1187,7 +1217,7 @@ export default function SocialMediaHome() {
                             </>
                           ) : (
                             <>
-                              <UserCheck className="w-4 h-4" />
+                              <UserPlus className="w-4 h-4" />
                               Follow
                             </>
                           )}
@@ -1231,7 +1261,7 @@ export default function SocialMediaHome() {
                         <div>
                           <p className="text-sm font-semibold flex items-center gap-1">
                             {user.name || 'User'}
-                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                            {user.verified ? <VerifiedBadge /> : null}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
@@ -1274,7 +1304,7 @@ export default function SocialMediaHome() {
                         <div>
                           <p className="text-sm font-semibold flex items-center gap-1">
                             {user.name || 'User'}
-                            {user.verified && <UserCheck className="w-4 h-4 text-blue-500" title="Verified" />}
+                            {user.verified ? <VerifiedBadge /> : null}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
