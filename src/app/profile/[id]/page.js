@@ -4,7 +4,7 @@ import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { HeartIcon, ChatBubbleOvalLeftIcon, UserPlusIcon, UserMinusIcon, HomeIcon, UserIcon, DocumentTextIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, ChatBubbleOvalLeftIcon, UserPlusIcon, UserMinusIcon, HomeIcon, UserIcon, DocumentTextIcon, ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { useSwipeable } from 'react-swipeable';
