@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XMarkIcon, PlusIcon, PhotoIcon } from '@heroicons/react/24/outline';
-import { AuthContext } from '../components/AuthContext/AuthContext';
+import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
