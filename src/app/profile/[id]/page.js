@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
 export default function ProfilePage() {
-  const { isLoggedIn, userData } = useContext(AuthContext);
+  const { isLoggedIn, userData, token } = useContext(AuthContext);
   const router = useRouter();
   const { id } = useParams();
   const [user, setUser] = useState(null);
@@ -17,7 +17,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
   const DEFAULT_IMAGE = '/user-symbol.jpg';
 
   useEffect(() => {
@@ -26,8 +26,9 @@ export default function ProfilePage() {
       setError(null);
       try {
         // Fetch user details
+        const headers = isLoggedIn && token ? { Authorization: `Bearer ${token}` } : {};
         const userResponse = await fetch(`${apiUrl}/user/${id}`, {
-          headers: isLoggedIn && userData?.token ? { Authorization: `Bearer ${userData.token}` } : {},
+          headers,
           cache: 'no-store',
         });
         const userDataResult = await userResponse.json();
@@ -39,7 +40,7 @@ export default function ProfilePage() {
 
         // Fetch user posts
         const postsResponse = await fetch(`${apiUrl}/user/${id}/posts`, {
-          headers: isLoggedIn && userData?.token ? { Authorization: `Bearer ${userData.token}` } : {},
+          headers,
           cache: 'no-store',
         });
         const postsResult = await postsResponse.json();
@@ -57,7 +58,7 @@ export default function ProfilePage() {
     if (id) {
       fetchUserData();
     }
-  }, [id, isLoggedIn, userData, apiUrl]);
+  }, [id, isLoggedIn, token, apiUrl]);
 
   const handleFollowToggle = async () => {
     if (!isLoggedIn) {
@@ -72,7 +73,7 @@ export default function ProfilePage() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${userData.token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           userId: userData.id,
