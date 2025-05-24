@@ -18,7 +18,7 @@ export default function ProfilePage() {
   const [error, setError] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
-  const DEFAULT_IMAGE = '/user-symbol.jpg';
+  const DEFAULT_IMAGE = '/def.jpg';
 
   useEffect(() => {
     const fetchUserData = async () => {
