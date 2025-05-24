@@ -1,5 +1,5 @@
 'use client';
-import { useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,7 +16,6 @@ export default function SocialMediaNav() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState({ posts: [], users: [] });
   const [isSearching, setIsSearching] = useState(false);
-  const [userImage, setUserImage] = useState('/def.jpg');
   const searchRef = useRef(null);
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
   const DEFAULT_IMAGE = '/def.jpg';
@@ -27,36 +26,6 @@ export default function SocialMediaNav() {
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
   }, []);
-
-  // Fetch user image
-  const fetchUserImage = useCallback(async () => {
-    if (!isLoggedIn || !userData?.id || !userData?.token) {
-      setUserImage(DEFAULT_IMAGE);
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/profile/${userData.id}`, {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${userData.token}` },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
-      }
-      const data = await response.json();
-      if (data.success && data.user?.image) {
-        setUserImage(data.user.image);
-      } else {
-        setUserImage(DEFAULT_IMAGE);
-      }
-    } catch (error) {
-      console.error('User image fetch error:', error.message);
-      setUserImage(DEFAULT_IMAGE);
-    }
-  }, [isLoggedIn, userData, apiUrl]);
-
-  useEffect(() => {
-    fetchUserImage();
-  }, [fetchUserImage]);
 
   // Handle clicks outside search results to close dropdown
   useEffect(() => {
@@ -422,7 +391,7 @@ export default function SocialMediaNav() {
                 onClick={toggleDropdown}
               >
                 <Image
-                  src={userImage}
+                  src={userData?.image || DEFAULT_IMAGE}
                   alt={userData?.name || 'User'}
                   width={32}
                   height={32}
@@ -438,23 +407,25 @@ export default function SocialMediaNav() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-2 z-50"
+                    className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg shadow-lg dark:shadow-xl border border-gray-200 dark:border-gray-600 p-3 z-50"
                   >
                     {userMenuItems.map((item, index) => (
-                      <div key={item.label}>
+                      <div key={item.label} className="mb-2 last:mb-0">
                         {item.href ? (
                           <Link
                             href={item.href}
                             onClick={() => setDropdownOpen(false)}
-                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm ${item.isLogout ? 'text-red-500' : ''}`}
+                            className={`flex items-center gap-2 w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm ${item.isLogout ? 'text-red-500' : ''}`}
                           >
+                            <item.icon className="h-5 w-5" />
                             {item.label}
                           </Link>
                         ) : (
                           <button
                             onClick={item.action}
-                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors text-sm ${item.isLogout ? 'text-red-500' : ''}`}
+                            className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md transition-colors text-sm ${item.isLogout ? 'text-white bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                           >
+                            <item.icon className="h-5 w-5" />
                             {item.label}
                           </button>
                         )}
@@ -510,7 +481,7 @@ export default function SocialMediaNav() {
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   aria-label="Clear search"
                 >
-                  <XMarkIcon className g="h-4 w-4" />
+                  <XMarkIcon className="h-4 w-4" />
                 </button>
               )}
             </div>
@@ -667,7 +638,7 @@ export default function SocialMediaNav() {
                   <div className="flex items-center gap-4">
                     <div className="relative">
                       <Image
-                        src={userImage}
+                        src={userData?.image || DEFAULT_IMAGE}
                         alt={userData?.name || 'User'}
                         width={48}
                         height={48}
@@ -698,7 +669,7 @@ export default function SocialMediaNav() {
                       <Link
                         href={item.href}
                         onClick={closeMenu}
-                        className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                        className="flex items-center gap-4 p-5 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                       >
                         <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                           <item.icon className="h-6 w-6" />
@@ -722,12 +693,13 @@ export default function SocialMediaNav() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 + index * 0.05 }}
+                        className="mb-2 last:mb-0"
                       >
                         {item.href ? (
                           <Link
                             href={item.href}
                             onClick={closeMenu}
-                            className="flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                            className="flex items-center gap-4 p-5 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                           >
                             <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                               <item.icon className="h-6 w-6" />
@@ -745,13 +717,13 @@ export default function SocialMediaNav() {
                               item.action();
                               closeMenu();
                             }}
-                            className="w-full flex items-center gap-4 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                            className={`w-full flex items-center gap-4 p-5 rounded-2xl transition-all duration-300 group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 ${item.isLogout ? 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white' : 'bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                           >
                             <div className={`p-3 rounded-xl bg-gradient-to-r ${item.color} text-white shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
                               <item.icon className="h-6 w-6" />
                             </div>
                             <div className="flex-1 text-left">
-                              <h4 className={`font-semibold ${item.isLogout ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                              <h4 className={`font-semibold ${item.isLogout ? 'text-white' : 'text-gray-900 dark:text-gray-100'}`}>
                                 {item.label}
                               </h4>
                             </div>
