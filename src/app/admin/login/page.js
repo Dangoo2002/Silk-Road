@@ -1,7 +1,7 @@
 'use client';
 import { useState, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthContext } from '../../../components/AuthContext/AuthContext';
+import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 import { motion } from 'framer-motion';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 
