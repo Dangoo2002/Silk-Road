@@ -28,40 +28,10 @@ export default function WritePost() {
   const [previewImages, setPreviewImages] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [showBanner, setShowBanner] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
   const fileInputRef = useRef(null);
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
-  const DEFAULT_IMAGE = '/def.jpg';
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!userData?.id || !token) return;
-      try {
-        const response = await fetch(`${apiUrl}/user/${userData.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: 'no-store',
-        });
-        const result = await response.json();
-        if (result.success) {
-          setUserProfile({
-            name: result.user.name,
-            handle: result.user.handle,
-            image: result.user.image && typeof result.user.image === 'string' ? result.user.image : DEFAULT_IMAGE,
-          });
-        } else {
-          setError('Failed to fetch user profile');
-        }
-      } catch (err) {
-        console.error('Fetch user profile error:', err);
-        setError('Failed to fetch user profile');
-      }
-    };
-    fetchUserProfile();
-  }, [userData, token, apiUrl]);
-
-  // Clean up preview images
   useEffect(() => {
     return () => {
       previewImages.forEach((url) => URL.revokeObjectURL(url));
@@ -82,10 +52,12 @@ export default function WritePost() {
       console.error('Invalid event object in handleChange:', e);
       return;
     }
+    console.log('handleChange called with:', e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleDescriptionChange = (value) => {
+    console.log('handleDescriptionChange called with:', value);
     setFormData({ ...formData, description: value });
   };
 
@@ -106,12 +78,14 @@ export default function WritePost() {
     Array.from(files).forEach((file) => formDataToSend.append('images', file));
 
     try {
+      console.log('Uploading images to:', `${apiUrl}/api/upload-images`);
       const response = await fetch(`${apiUrl}/api/upload-images`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formDataToSend,
       });
       const data = await response.json();
+      console.log('Image upload response:', data);
       if (!response.ok) {
         if (data.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
@@ -121,11 +95,13 @@ export default function WritePost() {
         throw new Error(data.message || 'Failed to upload images');
       }
       if (data.success) {
-        setFormData((prev) => ({
-          ...prev,
-          imageUrls: [...prev.imageUrls, ...data.imageUrls],
-          imageIds: [...prev.imageIds, ...data.imageIds],
-        }));
+        setFormData((prev) => {
+          const newImageUrls = [...prev.imageUrls, ...data.imageUrls];
+          const newImageIds = [...prev.imageIds, ...data.imageIds];
+          console.log('Updated imageUrls:', newImageUrls);
+          console.log('Updated imageIds:', newImageIds);
+          return { ...prev, imageUrls: newImageUrls, imageIds: newImageIds };
+        });
       } else {
         throw new Error('Image upload response not successful');
       }
@@ -178,6 +154,7 @@ export default function WritePost() {
       console.error('Invalid event object in handleTagsChange:', e);
       return;
     }
+    console.log('handleTagsChange called with:', e.target.value);
     const tags = e.target.value.split(',').map((tag) => tag.trim()).filter((tag) => tag);
     if (tags.length > 10) {
       setError('Maximum 10 tags allowed.');
@@ -190,6 +167,9 @@ export default function WritePost() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+
+    console.log('userData:', userData);
+    console.log('token:', token);
 
     if (!token || !userData?.id) {
       setError('You must be logged in to create a post.');
@@ -204,7 +184,7 @@ export default function WritePost() {
       return;
     }
     if (!formData.description || formData.description.replace(/<[^>]+>/g, '').length < 50) {
-      setError('Description is required and must be at least 50 characters.');
+      setError('Description is required and must be at least 50 characters for posts.');
       setSubmitting(false);
       return;
     }
@@ -225,6 +205,9 @@ export default function WritePost() {
       return;
     }
 
+    console.log('imageUrls:', formData.imageUrls);
+    console.log('imageIds:', formData.imageIds);
+
     const requestBody = {
       userId: userData.id,
       contentType: 'post',
@@ -236,6 +219,7 @@ export default function WritePost() {
       tags: formData.tags || [],
       reading_time: formData.reading_time || '5 min',
     };
+    console.log('Request body:', requestBody);
 
     try {
       const response = await fetch(`${apiUrl}/write`, {
@@ -248,6 +232,8 @@ export default function WritePost() {
       });
 
       const responseData = await response.json();
+      console.log('Response:', responseData);
+
       if (!response.ok) {
         if (responseData.message === 'Invalid token') {
           setError('Your session has expired. Please log in again.');
@@ -287,12 +273,12 @@ export default function WritePost() {
 
   if (!userData?.id || !token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 space-y-6 border border-gray-200/50 dark:border-gray-700/50"
+          className="max-w-md w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-8 space-y-6 border border-gray-200 dark:border-gray-700"
         >
           <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white text-center font-heading">Login Required</h2>
           <p className="text-gray-600 dark:text-gray-300 text-center">
@@ -314,32 +300,7 @@ export default function WritePost() {
   const categories = ['General', 'Technology', 'Lifestyle', 'Travel', 'Food', 'News', 'Entertainment'];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
-      {/* Floating Navigation */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl px-4 py-2 shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20 flex"
-      >
-        <div className="flex items-center space-x-2 sm:space-x-4">
-          {[
-            { key: 'home', icon: HomeIcon, label: 'Home', href: '/' },
-            { key: 'profile', icon: UserIcon, label: 'Profile', href: `/profile/${userData.id}` },
-          ].map(({ key, icon: Icon, label, href }) => (
-            <motion.button
-              key={key}
-              onClick={() => router.push(href)}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative p-2 rounded-xl transition-all duration-300 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <Icon className="w-5 h-5" />
-              <span className="sr-only">{label}</span>
-            </motion.button>
-          ))}
-        </div>
-      </motion.div>
-
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 pt-16 px-4 sm:px-6 lg:px-8">
       <AnimatePresence>
         {showBanner && (
           <motion.div
@@ -347,10 +308,10 @@ export default function WritePost() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             transition={{ duration: 0.3 }}
-            className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2"
           >
             <svg
-              className="w-5 h-5"
+              className="w-5 h-5 text-green-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -367,36 +328,15 @@ export default function WritePost() {
           </motion.div>
         )}
       </AnimatePresence>
-
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-4xl w-full mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl shadow-2xl p-6 sm:p-8 space-y-8 border border-gray-200/50 dark:border-gray-700/50"
+        className="max-w-4xl w-full mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-6 sm:p-8 space-y-8 border border-gray-200 dark:border-gray-700"
       >
-        {/* User Profile Header */}
-        <div className="flex items-center space-x-4">
-          <div className="relative w-12 h-12">
-            <Image
-              src={userProfile?.image || DEFAULT_IMAGE}
-              alt={userProfile?.name || 'User'}
-              fill
-              className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 shadow-sm"
-              onError={(e) => (e.target.src = DEFAULT_IMAGE)}
-            />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {userProfile?.name || 'User'}
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">@{userProfile?.handle || 'unknown'}</p>
-          </div>
-        </div>
-
         <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white text-center font-heading bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-600">
           Create a New Post
         </h1>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
@@ -518,14 +458,14 @@ export default function WritePost() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="relative bg-white/50 dark:bg-gray-700/50 rounded-full overflow-hidden border border-gray-200 dark:border-gray-600 shadow-lg aspect-square"
+                    className="relative bg-white/50 dark:bg-gray-700/50 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-600 shadow-lg"
                   >
                     <Image
                       src={url}
                       alt={`Preview ${index + 1}`}
-                      width={120}
-                      height={120}
-                      className="w-full h-full object-cover rounded-full"
+                      width={150}
+                      height={150}
+                      className="w-full h-32 object-cover"
                     />
                     <motion.button
                       whileHover={{ scale: 1.1 }}

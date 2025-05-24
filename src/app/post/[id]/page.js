@@ -1,29 +1,29 @@
 'use client';
 
 import { useEffect, useState, useContext } from 'react';
-import { HeartIcon, ShareIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { HeartIcon, ShareIcon, ChatBubbleLeftIcon, HomeIcon, UserIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
-import Nav from '@/app/components/navbar/page';
 import { AuthContext } from '@/app/components/AuthContext/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClockIcon, TagIcon, EyeIcon, UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ClockIcon, TagIcon, EyeIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import DOMPurify from 'dompurify';
+import { useRouter } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 const VerifiedBadge = () => (
   <svg
-    width="16"
-    height="16"
+    width="20"
+    height="20"
     viewBox="0 0 24 24"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className="inline-block ml-1"
     title="Verified"
   >
-    <circle cx="12" cy="12" r="12" fill="#1DA1F2" />
+    <circle cx="12" cy="12" r="12" fill="#3B82F6" />
     <path
       d="M9.75 16.5L5.25 12L6.6825 10.5675L9.75 13.6275L17.3175 6.06L18.75 7.5L9.75 16.5Z"
       fill="white"
@@ -44,9 +44,10 @@ export default function BlogPost({ params }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [error, setError] = useState('');
   const [expandedImage, setExpandedImage] = useState(null);
+  const router = useRouter();
 
   const DEFAULT_IMAGE = '/def.jpg';
-  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
+  const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
 
   useEffect(() => {
     let isMounted = true;
@@ -69,7 +70,6 @@ export default function BlogPost({ params }) {
     };
   }, [id, userId]);
 
-  // Separate useEffect for fetching more posts, dependent on post
   useEffect(() => {
     if (post && post.userId) {
       fetchMorePosts();
@@ -97,10 +97,13 @@ export default function BlogPost({ params }) {
           views: data.post.views || 0,
           reading_time: data.post.reading_time || '5 min',
           author_bio: data.post.author_bio || 'Passionate about sharing stories.',
-          imageUrls: Array.isArray(data.post.imageUrls) && data.post.imageUrls.length > 0 
-            ? data.post.imageUrls 
+          imageUrls: Array.isArray(data.post.imageUrls) && data.post.imageUrls.length > 0
+            ? data.post.imageUrls.map(url => `${url}?t=${Date.now()}`)
             : [DEFAULT_IMAGE],
           verified: data.post.verified || 0,
+          author_image: data.post.author_image && typeof data.post.author_image === 'string'
+            ? `${data.post.author_image}?t=${Date.now()}`
+            : DEFAULT_IMAGE,
         });
       } else {
         throw new Error('Invalid response data');
@@ -121,7 +124,9 @@ export default function BlogPost({ params }) {
       if (data && data.success) {
         setComments(data.comments.map(comment => ({
           ...comment,
-          author_image: comment.author_image || DEFAULT_IMAGE,
+          author_image: comment.author_image && typeof comment.author_image === 'string'
+            ? `${comment.author_image}?t=${Date.now()}`
+            : DEFAULT_IMAGE,
           verified: comment.verified || 0,
         })));
       } else {
@@ -148,11 +153,10 @@ export default function BlogPost({ params }) {
           .filter(p => p.id !== parseInt(id, 10))
           .map(p => ({
             ...p,
-            imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0 
-              ? p.imageUrls 
+            imageUrls: Array.isArray(p.imageUrls) && p.imageUrls.length > 0
+              ? p.imageUrls.map(url => `${url}?t=${Date.now()}`)
               : [DEFAULT_IMAGE],
           }));
-        console.log('Fetched more posts:', filteredPosts);
         setMorePosts(filteredPosts);
       }
     } catch (error) {
@@ -204,7 +208,7 @@ export default function BlogPost({ params }) {
         body: JSON.stringify({ postId: id, userId }),
       });
       if (!response.ok) {
-        throw new Error('DRAMATIC Failed to share post');
+        throw new Error('Failed to share post');
       }
       const postUrl = `${window.location.origin}/post/${id}`;
       if (platform === 'clipboard') {
@@ -252,10 +256,12 @@ export default function BlogPost({ params }) {
       }
       const result = await response.json();
       setComments((prev) => [
-        { 
-          ...result.comment, 
+        {
+          ...result.comment,
           fullName: userData?.name || 'User',
-          author_image: userData?.image || DEFAULT_IMAGE,
+          author_image: userData?.image && typeof userData.image === 'string'
+            ? `${userData.image}?t=${Date.now()}`
+            : DEFAULT_IMAGE,
           verified: userData?.verified || 0,
         },
         ...prev,
@@ -273,30 +279,6 @@ export default function BlogPost({ params }) {
     setShowComments((prev) => !prev);
   };
 
-  const handleFollow = async () => {
-    if (!userId || !token) {
-      setError('Please log in to follow users');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/follow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId, followId: post.userId }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to follow user');
-      }
-      setPost((prev) => ({ ...prev, is_followed: true }));
-    } catch (error) {
-      setError('Failed to follow user');
-      console.error('Follow error:', error);
-    }
-  };
-
   const formatDateTime = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -308,11 +290,18 @@ export default function BlogPost({ params }) {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
   };
 
+  const scrollToSection = (section) => {
+    const element = document.getElementById(section);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const SkeletonLoader = () => (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-6 animate-pulse">
-          <div className="h-64 sm:h-80 md:h-96 bg-gray-300 dark:bg-gray-700 rounded-xl mb-6"></div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 animate-pulse">
+          <div className="h-64 sm:h-80 md:h-96 bg-gray-300 dark:bg-gray-700 rounded-2xl mb-6"></div>
           <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
           <div className="flex gap-4 mb-6">
             <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
@@ -320,7 +309,7 @@ export default function BlogPost({ params }) {
             <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4"></div>
           </div>
           <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-full Transnational Institutebg-gray-300 dark:bg-gray-700"></div>
+            <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-gray-700"></div>
             <div className="flex-1 space-y-2">
               <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
               <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
@@ -347,15 +336,40 @@ export default function BlogPost({ params }) {
 
   if (!post) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
         <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Post not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 pt-16">
-      <Nav />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 pt-16">
+      {/* Floating Navigation */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl px-4 py-2 shadow-lg shadow-gray-200/20 dark:shadow-gray-900/20 flex"
+      >
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {[
+            { key: 'home', icon: HomeIcon, label: 'Home', href: '/' },
+            { key: 'profile', icon: UserIcon, label: 'Profile', section: 'profile' },
+            { key: 'post', icon: DocumentTextIcon, label: 'Post', section: 'post' },
+          ].map(({ key, icon: Icon, label, href, section }) => (
+            <motion.button
+              key={key}
+              onClick={() => (href ? router.push(href) : scrollToSection(section))}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              className="relative p-2 rounded-xl transition-all duration-300 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <Icon className="w-5 h-5" />
+              <span className="sr-only">{label}</span>
+            </motion.button>
+          ))}
+        </div>
+      </motion.div>
+
       <style jsx>{`
         .post-content img {
           max-width: 100%;
@@ -383,7 +397,7 @@ export default function BlogPost({ params }) {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50"
+          className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 z-50"
         >
           <span>{error}</span>
           <button
@@ -431,12 +445,13 @@ export default function BlogPost({ params }) {
         )}
       </AnimatePresence>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <motion.article
+          id="post"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700"
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-gray-200/50 dark:border-gray-700/50"
         >
           {/* Header Image */}
           <div className="relative">
@@ -446,19 +461,19 @@ export default function BlogPost({ params }) {
                   src={post.imageUrls[0]}
                   alt={post.title}
                   fill
-                  className="object-cover rounded-t-2xl"
+                  className="object-cover rounded-t-3xl"
                   priority
                   onError={(e) => {
                     e.target.src = DEFAULT_IMAGE;
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-gray-300 dark:bg-gray-700 rounded-t-2xl" />
+                <div className="w-full h-full bg-gray-300 dark:bg-gray-700 rounded-t-3xl" />
               )}
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <div className="absolute bottom-4 left-4 right-4">
-              <span className="inline-block bg-indigo-500 dark:bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+              <span className="inline-block bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
                 {post.category}
               </span>
             </div>
@@ -466,7 +481,7 @@ export default function BlogPost({ params }) {
 
           {/* Post Content */}
           <div className="p-6 sm:p-8">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight font-heading">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6 leading-tight font-heading bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300">
               {post.title}
             </h1>
 
@@ -487,18 +502,19 @@ export default function BlogPost({ params }) {
             </div>
 
             {/* Author Info */}
-            <div className="flex items-center justify-between mb-6">
+            <div id="profile" className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <Image
-                  src={post.author_image || DEFAULT_IMAGE}
-                  alt={post.fullName}
-                  width={48}
-                  height={48}
-                  className="rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = DEFAULT_IMAGE;
-                  }}
-                />
+                <div className="relative w-12 h-12">
+                  <Image
+                    src={post.author_image}
+                    alt={post.fullName}
+                    fill
+                    className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                    onError={(e) => {
+                      e.target.src = DEFAULT_IMAGE;
+                    }}
+                  />
+                </div>
                 <div>
                   <Link
                     href={`/profile/${post.userId}`}
@@ -512,20 +528,52 @@ export default function BlogPost({ params }) {
                   </div>
                 </div>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleFollow}
-                className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors duration-300 ${
-                  post.is_followed
-                    ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
-                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
-                }`}
-                disabled={post.is_followed}
-              >
-                <UserPlusIcon className="w-4 h-4" />
-                {post.is_followed ? 'Following' : 'Follow'}
-              </motion.button>
+              {post.userId !== userId && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={async () => {
+                    if (!userId || !token) {
+                      setError('Please log in to follow users');
+                      return;
+                    }
+                    try {
+                      const endpoint = post.is_followed ? '/unfollow' : '/follow';
+                      const method = post.is_followed ? 'DELETE' : 'POST';
+                      const response = await fetch(`${apiUrl}${endpoint}`, {
+                        method,
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ userId, followId: post.userId }),
+                      });
+                      if (!response.ok) {
+                        throw new Error(`Failed to ${post.is_followed ? 'unfollow' : 'follow'} user`);
+                      }
+                      setPost((prev) => ({
+                        ...prev,
+                        is_followed: !post.is_followed,
+                      }));
+                    } catch (error) {
+                      setError(`Failed to ${post.is_followed ? 'unfollow' : 'follow'} user`);
+                      console.error('Follow error:', error);
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2 transition-colors duration-300 ${
+                    post.is_followed
+                      ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
+                  }`}
+                >
+                  {post.is_followed ? (
+                    <XMarkIcon className="w-4 h-4" />
+                  ) : (
+                    <UserPlusIcon className="w-4 h-4" />
+                  )}
+                  {post.is_followed ? 'Unfollow' : 'Follow'}
+                </motion.button>
+              )}
             </div>
 
             {/* Post Images */}
@@ -538,7 +586,7 @@ export default function BlogPost({ params }) {
                     onClick={() => setExpandedImage(post.imageUrls[0])}
                   >
                     <Image
-                      src={post.imageUrls[0] || DEFAULT_IMAGE}
+                      src={post.imageUrls[0]}
                       alt={`${post.title} image`}
                       width={800}
                       height={600}
@@ -559,7 +607,7 @@ export default function BlogPost({ params }) {
                           onClick={() => setExpandedImage(url)}
                         >
                           <Image
-                            src={url || DEFAULT_IMAGE}
+                            src={url}
                             alt={`${post.title} image ${index + 1}`}
                             fill
                             className="object-cover rounded-xl"
@@ -580,7 +628,7 @@ export default function BlogPost({ params }) {
                             onClick={() => setExpandedImage(url)}
                           >
                             <Image
-                              src={url || DEFAULT_IMAGE}
+                              src={url}
                               alt={`${post.title} image ${index + 3}`}
                               fill
                               className="object-cover rounded-xl"
@@ -647,7 +695,7 @@ export default function BlogPost({ params }) {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute top-full left-0 mt-2 w-48 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 p-2 z-50"
+                        className="absolute top-full left-0 mt-2 w-48 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-2 z-50"
                       >
                         <button
                           onClick={() => handleShare('clipboard')}
@@ -684,7 +732,7 @@ export default function BlogPost({ params }) {
                   transition={{ duration: 0.3 }}
                   className="mt-8"
                 >
-                  <div className="mb-6 p-4 bg-white/50 dark:bg-gray-700/50 rounded-xl">
+                  <div className="mb-6 p-4 bg-white/50 dark:bg-gray-700/50 backdrop-blur-xl rounded-xl border border-gray-200/50 dark:border-gray-700/50">
                     <textarea
                       value={commentInput}
                       onChange={(e) => setCommentInput(e.target.value)}
@@ -709,19 +757,20 @@ export default function BlogPost({ params }) {
                         key={comment.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="p-4 bg-white/50 dark:bg-gray-700/50 rounded-xl"
+                        className="p-4 bg-white/50 dark:bg-gray-700/50 backdrop-blur-xl rounded-xl border border-gray-200/50 dark:border-gray-700/50"
                       >
-                        <div className="flex items-center gap-2 mb-2">
-                          <Image
-                            src={comment.author_image || DEFAULT_IMAGE}
-                            alt={comment.fullName}
-                            width={32}
-                            height={32}
-                            className="rounded-full object-cover"
-                            onError={(e) => {
-                              e.target.src = DEFAULT_IMAGE;
-                            }}
-                          />
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="relative w-10 h-10">
+                            <Image
+                              src={comment.author_image}
+                              alt={comment.fullName}
+                              fill
+                              className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                              onError={(e) => {
+                                e.target.src = DEFAULT_IMAGE;
+                              }}
+                            />
+                          </div>
                           <div>
                             <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                               {comment.fullName}
@@ -753,20 +802,23 @@ export default function BlogPost({ params }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700"
+          className="mt-12 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-6 border border-gray-200/50 dark:border-gray-700/50"
         >
-          <h2 className="text-2xl font-semibold mb-4 font-heading">About the Author</h2>
+          <h2 className="text-2xl font-semibold mb-4 font-heading bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300">
+            About the Author
+          </h2>
           <div className="flex items-center gap-4">
-            <Image
-              src={post.author_image || DEFAULT_IMAGE}
-              alt={post.fullName}
-              width={64}
-              height={64}
-              className="rounded-full object-cover"
-              onError={(e) => {
-                e.target.src = DEFAULT_IMAGE;
-              }}
-            />
+            <div className="relative w-16 h-16">
+              <Image
+                src={post.author_image}
+                alt={post.fullName}
+                fill
+                className="rounded-full object-cover border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                onError={(e) => {
+                  e.target.src = DEFAULT_IMAGE;
+                }}
+              />
+            </div>
             <div>
               <Link
                 href={`/profile/${post.userId}`}
@@ -788,17 +840,19 @@ export default function BlogPost({ params }) {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-12"
           >
-            <h2 className="text-2xl font-semibold mb-4 font-heading">Also Read</h2>
+            <h2 className="text-2xl font-semibold mb-4 font-heading bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300">
+              Also Read
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {morePosts.map((relatedPost) => (
                 <Link
                   key={relatedPost.id}
                   href={`/post/${relatedPost.id}`}
-                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-4 hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700"
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-xl shadow-2xl p-4 hover:shadow-xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50"
                 >
                   <div className="relative h-40 rounded-xl overflow-hidden mb-4">
                     <Image
-                      src={relatedPost.imageUrls[0] || DEFAULT_IMAGE}
+                      src={relatedPost.imageUrls[0]}
                       alt={relatedPost.title}
                       fill
                       className="object-cover"
