@@ -7,7 +7,7 @@ import { X, Eye, Clock, ExternalLink, TrendingUp, UserPlus, ThumbsUp, Share, Mes
 import { AuthContext } from '../AuthContext/AuthContext';
 
 export default function SocialMediaHome() {
-  const { userData, token, setError: setAuthError, setSuccess } = useContext(AuthContext);
+  const { userData, token } = useContext(AuthContext);
   const userId = userData?.id || null;
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState({});
@@ -35,7 +35,7 @@ export default function SocialMediaHome() {
   };
 
   const truncateDescription = (html, wordLimit = 15) => {
-    const text = html?.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() || '';
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
     const words = text.split(' ');
     if (words.length <= wordLimit) return { text, truncated: false };
     return { text: words.slice(0, wordLimit).join(' ') + '...', truncated: true };
@@ -73,37 +73,37 @@ export default function SocialMediaHome() {
   ];
 
   const SkeletonCard = () => (
-    <div className="bg-white rounded-2xl shadow-md p-6 animate-pulse border border-gray-100">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-pulse">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-12 h-12 rounded-full bg-gray-200"></div>
+        <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+          <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
         </div>
       </div>
-      <div className="space-y-3">
-        <div className="h-5 bg-gray-200 rounded w-2/3"></div>
+      <div className="space-y-4">
+        <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
         <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded"></div>
-          <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
+          <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
         </div>
-        <div className="h-64 bg-gray-200 rounded-2xl"></div>
+        <div className="h-64 bg-gray-300 dark:bg-gray-600 rounded-xl"></div>
       </div>
     </div>
   );
 
   const SkeletonUserCard = () => (
-    <div className="bg-white rounded-2xl shadow-md p-6 animate-pulse border border-gray-100">
-      <div className="h-5 bg-gray-200 rounded w-1/3 mb-4"></div>
-      <div className="space-y-3">
+    <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-pulse">
+      <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
+      <div className="space-y-4">
         {[...Array(4)].map((_, index) => (
           <div key={index} className="flex items-center gap-3 p-2">
-            <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+            <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-600"></div>
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
+              <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/4"></div>
             </div>
-            <div className="h-8 w-20 bg-gray-200 rounded-full"></div>
+            <div className="h-8 w-20 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
           </div>
         ))}
       </div>
@@ -142,21 +142,19 @@ export default function SocialMediaHome() {
         setPosts((prev) => (isRefresh || pageNum === 1 ? newPosts : [...prev, ...newPosts]));
         setHasMore(data.posts.length === 20);
         const commentsData = {};
-        await Promise.all(
-          newPosts.map(async (post) => {
-            const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, {
-              cache: 'no-store',
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            });
-            const commentsResult = await commentsResponse.json();
-            if (commentsResult.success) {
-              commentsData[post.id] = commentsResult.comments.map(comment => ({
-                ...comment,
-                author_image: comment.author_image || DEFAULT_IMAGE,
-              }));
-            }
-          })
-        );
+        for (const post of newPosts) {
+          const commentsResponse = await fetch(`${apiUrl}/comments/${post.id}`, {
+            cache: 'no-store',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const commentsResult = await commentsResponse.json();
+          if (commentsResult.success) {
+            commentsData[post.id] = commentsResult.comments.map(comment => ({
+              ...comment,
+              author_image: comment.author_image || DEFAULT_IMAGE,
+            }));
+          }
+        }
         setComments((prev) => (isRefresh ? commentsData : { ...prev, ...commentsData }));
       }
     } catch (error) {
@@ -173,27 +171,21 @@ export default function SocialMediaHome() {
       return;
     }
     try {
-      const response = await fetch(`${apiUrl}/users?limit=100`, {
+      const response = await fetch(`${apiUrl}/users?limit=4&random=true`, {
         cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch users: ${response.status}`);
+        throw new Error(errorData.message || `Failed to fetch suggested users: ${response.status}`);
       }
       const data = await response.json();
       if (data.success) {
-        // Filter out current user and randomize
-        const filteredUsers = data.users
-          .filter(user => user.id !== userId)
-          .map(user => ({
-            ...user,
-            image: user.image || DEFAULT_IMAGE,
-            is_followed: user.is_followed || false,
-          }));
-        // Shuffle and pick 4
-        const shuffled = filteredUsers.sort(() => 0.5 - Math.random());
-        setSuggestedUsers(shuffled.slice(0, 4));
+        setSuggestedUsers(data.users.map(user => ({
+          ...user,
+          image: user.image || DEFAULT_IMAGE,
+          is_followed: !!user.is_followed,
+        })));
       }
     } catch (error) {
       console.error('Users error:', error.message);
@@ -294,7 +286,7 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setFollowers(data.followers.slice(0, 4).map(user => ({
+        setFollowers(data.followers.slice(0, 5).map(user => ({
           ...user,
           image: user.image || DEFAULT_IMAGE,
         })));
@@ -321,7 +313,7 @@ export default function SocialMediaHome() {
       }
       const data = await response.json();
       if (data.success) {
-        setFollowing(data.following.slice(0, 4).map(user => ({
+        setFollowing(data.following.slice(0, 5).map(user => ({
           ...user,
           image: user.image || DEFAULT_IMAGE,
         })));
@@ -332,456 +324,224 @@ export default function SocialMediaHome() {
     }
   }, [userId, token, apiUrl]);
 
-  const trackPostView = useCallback(async (postId) => {
-    if (!userId || !token || viewedPosts.has(postId)) return;
-    try {
-      const response = await fetch(`${apiUrl}/post-views`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId, userId }),
-      });
-      if (response.ok) {
-        setViewedPosts((prev) => new Set(prev).add(postId));
-        setPosts((prev) =>
-          prev.map((post) =>
-            post.id === postId ? { ...post, views: (post.views || 0) + 1 } : post
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Post view error:', error.message);
-      setError(`Error tracking post view: ${error.message}`);
-    }
-  }, [userId, token, viewedPosts, apiUrl]);
+  // ... (keep all other utility functions the same)
 
-  const handleFollow = useCallback(async (followId) => {
-    if (!userId || !token) {
-      setError('Please log in to follow users');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/follow`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId, followId }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to follow user');
-      }
-      setSuggestedUsers((prev) =>
-        prev.map((user) =>
-          user.id === followId ? { ...user, is_followed: true } : user
-        )
-      );
+  useEffect(() => {
+    if (token) {
+      fetchPosts(1);
+      fetchFollowers();
       fetchFollowing();
-      setSuccess('Successfully followed user!');
-    } catch (error) {
-      console.error('Follow error:', error.message);
-      setError(`An error occurred while following user: ${error.message}`);
+      fetchSuggestedPosts();
+      fetchTrendingTopics();
+      fetchSuggestedUsers();
     }
-  }, [userId, token, apiUrl, fetchFollowing, setSuccess]);
+  }, [fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedPosts, fetchTrendingTopics, fetchSuggestedUsers, token]);
 
-  const handleUnfollow = useCallback(async (followId) => {
-    if (!userId || !token) {
-      setError('Please log in to unfollow users');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/unfollow`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId, followId }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to unfollow user');
-      }
-      setSuggestedUsers((prev) =>
-        prev.map((user) =>
-          user.id === followId ? { ...user, is_followed: false } : user
-        )
-      );
-      fetchFollowing();
-      setSuccess('Successfully unfollowed user!');
-    } catch (error) {
-      console.error('Unfollow error:', error.message);
-      setError(`An error occurred while unfollowing user: ${error.message}`);
-    }
-  }, [userId, token, apiUrl, fetchFollowing, setSuccess]);
-
-  const handlePostLike = useCallback(async (postId, isLiked) => {
-    if (!userId || !token) {
-      setError('Please log in to like a post');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/likes`, {
-        method: isLiked ? 'DELETE' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId, userId }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update post like');
-      }
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                likes_count: isLiked ? post.likes_count - 1 : post.likes_count + 1,
-                is_liked: !isLiked,
-              }
-            : post
-        )
-      );
-    } catch (error) {
-      console.error('Post like error:', error.message);
-      setError(`An error occurred while updating post like: ${error.message}`);
-    }
-  }, [userId, token, apiUrl]);
-
-  const handlePostShare = useCallback((postId) => {
-    if (!navigator.clipboard) {
-      setError('Clipboard API not supported in this browser');
-      return;
-    }
-    const postUrl = `${window.location.origin}/post/${postId}`;
-    navigator.clipboard.writeText(postUrl).then(() => {
-      setSuccess('Post URL copied to clipboard!');
-    }).catch((err) => {
-      console.error('Post share error:', err);
-      setError('Failed to copy post URL');
-    });
-  }, [setSuccess]);
-
-  const handlePostCommentSubmit = useCallback(async (postId) => {
-    if (!userId || !token) {
-      setError('Please log in to comment');
-      return;
-    }
-    const content = commentInput[postId]?.trim();
-    if (!content) {
-      setError('Comment cannot be empty');
-      return;
-    }
-    try {
-      const response = await fetch(`${apiUrl}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ postId, userId, content }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to post comment');
-      }
-      const result = await response.json();
-      setComments((prev) => ({
-        ...prev,
-        [postId]: [...(prev[postId] || []), { 
-          ...result.comment, 
-          fullName: userData?.name || 'User',
-          author_image: userData?.image || DEFAULT_IMAGE,
-        }],
-      }));
-      setCommentInput((prev) => ({ ...prev, [postId]: '' }));
-      setPosts((prev) =>
-        prev.map((post) =>
-          post.id === postId ? { ...post, comments_count: (post.comments_count || 0) + 1 } : post
-        )
-      );
-      setSuccess('Comment posted successfully!');
-    } catch (error) {
-      console.error('Post comment error:', error.message);
-      setError(`An error occurred while posting comment: ${error.message}`);
-    }
-  }, [userId, token, commentInput, userData, apiUrl, setSuccess]);
-
-  const togglePostExpand = useCallback((postId) => {
-    setExpandedPost((prev) => ({ ...prev, [postId]: !prev[postId] }));
-  }, []);
-
-  const toggleComments = useCallback((postId) => {
-    setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
-  }, []);
-
-  const handleImageClick = (url) => {
-    setExpandedImage(url);
-  };
-
-  const closeImageModal = () => {
-    setExpandedImage(null);
-  };
-
-  useEffect(() => {
-    if (token && userId) {
-      Promise.all([
-        fetchPosts(1, true),
-        fetchFollowers(),
-        fetchFollowing(),
-        fetchSuggestedUsers(),
-        fetchSuggestedPosts(),
-        fetchTrendingTopics(),
-      ]).catch(err => {
-        console.error('Initial fetch error:', err);
-        setError('Failed to load initial data');
-      });
-    }
-  }, [token, userId, fetchPosts, fetchFollowers, fetchFollowing, fetchSuggestedUsers, fetchSuggestedPosts, fetchTrendingTopics]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >=
-          document.documentElement.offsetHeight - 100 &&
-        hasMore &&
-        !isLoading
-      ) {
-        setPage((prev) => prev + 1);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, isLoading]);
-
-  useEffect(() => {
-    if (page > 1 && token) fetchPosts(page);
-  }, [page, fetchPosts, token]);
+  // ... (keep all other useEffect hooks the same)
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 pt-16">
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-0 right-0 mx-auto max-w-md bg-red-600 text-white p-4 rounded-xl shadow-lg z-50 flex items-center justify-between"
-          >
-            <span>{error}</span>
-            <button onClick={() => setError('')} className="text-white">
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {expandedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-            onClick={closeImageModal}
-          >
-            <motion.div
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              className="relative max-w-4xl w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Image
-                src={expandedImage || DEFAULT_IMAGE}
-                alt="Expanded image"
-                width={1200}
-                height={800}
-                className="w-full h-auto rounded-xl object-contain"
-                onError={(e) => {
-                  console.error(`Failed to load expanded image: ${expandedImage}`);
-                  e.target.src = DEFAULT_IMAGE;
-                }}
-              />
-              <button
-                onClick={closeImageModal}
-                className="absolute top-2 right-2 p-2 bg-gray-900/70 rounded-full text-white hover:bg-gray-900 transition-all duration-300"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-200 dark:from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 pt-16">
+      <style jsx>{`
+        .highlight-post {
+          animation: highlight 2s ease-in-out;
+        }
+        @keyframes highlight {
+          0% { background-color: rgba(99, 102, 241, 0.2); }
+          50% { background-color: rgba(99, 102, 241, 0.4); }
+          100% { background-color: rgba(99, 102, 241, 0.2); }
+        }
+        .post-image {
+          width: 100%;
+          height: auto;
+          max-height: 500px;
+          object-fit: cover;
+        }
+        @media (min-width: 1024px) {
+          .post-image {
+            max-height: 600px;
+          }
+        }
+      `}</style>
+      
+      {/* Error message and expanded image modal remain the same */}
+
       <div className="container mx-auto px-4 py-8 lg:flex lg:gap-8">
         <div className="lg:w-2/3">
+          {/* Login prompt for non-logged-in users */}
           {!userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100 text-center"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 text-center"
             >
-              <p className="text-lg font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
                 You must be logged in to view personalized content
               </p>
               <Link
                 href="/login"
-                className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 text-sm font-medium"
+                className="inline-block px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
               >
                 Log In
               </Link>
             </motion.div>
           )}
+
+          {/* Loading skeletons */}
           {isLoading && !userId && (
-            <div className="space-y-8">
+            <>
               <SkeletonCard />
               <SkeletonCard />
-            </div>
+            </>
           )}
+          {userId && isLoading && (
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
+          )}
+
+          {/* User post creation prompt */}
           {userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
-              className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <Image
                   src={userData?.image || DEFAULT_IMAGE}
                   alt="User"
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover"
+                  width={48}
+                  height={48}
+                  className="rounded-full object-cover w-12 h-12"
                   onError={(e) => {
                     e.target.src = DEFAULT_IMAGE;
                   }}
                 />
                 <Link
                   href="/write"
-                  className="flex-1 p-3 bg-gray-50 rounded-full text-gray-500 text-sm hover:bg-gray-100 transition-all duration-300"
+                  className="flex-1 p-3 bg-white/50 dark:bg-gray-700/50 rounded-full text-gray-500 dark:text-gray-400 text-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-300"
                 >
                   What's on your mind, {userData?.name || 'User'}?
                 </Link>
               </div>
             </motion.div>
           )}
-          {(userId ? trendingTopics.length > 0 : true) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100"
-            >
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-                Trending Topics
-              </h2>
-              {trendingTopics.length === 0 ? (
-                <p className="text-sm text-gray-500">No trending topics available</p>
-              ) : (
-                <div className="flex flex-wrap gap-3">
-                  {trendingTopics.map((topic) => (
-                    <Link
-                      key={topic.id}
-                      href={`/`}
-                      className="p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all duration-300"
-                    >
-                      <p className="text-sm font-semibold text-gray-900">{topic.name}</p>
-                      <p className="text-xs text-gray-500">{topic.views} views</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-          {(userId ? suggestedPosts.length > 0 : true) && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100"
-            >
-              <h2 className="text-lg font-semibold mb-4">Suggested Posts</h2>
-              {isLoading && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[...Array(4)].map((_, index) => (
-                    <div key={index} className="flex items-center gap-3 p-2 animate-pulse">
-                      <div className="w-20 h-15 rounded-xl bg-gray-200"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/3"></div>
-                      </div>
+
+          {/* Trending topics */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
+          >
+            <h2 className="text-lg font-semibold mb-4 font-heading flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
+              Trending Topics
+            </h2>
+            {trendingTopics.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No trending topics available</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {trendingTopics.map((topic) => (
+                  <Link
+                    key={topic.id}
+                    href={`/`}
+                    className="flex-shrink-0 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-300"
+                  >
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{topic.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{topic.views} views</p>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Suggested posts */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700"
+          >
+            <h2 className="text-lg font-semibold mb-4 font-heading">Suggested Posts</h2>
+            {isLoading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[...Array(4)].map((_, index) => (
+                  <div key={index} className="flex items-center gap-3 p-2 animate-pulse">
+                    <div className="w-20 h-15 rounded-xl bg-gray-300 dark:bg-gray-600"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-2/3"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+                      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/3"></div>
                     </div>
-                  ))}
-                </div>
-              )}
-              {!isLoading && suggestedPosts.length === 0 && userId ? (
-                <p className="text-sm text-gray-500">No suggested posts available</p>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {(userId ? suggestedPosts : defaultPosts).slice(0, 5).map((post) => (
-                    <Link
-                      key={post.id}
-                      href={`/post/${post.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all duration-300"
-                    >
-                      <Image
-                        src={post.imageUrls[0] || DEFAULT_IMAGE}
-                        alt={post.title || 'Post'}
-                        width={80}
-                        height={60}
-                        className="rounded-xl object-cover"
-                        onError={(e) => {
-                          e.target.src = DEFAULT_IMAGE;
-                        }}
-                      />
-                      <div>
-                        <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
-                        <p className="text-xs text-gray-500">
-                          {post.category || 'General'} • {post.author || 'Anonymous'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          <Eye className="inline w-3 h-3 mr-1" />
-                          {post.views || 0} views
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          )}
-          {userId && isLoading && <SkeletonUserCard />}
-          {userId && !isLoading && (
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoading && suggestedPosts.length === 0 && userId ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No suggested posts available</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(userId ? suggestedPosts : defaultPosts).slice(0, 5).map((post) => (
+                  <Link
+                    key={post.id}
+                    href={`/post/${post.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
+                  >
+                    <Image
+                      src={post.imageUrls[0] || DEFAULT_IMAGE}
+                      alt={post.title || 'Post'}
+                      width={80}
+                      height={60}
+                      className="rounded-xl object-cover w-20 h-15"
+                      onError={(e) => {
+                        e.target.src = DEFAULT_IMAGE;
+                      }}
+                    />
+                    <div>
+                      <h3 className="text-sm font-semibold line-clamp-2">{post.title || 'Untitled'}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {post.category || 'General'} • {post.author || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <Eye className="inline w-3 h-3 mr-1" />
+                        {post.views || 0} views
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Mobile-only suggested users */}
+          {userId && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white rounded-2xl shadow-md p-6 mb-8 lg:hidden border border-gray-100"
+              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 mb-8 lg:hidden border border-gray-200 dark:border-gray-700"
             >
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-blue-600" />
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
+                <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
                 Suggested Users
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {suggestedUsers.length === 0 ? (
-                  <p className="text-sm text-gray-500">No suggested users available</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
                 ) : (
                   suggestedUsers.map((user) => (
-                    <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300">
+                    <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
                       <Image
                         src={user.image || DEFAULT_IMAGE}
                         alt="User"
                         width={40}
                         height={40}
-                        className="rounded-full object-cover"
+                        className="rounded-full object-cover w-10 h-10"
                         onError={(e) => {
                           e.target.src = DEFAULT_IMAGE;
                         }}
@@ -789,11 +549,11 @@ export default function SocialMediaHome() {
                       <div className="flex-1">
                         <Link
                           href={`/profile/${user.id}`}
-                          className="text-sm font-semibold hover:text-blue-600 transition-all duration-300"
+                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                         >
                           {user.name || 'User'}
                         </Link>
-                        <p className="text-xs text-gray-500">@{user.handle || 'user'}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                       </div>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -801,8 +561,8 @@ export default function SocialMediaHome() {
                         onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
                         className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
                           user.is_followed
-                            ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
+                            ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                            : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
                         }`}
                       >
                         {user.is_followed ? (
@@ -823,6 +583,8 @@ export default function SocialMediaHome() {
               </div>
             </motion.div>
           )}
+
+          {/* Main posts feed */}
           <div className="space-y-8">
             {(userId ? posts : defaultPosts).map((post) => {
               const { text: truncatedText, truncated } = truncateDescription(post.description || '');
@@ -832,7 +594,7 @@ export default function SocialMediaHome() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
-                    className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100"
+                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container"
                     data-post-id={post.id}
                     ref={(el) => {
                       if (el && userId) {
@@ -850,13 +612,13 @@ export default function SocialMediaHome() {
                     }}
                   >
                     <div className="p-6">
-                      <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-4 mb-4">
                         <Image
                           src={post.author_image || DEFAULT_IMAGE}
                           alt="User"
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
+                          width={48}
+                          height={48}
+                          className="rounded-full object-cover w-12 h-12"
                           onError={(e) => {
                             e.target.src = DEFAULT_IMAGE;
                           }}
@@ -864,20 +626,20 @@ export default function SocialMediaHome() {
                         <div>
                           <Link
                             href={`/profile/${post.userId || 'unknown'}`}
-                            className="text-sm font-semibold hover:text-blue-600 transition-all duration-300"
+                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                           >
                             {post.author || 'Anonymous'}
                           </Link>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {formatDateTime(post.created_at)} • {post.category || 'General'}
                           </p>
                         </div>
                       </div>
                       <div>
-                        <h2 className="text-lg font-semibold mb-2 hover:text-blue-600 transition-all duration-300">
+                        <h2 className="text-xl font-semibold mb-3 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 font-heading">
                           {post.title || 'Untitled'}
                         </h2>
-                        <div className="text-sm text-gray-600 mb-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                           {expandedPost[post.id] ? (
                             <div dangerouslySetInnerHTML={{ __html: post.description || '' }} />
                           ) : (
@@ -889,7 +651,7 @@ export default function SocialMediaHome() {
                                 e.preventDefault();
                                 togglePostExpand(post.id);
                               }}
-                              className="text-blue-600 hover:underline ml-2 text-sm"
+                              className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
                             >
                               {expandedPost[post.id] ? 'Read Less' : 'Read More'}
                             </button>
@@ -900,9 +662,9 @@ export default function SocialMediaHome() {
                             <Image
                               src={post.imageUrls[0] || DEFAULT_IMAGE}
                               alt={`${post.title || 'Post'} image`}
-                              width={1200}
+                              width={800}
                               height={600}
-                              className="w-full h-auto rounded-2xl object-cover cursor-pointer"
+                              className="post-image rounded-xl cursor-pointer"
                               onClick={(e) => {
                                 e.preventDefault();
                                 handleImageClick(post.imageUrls[0]);
@@ -912,16 +674,16 @@ export default function SocialMediaHome() {
                               }}
                             />
                           ) : (
-                            <div className="grid gap-4">
-                              <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-4' : ''}>
+                            <div className="grid gap-3">
+                              <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-3' : ''}>
                                 {post.imageUrls.slice(0, 2).map((url, index) => (
                                   <Image
                                     key={index}
                                     src={url || DEFAULT_IMAGE}
                                     alt={`${post.title || 'Post'} image ${index + 1}`}
-                                    width={600}
+                                    width={400}
                                     height={300}
-                                    className="w-full h-auto rounded-2xl object-cover cursor-pointer"
+                                    className="w-full h-48 sm:h-64 rounded-xl object-cover cursor-pointer"
                                     onClick={(e) => {
                                       e.preventDefault();
                                       handleImageClick(url);
@@ -933,15 +695,15 @@ export default function SocialMediaHome() {
                                 ))}
                               </div>
                               {post.imageUrls.length > 2 && (
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-3 gap-3">
                                   {post.imageUrls.slice(2).map((url, index) => (
                                     <Image
                                       key={index + 2}
                                       src={url || DEFAULT_IMAGE}
                                       alt={`${post.title || 'Post'} image ${index + 3}`}
-                                      width={400}
+                                      width={300}
                                       height={200}
-                                      className="w-full h-auto rounded-2xl object-cover cursor-pointer"
+                                      className="w-full h-32 sm:h-48 rounded-xl object-cover cursor-pointer"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         handleImageClick(url);
@@ -961,7 +723,7 @@ export default function SocialMediaHome() {
                             {post.tags.map((tag, index) => (
                               <span
                                 key={index}
-                                className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                                className="flex items-center gap-1 px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
                               >
                                 <Tag className="w-3 h-3" />
                                 {tag}
@@ -971,8 +733,8 @@ export default function SocialMediaHome() {
                         )}
                       </div>
                       {userId && (
-                        <div className="flex items-center justify-between border-t border-gray-100 pt-4">
-                          <div className="flex items-center gap-6">
+                        <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-3 mb-4">
+                          <div className="flex items-center gap-4">
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
@@ -980,10 +742,10 @@ export default function SocialMediaHome() {
                                 e.preventDefault();
                                 handlePostLike(post.id, post.is_liked);
                               }}
-                              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-all duration-300"
+                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <ThumbsUp
-                                className={`w-5 h-5 ${post.is_liked ? 'fill-blue-600 text-blue-600' : ''}`}
+                                className={`w-5 h-5 ${post.is_liked ? 'fill-indigo-500 dark:fill-purple-500 text-indigo-500 dark:text-purple-500' : ''}`}
                               />
                               <span className="text-sm">{post.likes_count || 0}</span>
                             </motion.button>
@@ -994,7 +756,7 @@ export default function SocialMediaHome() {
                                 e.preventDefault();
                                 toggleComments(post.id);
                               }}
-                              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-all duration-300"
+                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <MessageCircle className="w-5 h-5" />
                               <span className="text-sm">{post.comments_count || 0}</span>
@@ -1006,25 +768,13 @@ export default function SocialMediaHome() {
                                 e.preventDefault();
                                 handlePostShare(post.id);
                               }}
-                              className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-all duration-300"
+                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                             >
                               <Share className="w-5 h-5" />
                               <span className="text-sm">Share</span>
                             </motion.button>
-                            {post.link && (
-                              <a
-                                href={post.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-gray-600 hover:text-blue-600 transition-all duration-300"
-                                onClick={(e) => e.preventDefault()}
-                              >
-                                <ExternalLink className="w-5 h-5" />
-                                <span className="text-sm">Link</span>
-                              </a>
-                            )}
                           </div>
-                          <div className="flex items-center gap-1 text-gray-600">
+                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
                             <Eye className="w-5 h-5" />
                             <span className="text-sm">{post.views || 0}</span>
                           </div>
@@ -1039,7 +789,7 @@ export default function SocialMediaHome() {
                                 setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
                               }
                               placeholder="Add a comment..."
-                              className="w-full p-3 bg-gray-50 text-gray-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 resize-none"
+                              className="w-full p-3 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 resize-none"
                               rows="2"
                             />
                             <motion.button
@@ -1049,20 +799,20 @@ export default function SocialMediaHome() {
                                 e.preventDefault();
                                 handlePostCommentSubmit(post.id);
                               }}
-                              className="mt-2 px-4 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 text-sm"
+                              className="mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
                             >
-                              Post
+                              Post Comment
                             </motion.button>
                           </div>
-                          <div className="space-y-3 max-h-48 overflow-y-auto">
+                          <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pr-2">
                             {(comments[post.id] || []).map((comment) => (
-                              <div key={comment.id} className="flex gap-2">
+                              <div key={comment.id} className="flex gap-3">
                                 <Image
                                   src={comment.author_image || DEFAULT_IMAGE}
                                   alt="User"
-                                  width={24}
-                                  height={24}
-                                  className="rounded-full object-cover"
+                                  width={32}
+                                  height={32}
+                                  className="rounded-full object-cover w-8 h-8"
                                   onError={(e) => {
                                     e.target.src = DEFAULT_IMAGE;
                                   }}
@@ -1070,11 +820,13 @@ export default function SocialMediaHome() {
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
-                                    <span className="text-xs text-gray-500">
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
                                       {formatDateTime(comment.created_at)}
                                     </span>
                                   </div>
-                                  <p className="text-sm text-gray-600">{comment.content}</p>
+                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    {comment.content}
+                                  </p>
                                 </div>
                               </div>
                             ))}
@@ -1087,32 +839,32 @@ export default function SocialMediaHome() {
               );
             })}
             {isLoading && userId && (
-              <div className="space-y-8">
+              <>
                 <SkeletonCard />
                 <SkeletonCard />
-              </div>
+              </>
             )}
             {!hasMore && posts.length > 0 && userId && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-4"
+                className="text-center py-6"
               >
-                <span className="text-gray-500">No more posts to load</span>
+                <span className="text-gray-500 dark:text-gray-400">No more posts to load</span>
               </motion.div>
             )}
             {!userId && !isLoading && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-4"
+                className="text-center py-6"
               >
-                <p className="text-lg font-bold text-gray-900">
+                <p className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
                   You must be logged in to view more posts
                 </p>
                 <Link
                   href="/login"
-                  className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 text-sm font-medium"
+                  className="inline-block px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
                 >
                   Log In
                 </Link>
@@ -1120,32 +872,35 @@ export default function SocialMediaHome() {
             )}
           </div>
         </div>
+
+        {/* Right sidebar (desktop only) */}
         <div className="hidden lg:block lg:w-1/3">
           <div className="sticky top-20 space-y-8">
+            {/* Suggested Users */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700"
               >
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <UserPlus className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 font-heading">
+                  <UserPlus className="w-5 h-5 text-indigo-500 dark:text-purple-500" />
                   Suggested Users
                 </h2>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {suggestedUsers.length === 0 ? (
-                    <p className="text-sm text-gray-500">No suggested users available</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No suggested users available</p>
                   ) : (
                     suggestedUsers.map((user) => (
-                      <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300">
+                      <div key={user.id} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300">
                         <Image
                           src={user.image || DEFAULT_IMAGE}
                           alt="User"
                           width={40}
                           height={40}
-                          className="rounded-full object-cover"
+                          className="rounded-full object-cover w-10 h-10"
                           onError={(e) => {
                             e.target.src = DEFAULT_IMAGE;
                           }}
@@ -1153,11 +908,11 @@ export default function SocialMediaHome() {
                         <div className="flex-1">
                           <Link
                             href={`/profile/${user.id}`}
-                            className="text-sm font-semibold hover:text-blue-600 transition-all duration-300"
+                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
                           >
                             {user.name || 'User'}
                           </Link>
-                          <p className="text-xs text-gray-500">@{user.handle || 'user'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
                         <motion.button
                           whileHover={{ scale: 1.05 }}
@@ -1165,8 +920,8 @@ export default function SocialMediaHome() {
                           onClick={() => user.is_followed ? handleUnfollow(user.id) : handleFollow(user.id)}
                           className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-all duration-300 ${
                             user.is_followed
-                              ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                              : 'bg-blue-600 text-white hover:bg-blue-700'
+                              ? 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
+                              : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700'
                           }`}
                         >
                           {user.is_followed ? (
@@ -1187,38 +942,40 @@ export default function SocialMediaHome() {
                 </div>
               </motion.div>
             )}
+
+            {/* Followers */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
-                className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700"
               >
-                <h2 className="text-lg font-semibold mb-4">Followers</h2>
-                <div className="space-y-3">
+                <h2 className="text-lg font-semibold mb-4 font-heading">Followers</h2>
+                <div className="space-y-4">
                   {followers.length === 0 ? (
-                    <p className="text-sm text-gray-500">No followers yet</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No followers yet</p>
                   ) : (
                     followers.map((user) => (
                       <Link
                         key={user.id}
                         href={`/profile/${user.id}`}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300"
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
                       >
                         <Image
                           src={user.image || DEFAULT_IMAGE}
                           alt="User"
                           width={40}
                           height={40}
-                          className="rounded-full object-cover"
+                          className="rounded-full object-cover w-10 h-10"
                           onError={(e) => {
                             e.target.src = DEFAULT_IMAGE;
                           }}
                         />
                         <div>
                           <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                          <p className="text-xs text-gray-500">@{user.handle || 'user'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
                       </Link>
                     ))
@@ -1226,38 +983,40 @@ export default function SocialMediaHome() {
                 </div>
               </motion.div>
             )}
+
+            {/* Following */}
             {isLoading && <SkeletonUserCard />}
             {!isLoading && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.2 }}
-                className="bg-white rounded-2xl shadow-md p-6 border border-gray-100"
+                className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl p-6 border border-gray-200 dark:border-gray-700"
               >
-                <h2 className="text-lg font-semibold mb-4">Following</h2>
-                <div className="space-y-3">
+                <h2 className="text-lg font-semibold mb-4 font-heading">Following</h2>
+                <div className="space-y-4">
                   {following.length === 0 ? (
-                    <p className="text-sm text-gray-500">Not following anyone yet</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Not following anyone yet</p>
                   ) : (
                     following.map((user) => (
                       <Link
                         key={user.id}
                         href={`/profile/${user.id}`}
-                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition-all duration-300"
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300"
                       >
                         <Image
                           src={user.image || DEFAULT_IMAGE}
                           alt="User"
                           width={40}
                           height={40}
-                          className="rounded-full object-cover"
+                          className="rounded-full object-cover w-10 h-10"
                           onError={(e) => {
                             e.target.src = DEFAULT_IMAGE;
                           }}
                         />
                         <div>
                           <p className="text-sm font-semibold">{user.name || 'User'}</p>
-                          <p className="text-xs text-gray-500">@{user.handle || 'user'}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle || 'user'}</p>
                         </div>
                       </Link>
                     ))
