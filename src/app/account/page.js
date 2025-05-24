@@ -58,8 +58,22 @@ export default function AccountDetails() {
   const followingRef = useRef(null);
   const settingsRef = useRef(null);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend-production.up.railway.app';
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://silkroadbackend.vercel.app';
   const DEFAULT_IMAGE = '/def.jpg';
+
+  // Validate image URLs to prevent [object Object] errors
+  useEffect(() => {
+    if (userDetails?.image && typeof userDetails.image !== 'string') {
+      console.error('Invalid userDetails.image:', userDetails.image);
+      setError('Invalid profile image data');
+    }
+    userPosts.forEach((post, index) => {
+      if (post.imageUrls && (!Array.isArray(post.imageUrls) || post.imageUrls.some(url => typeof url !== 'string'))) {
+        console.error(`Invalid imageUrls for post ${index}:`, post.imageUrls);
+        setError('Invalid post image data');
+      }
+    });
+  }, [userDetails, userPosts, setError]);
 
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
@@ -296,8 +310,12 @@ export default function AccountDetails() {
           setLoading(false);
           showNotification('Failed to load profile data', 'error');
         });
+    } else {
+      setLoading(false);
+      showNotification('User not authenticated', 'error');
+      router.push('/login');
     }
-  }, [profileId, token]);
+  }, [profileId, token, router]);
 
   // Update bio text
   useEffect(() => {
@@ -442,11 +460,21 @@ export default function AccountDetails() {
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div className="relative -mb-16 mx-auto w-24 md:w-32 h-24 md:h-32">
                   <Image
-                    src={`${previewImage || userDetails?.image || DEFAULT_IMAGE}?t=${Date.now()}`}
+                    src={
+                      previewImage
+                        ? previewImage
+                        : userDetails?.image && typeof userDetails.image === 'string'
+                        ? `${userDetails.image}?t=${Date.now()}`
+                        : DEFAULT_IMAGE
+                    }
                     alt={userDetails?.name || 'User'}
                     fill
+                    priority
                     className="rounded-full border-4 border-white object-cover shadow-md"
-                    onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                    onError={(e) => {
+                      console.error('Profile image load error:', e);
+                      e.target.src = DEFAULT_IMAGE;
+                    }}
                   />
                   <button
                     onClick={() => fileInputRef.current.click()}
@@ -490,7 +518,7 @@ export default function AccountDetails() {
                   <textarea
                     value={bioText}
                     onChange={(e) => setBioText(e.target.value)}
-                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm text-gray-900 placeholder-gray-400"
+                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none text-sm text-gray-900 bg-white placeholder-black"
                     rows={4}
                     maxLength={200}
                     placeholder="Tell us about yourself..."
@@ -572,14 +600,21 @@ export default function AccountDetails() {
                       transition={{ duration: 0.3 }}
                       className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300"
                     >
-                      {post.imageUrls && post.imageUrls.length > 0 && (
+                      {post.imageUrls && Array.isArray(post.imageUrls) && post.imageUrls.length > 0 && (
                         <div className="relative h-48 w-full">
                           <Image
-                            src={`${post.imageUrls[0] || DEFAULT_IMAGE}?t=${Date.now()}`}
+                            src={
+                              post.imageUrls[0] && typeof post.imageUrls[0] === 'string'
+                                ? `${post.imageUrls[0]}?t=${Date.now()}`
+                                : DEFAULT_IMAGE
+                            }
                             alt={post.title}
                             fill
                             className="object-cover"
-                            onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                            onError={(e) => {
+                              console.error('Post image load error:', e);
+                              e.target.src = DEFAULT_IMAGE;
+                            }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                         </div>
@@ -657,11 +692,18 @@ export default function AccountDetails() {
                   >
                     <div className="relative h-12 w-12 mx-auto">
                       <Image
-                        src={`${user.image || DEFAULT_IMAGE}?t=${Date.now()}`}
+                        src={
+                          user.image && typeof user.image === 'string'
+                            ? `${user.image}?t=${Date.now()}`
+                            : DEFAULT_IMAGE
+                        }
                         alt={user.name}
                         fill
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                        onError={(e) => {
+                          console.error('Follower image load error:', e);
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
                       />
                     </div>
                     <Link
@@ -716,11 +758,18 @@ export default function AccountDetails() {
                   >
                     <div className="relative h-12 w-12 mx-auto">
                       <Image
-                        src={`${user.image || DEFAULT_IMAGE}?t=${Date.now()}`}
+                        src={
+                          user.image && typeof user.image === 'string'
+                            ? `${user.image}?t=${Date.now()}`
+                            : DEFAULT_IMAGE
+                        }
                         alt={user.name}
                         fill
                         className="rounded-full object-cover"
-                        onError={(e) => (e.target.src = DEFAULT_IMAGE)}
+                        onError={(e) => {
+                          console.error('Following image load error:', e);
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
                       />
                     </div>
                     <Link
