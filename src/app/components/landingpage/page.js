@@ -390,7 +390,7 @@ export default function SocialMediaHome() {
   };
 
   const handlePostLike = async (postId, isLiked, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     if (!userId || !token) {
       setError('Authentication required to like posts.');
       return;
@@ -428,7 +428,7 @@ export default function SocialMediaHome() {
   };
 
   const handlePostCommentSubmit = async (postId, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     if (!userId || !token) {
       setError('Authentication required to comment.');
       return;
@@ -476,7 +476,7 @@ export default function SocialMediaHome() {
   };
 
   const handlePostShare = async (postId, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     if (!userId || !token) {
       setError('Authentication required to share posts.');
       return;
@@ -530,17 +530,17 @@ export default function SocialMediaHome() {
   };
 
   const toggleComments = (postId, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     setShowComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
   const togglePostExpand = (postId, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     setExpandedPost((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
   const handleImageClick = (imageUrl, e) => {
-    e.stopPropagation(); // Prevent event from bubbling to parent Link
+    e.stopPropagation();
     setExpandedImage(imageUrl);
   };
 
@@ -870,95 +870,114 @@ export default function SocialMediaHome() {
             {(userId ? posts : defaultPosts).map((post) => {
               const { text: truncatedText, truncated } = truncateDescription(post.description || '');
               return (
-                <Link href={`/post/${post.id}`} key={post.id}>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container mb-12"
-                    data-post-id={post.id}
-                    ref={(el) => {
-                      if (el && userId) {
-                        const observer = new IntersectionObserver(
-                          ([entry]) => {
-                            if (entry.isIntersecting) {
-                              trackPostView(post.id);
-                              observer.unobserve(el);
-                            }
-                          },
-                          { threshold: 0.5 }
-                        );
-                        observer.observe(el);
-                      }
-                    }}
-                  >
-                    <div className="p-6">
-                      <div className="flex items-center gap-4 mb-4">
-                        <Image
-                          src={post.author_image || DEFAULT_IMAGE}
-                          alt="User"
-                          width={48}
-                          height={48}
-                          className="rounded-full object-cover w-12 h-12"
-                          onError={(e) => {
-                            e.target.src = DEFAULT_IMAGE;
-                          }}
-                        />
-                        <div>
-                          <Link
-                            href={`/profile/${post.userId || 'unknown'}`}
-                            className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                          >
-                            {post.author || 'Anonymous'}
-                          </Link>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDateTime(post.created_at)} • {post.category || 'General'}
-                          </p>
-                        </div>
-                      </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-xl shadow-2xl hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700 post-container mb-12"
+                  key={post.id}
+                  data-post-id={post.id}
+                  ref={(el) => {
+                    if (el && userId) {
+                      const observer = new IntersectionObserver(
+                        ([entry]) => {
+                          if (entry.isIntersecting) {
+                            trackPostView(post.id);
+                            observer.unobserve(el);
+                          }
+                        },
+                        { threshold: 0.5 }
+                      );
+                      observer.observe(el);
+                    }
+                  }}
+                >
+                  <div className="p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <Image
+                        src={post.author_image || DEFAULT_IMAGE}
+                        alt="User"
+                        width={48}
+                        height={48}
+                        className="rounded-full object-cover w-12 h-12"
+                        onError={(e) => {
+                          e.target.src = DEFAULT_IMAGE;
+                        }}
+                      />
                       <div>
+                        <Link
+                          href={`/profile/${post.userId || 'unknown'}`}
+                          className="text-sm font-semibold hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                        >
+                          {post.author || 'Anonymous'}
+                        </Link>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatDateTime(post.created_at)} • {post.category || 'General'}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <Link href={`/post/${post.id}`}>
                         <h2 className="text-xl font-semibold mb-3 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300 font-heading">
                           {post.title || 'Untitled'}
                         </h2>
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                          {expandedPost[post.id] ? (
-                            <div dangerouslySetInnerHTML={{ __html: post.description || '' }} />
-                          ) : (
-                            <span>{truncatedText}</span>
-                          )}
-                          {truncated && (
-                            <button
-                              onClick={(e) => togglePostExpand(post.id, e)}
-                              className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
-                            >
-                              {expandedPost[post.id] ? 'Read Less' : 'Read More'}
-                            </button>
-                          )}
-                        </div>
-                        <div className="mb-4">
-                          {post.imageUrls.length === 1 ? (
-                            <Image
-                              src={post.imageUrls[0] || DEFAULT_IMAGE}
-                              alt={`${post.title || 'Post'} image`}
-                              width={800}
-                              height={600}
-                              className="post-image rounded-xl cursor-pointer"
-                              onClick={(e) => handleImageClick(post.imageUrls[0], e)}
-                              onError={(e) => {
-                                e.target.src = DEFAULT_IMAGE;
-                              }}
-                            />
-                          ) : (
-                            <div className="grid gap-3">
-                              <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-3' : ''}>
-                                {post.imageUrls.slice(0, 2).map((url, index) => (
+                      </Link>
+                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        {expandedPost[post.id] ? (
+                          <div dangerouslySetInnerHTML={{ __html: post.description || '' }} />
+                        ) : (
+                          <span>{truncatedText}</span>
+                        )}
+                        {truncated && (
+                          <button
+                            onClick={(e) => togglePostExpand(post.id, e)}
+                            className="text-indigo-500 dark:text-purple-500 hover:underline ml-2 text-sm"
+                          >
+                            {expandedPost[post.id] ? 'Read Less' : 'Read More'}
+                          </button>
+                        )}
+                      </div>
+                      <div className="mb-4">
+                        {post.imageUrls.length === 1 ? (
+                          <Image
+                            src={post.imageUrls[0] || DEFAULT_IMAGE}
+                            alt={`${post.title || 'Post'} image`}
+                            width={800}
+                            height={600}
+                            className="post-image rounded-xl cursor-pointer"
+                            onClick={(e) => handleImageClick(post.imageUrls[0], e)}
+                            onError={(e) => {
+                              e.target.src = DEFAULT_IMAGE;
+                            }}
+                          />
+                        ) : (
+                          <div className="grid gap-3">
+                            <div className={post.imageUrls.length >= 2 ? 'grid grid-cols-2 gap-3' : ''}>
+                              {post.imageUrls.slice(0, 2).map((url, index) => (
+                                <Image
+                                  key={index}
+                                  src={url || DEFAULT_IMAGE}
+                                  alt={`${post.title || 'Post'} image ${index + 1}`}
+                                  width={400}
+                                  height={300}
+                                  className="w-full h-48 sm:h-64 rounded-xl object-cover cursor-pointer"
+                                  onClick={(e) => handleImageClick(url, e)}
+                                  onError={(e) => {
+                                    e.target.src = DEFAULT_IMAGE;
+                                  }}
+                                />
+                              ))}
+                            </div>
+                            {post.imageUrls.length > 2 && (
+                              <div className="grid grid-cols-3 gap-3">
+                                {post.imageUrls.slice(2).map((url, index) => (
                                   <Image
-                                    key={index}
+                                    key={index + 2}
                                     src={url || DEFAULT_IMAGE}
-                                    alt={`${post.title || 'Post'} image ${index + 1}`}
-                                    width={400}
-                                    height={300}
-                                    className="w-full h-48 sm:h-64 rounded-xl object-cover cursor-pointer"
+                                    alt={`${post.title || 'Post'} image ${index + 3}`}
+                                    width={300}
+                                    height={200}
+                                    className="w-full h-32 sm:h-48 rounded-xl object-cover cursor-pointer"
                                     onClick={(e) => handleImageClick(url, e)}
                                     onError={(e) => {
                                       e.target.src = DEFAULT_IMAGE;
@@ -966,133 +985,115 @@ export default function SocialMediaHome() {
                                   />
                                 ))}
                               </div>
-                              {post.imageUrls.length > 2 && (
-                                <div className="grid grid-cols-3 gap-3">
-                                  {post.imageUrls.slice(2).map((url, index) => (
-                                    <Image
-                                      key={index + 2}
-                                      src={url || DEFAULT_IMAGE}
-                                      alt={`${post.title || 'Post'} image ${index + 3}`}
-                                      width={300}
-                                      height={200}
-                                      className="w-full h-32 sm:h-48 rounded-xl object-cover cursor-pointer"
-                                      onClick={(e) => handleImageClick(url, e)}
-                                      onError={(e) => {
-                                        e.target.src = DEFAULT_IMAGE;
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {post.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {post.tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className="flex items-center gap-1 px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
-                              >
-                                <Tag className="w-3 h-3" />
-                                {tag}
-                              </span>
-                            ))}
+                            )}
                           </div>
                         )}
                       </div>
-                      {userId && (
-                        <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-3 mb-4">
-                          <div className="flex items-center gap-4">
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={(e) => handlePostLike(post.id, post.is_liked, e)}
-                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                      {post.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {post.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="flex items-center gap-1 px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded-full text-xs"
                             >
-                              <ThumbsUp
-                                className={`w-5 h-5 ${post.is_liked ? 'fill-indigo-500 dark:fill-purple-500 text-indigo-500 dark:text-purple-500' : ''}`}
-                              />
-                              <span className="text-sm">{post.likes_count || 0}</span>
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={(e) => toggleComments(post.id, e)}
-                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                            >
-                              <MessageCircle className="w-5 h-5" />
-                              <span className="text-sm">{post.comments_count || 0}</span>
-                            </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={(e) => handlePostShare(post.id, e)}
-                              className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
-                            >
-                              <Share className="w-5 h-5" />
-                              <span className="text-sm">Share</span>
-                            </motion.button>
-                          </div>
-                          <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
-                            <Eye className="w-5 h-5" />
-                            <span className="text-sm">{post.views || 0}</span>
-                          </div>
-                        </div>
-                      )}
-                      {userId && showComments[post.id] && (
-                        <div className="mt-4">
-                          <div className="mb-4">
-                            <textarea
-                              value={commentInput[post.id] || ''}
-                              onChange={(e) =>
-                                setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
-                              }
-                              placeholder="Add a comment..."
-                              className="w-full p-3 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 resize-none"
-                              rows="2"
-                            />
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={(e) => handlePostCommentSubmit(post.id, e)}
-                              className="mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
-                            >
-                              Post Comment
-                            </motion.button>
-                          </div>
-                          <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pr-2">
-                            {(comments[post.id] || []).map((comment) => (
-                              <div key={comment.id} className="flex gap-3">
-                                <Image
-                                  src={comment.author_image || DEFAULT_IMAGE}
-                                  alt="User"
-                                  width={32}
-                                  height={32}
-                                  className="rounded-full object-cover w-8 h-8"
-                                  onError={(e) => {
-                                    e.target.src = DEFAULT_IMAGE;
-                                  }}
-                                />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      {formatDateTime(comment.created_at)}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                                    {comment.content}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
+                              <Tag className="w-3 h-3" />
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       )}
                     </div>
-                  </motion.div>
-                </Link>
+                    {userId && (
+                      <div className="flex items-center justify-between border-t border-b border-gray-200 dark:border-gray-600 py-3 mb-4">
+                        <div className="flex items-center gap-4">
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => handlePostLike(post.id, post.is_liked, e)}
+                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          >
+                            <ThumbsUp
+                              className={`w-5 h-5 ${post.is_liked ? 'fill-indigo-500 dark:fill-purple-500 text-indigo-500 dark:text-purple-500' : ''}`}
+                            />
+                            <span className="text-sm">{post.likes_count || 0}</span>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => toggleComments(post.id, e)}
+                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          >
+                            <MessageCircle className="w-5 h-5" />
+                            <span className="text-sm">{post.comments_count || 0}</span>
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(e) => handlePostShare(post.id, e)}
+                            className="flex items-center gap-1 text-gray-600 dark:text-gray-300 hover:text-indigo-500 dark:hover:text-purple-500 transition-all duration-300"
+                          >
+                            <Share className="w-5 h-5" />
+                            <span className="text-sm">Share</span>
+                          </motion.button>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-600 dark:text-gray-300">
+                          <Eye className="w-5 h-5" />
+                          <span className="text-sm">{post.views || 0}</span>
+                        </div>
+                      </div>
+                    )}
+                    {userId && showComments[post.id] && (
+                      <div className="mt-4">
+                        <div className="mb-4">
+                          <textarea
+                            value={commentInput[post.id] || ''}
+                            onChange={(e) =>
+                              setCommentInput((prev) => ({ ...prev, [post.id]: e.target.value }))
+                            }
+                            placeholder="Add a comment..."
+                            className="w-full p-3 bg-white/50 dark:bg-gray-700/50 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-purple-500 transition-all duration-300 resize-none"
+                            rows="2"
+                          />
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={(e) => handlePostCommentSubmit(post.id, e)}
+                            className="mt-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 text-sm"
+                          >
+                            Post Comment
+                          </motion.button>
+                        </div>
+                        <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 pr-2">
+                          {(comments[post.id] || []).map((comment) => (
+                            <div key={comment.id} className="flex gap-3">
+                              <Image
+                                src={comment.author_image || DEFAULT_IMAGE}
+                                alt="User"
+                                width={32}
+                                height={32}
+                                className="rounded-full object-cover w-8 h-8"
+                                onError={(e) => {
+                                  e.target.src = DEFAULT_IMAGE;
+                                }}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium">{comment.fullName || 'User'}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {formatDateTime(comment.created_at)}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                  {comment.content}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
               );
             })}
             {isLoading && userId && (
