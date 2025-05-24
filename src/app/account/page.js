@@ -723,7 +723,7 @@ export default function AccountDetails() {
                     )}
                   <div className="p-6">
                     <div className="flex justify-between items-start">
-                      <Link href={`/posts/${userPosts[postIndex].id}`}>
+                      <Link href={`/post/${userPosts[postIndex].id}`}>
                         <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2">
                           {userPosts[postIndex].title}
                         </h3>
